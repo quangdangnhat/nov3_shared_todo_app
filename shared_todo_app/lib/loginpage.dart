@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:shared_todo_app/loginpage.dart';
+import 'package:shared_todo_app/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -22,12 +23,12 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  Future<void> _signUp() async {
+  Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
     try {
-      final response = await Supabase.instance.client.auth.signUp(
+      final response = await Supabase.instance.client.auth.signInWithPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -37,18 +38,30 @@ class _RegisterPageState extends State<RegisterPage> {
       if (response.user != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registrazione avvenuta! Controlla la tua email.'),
+            content: Text('Login effettuato con successo!'),
             backgroundColor: Colors.green,
           ),
         );
-        _emailController.clear();
-        _passwordController.clear();
+
+        // ✅ Reindirizzamento alla HomePage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
       }
     } on AuthException catch (e) {
       if (!mounted) return;
+      String errorMessage = 'Errore durante il login';
+      
+      if (e.message.contains('Invalid login credentials')) {
+        errorMessage = 'Email o password errati';
+      } else if (e.message.contains('Email not confirmed')) {
+        errorMessage = 'Conferma la tua email prima di accedere';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Errore: ${e.message}'),
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
         ),
       );
@@ -67,11 +80,45 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    if (_emailController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Inserisci la tua email per recuperare la password'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await Supabase.instance.client.auth.resetPasswordForEmail(
+        _emailController.text.trim(),
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email di recupero inviata! Controlla la tua casella.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registrazione'),
+        title: const Text('Login'),
         elevation: 0,
       ),
       body: SafeArea(
@@ -85,7 +132,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Icon(
-                    Icons.person_add_rounded,
+                    Icons.lock_outline_rounded,
                     size: 80,
                     color: Theme.of(context).primaryColor,
                   ),
@@ -111,32 +158,49 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Inserisci una password';
                       }
-                      if (value.length < 6) {
-                        return 'La password deve avere almeno 6 caratteri';
-                      }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _resetPassword,
+                      child: const Text('Password dimenticata?'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : ElevatedButton(
-                          onPressed: _signUp,
+                          onPressed: _signIn,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           child: const Text(
-                            'Registrati',
+                            'Accedi',
                             style: TextStyle(fontSize: 16),
                           ),
                         ),
@@ -144,17 +208,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Hai già un account?'),
+                      const Text('Non hai un account?'),
                       TextButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LoginPage(),
-                            ),
-                          );
+                          Navigator.pop(context);
                         },
-                        child: const Text('Accedi'),
+                        child: const Text('Registrati'),
                       ),
                     ],
                   ),
