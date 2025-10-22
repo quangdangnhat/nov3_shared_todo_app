@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_todo_app/main.dart';
+import 'package:shared_todo_app/registerpage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginPage extends StatefulWidget {
@@ -52,13 +53,13 @@ class _LoginPageState extends State<LoginPage> {
     } on AuthException catch (e) {
       if (!mounted) return;
       String errorMessage = 'Errore durante il login';
-      
+
       if (e.message.contains('Invalid login credentials')) {
         errorMessage = 'Email o password errati';
       } else if (e.message.contains('Email not confirmed')) {
         errorMessage = 'Conferma la tua email prima di accedere';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
@@ -211,7 +212,11 @@ class _LoginPageState extends State<LoginPage> {
                       const Text('Non hai un account?'),
                       TextButton(
                         onPressed: () {
-                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const RegisterPage()),
+                          );
                         },
                         child: const Text('Registrati'),
                       ),
