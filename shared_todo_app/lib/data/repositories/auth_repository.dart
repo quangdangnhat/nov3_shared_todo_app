@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../main.dart'; // Per accedere a 'supabase'
 
 class AuthRepository {
-
   // Metodo per registrarsi
   // Nota come gestiamo il campo 'username' nella tua tabella 'users'
   // usando il parametro 'data' di signUp.
@@ -26,7 +25,13 @@ class AuthRepository {
         },
       );
     } on AuthException catch (error) {
-      debugPrint('Sign up error: ${error.message}');
+      if (error.message.contains('Database error saving new user')) {
+        throw AuthException(
+          'Username già in uso. Prova con un altro.'
+        );
+      }
+
+      
       rethrow;
     } catch (error) {
       debugPrint('Generic sign up error: $error');
