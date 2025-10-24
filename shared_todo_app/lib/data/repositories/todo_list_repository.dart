@@ -16,6 +16,9 @@ class TodoListRepository {
         .eq('user_id', userId)
         .order('created_at', ascending: false);
 
+    // Mappa per tenere traccia dei ruoli
+    final roleMap = <String, String>{};
+
     // 2. Trasforma lo stream di "partecipazioni" in uno stream di "liste"
     return participationStream.asyncMap((participationMaps) async {
       debugPrint("Participation stream updated with ${participationMaps.length} items");
@@ -24,20 +27,19 @@ class TodoListRepository {
         return <TodoList>[];
       }
 
-      // --- MODIFICA: Crea una mappa per cercare i ruoli velocemente ---
-      // (Es: {'listId_1': 'admin', 'listId_2': 'collaborator'})
-      final roleMap = <String, String>{};
-      for (final map in participationMaps) {
-        // Usa la logica robusta per trovare l'ID
-        final listId = map['todo_list_id'] ?? map['todoListId'];
-        final role = map['role'] as String?; // Il ruolo
-        if (listId != null && role != null) {
-          roleMap[listId] = role;
-        }
-      }
-      
-      final listIds = roleMap.keys.toList();
-      // --- FINE MODIFICA ---
+      // 3. Estrai gli ID delle liste e salva i ruoli
+      final listIds = participationMaps
+          .map((map) {
+            final listId = map['todo_list_id'] ?? map['todoListId'];
+            final role = map['role'] as String? ?? 'unknown';
+            if (listId != null) {
+              roleMap[listId] = role;
+            }
+            return listId;
+          })
+          .whereType<String>()
+          .toSet()
+          .toList();
 
       if (listIds.isEmpty) {
         debugPrint("No valid list IDs found after filtering");
@@ -50,34 +52,21 @@ class TodoListRepository {
       final todoListsData = await supabase
           .from('todo_lists')
           .select()
-          .filter('id', 'in', listIds);
-          // Rimuoviamo l'ordine qui, lo applicheremo dopo il merge
+          .filter('id', 'in', listIds)
+          .order('created_at', ascending: false);
 
       debugPrint("Got ${todoListsData.length} list details");
 
-      // --- MODIFICA: Fondi i dati della lista con i dati del ruolo ---
-      final mergedData = todoListsData.map((listMap) {
-        final listId = listMap['id'] as String;
-        final role = roleMap[listId] ?? 'Unknown'; // Recupera il ruolo
-
-        // Ritorna una nuova mappa con *tutti* i dati
-        return {
-          ...listMap, // Dati della lista (id, title, desc, created_at)
-          'role': role,  // Aggiungi il ruolo
+      // 5. Trasforma i dati grezzi in oggetti TodoList, FONDENDO il ruolo
+      return todoListsData.map((map) {
+        final listId = map['id'] as String;
+        // Aggiungi il ruolo salvato alla mappa prima di creare l'oggetto
+        final mapWithRole = {
+          ...map,
+          'role': roleMap[listId] ?? 'unknown',
         };
+        return TodoList.fromMap(mapWithRole);
       }).toList();
-
-      // Ordina la lista finale in Dart per data di creazione
-      mergedData.sort((a, b) {
-         // Usa la logica robusta per la data
-         final dateA = DateTime.parse(a['created_at'] ?? a['createdAt']);
-         final dateB = DateTime.parse(b['created_at'] ?? b['createdAt']);
-         return dateB.compareTo(dateA); // Decrescente (più recenti prima)
-      });
-      // --- FINE MODIFICA ---
-
-      // 5. Trasforma le mappe unite in oggetti TodoList
-      return mergedData.map((map) => TodoList.fromMap(map)).toList();
     });
   }
 
@@ -105,6 +94,29 @@ class TodoListRepository {
       await supabase.from('todo_lists').delete().eq('id', listId);
     } catch (error) {
       debugPrint('Errore eliminazione lista: $error');
+      rethrow;
+    }
+  }
+
+  // --- NUOVO METODO PER MODIFICARE UNA LISTA ---
+  Future<void> updateTodoList({
+    required String listId,
+    required String title,
+    String? desc,
+  }) async {
+    final updates = {
+      'title': title,
+      'desc': desc,
+      'updated_at': DateTime.now().toIso8601String(), // Aggiorna 'updated_at'
+    };
+
+    try {
+      await supabase
+          .from('todo_lists')
+          .update(updates)
+          .eq('id', listId);
+    } catch (error) {
+      debugPrint('Errore aggiornamento lista: $error');
       rethrow;
     }
   }
