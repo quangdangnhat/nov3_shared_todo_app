@@ -3,7 +3,7 @@ import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
-import '../../../core/widget/app_drawer_widget.dart';
+import '../../../core/widgets/app_drawer_widget.dart';
 import '../presentation/widgets/folder_list_tile.dart';
 
 class TodoListDetailScreen extends StatefulWidget {

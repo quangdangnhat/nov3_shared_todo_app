@@ -5,19 +5,19 @@ class FolderRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   // --- GET: Stream di tutti i folder di una TodoList ---
-Stream<List<Folder>> getFoldersStream(String todoListId) {
-  return _supabase
-      .from('folders')
-      .stream(primaryKey: ['id'])
-      .eq('todo_list_id', todoListId)
-      .map((data) {
-        return data.map((json) => Folder.fromJson(json)).toList();
-      });
-}
-
+  Stream<List<Folder>> getFoldersStream(String todoListId) {
+    return _supabase
+        .from('folders')
+        .stream(primaryKey: ['id'])
+        .eq('todo_list_id', todoListId)
+        .order('created_at', ascending: false) // Aggiungiamo un ordine
+        .map((data) {
+      // Usa .fromMap come abbiamo corretto
+      return data.map((json) => Folder.fromMap(json)).toList();
+    });
+  }
 
   // --- CREATE: Nuovo folder ---
-  // verificare che il title del folder non sia già presente.-->altrimenti si genera una "infinite recursion"
   Future<Folder> createFolder({
     required String todoListId,
     required String title,
@@ -27,19 +27,24 @@ Stream<List<Folder>> getFoldersStream(String todoListId) {
       final response = await _supabase
           .from('folders')
           .insert({
-            'created_at': DateTime.now().toIso8601String(),
+            // --- CORREZIONE ---
+            // 'created_at' rimosso. Lasciamo che il DB lo imposti.
+            // --- FINE CORREZIONE ---
             'todo_list_id': todoListId,
             'title': title,
             'parent_id': parentId,
           })
           .select()
           .single();
-      return Folder.fromJson(response);
+      
+      // Usa .fromMap come abbiamo corretto
+      return Folder.fromMap(response);
     } catch (e) {
       throw Exception('Failed to create folder: $e');
     }
   }
 
+  // --- UPDATE: Aggiorna folder ---
   Future<Folder> updateFolder({
     required String id,
     String? title,
@@ -61,15 +66,17 @@ Stream<List<Folder>> getFoldersStream(String todoListId) {
           .from('folders')
           .update(updates)
           .eq('id', id)
-          .select() // in modo che verifico che i dati siano stati aggiornati    ( si può togliere )
+          .select() // in modo che verifico che i dati siano stati aggiornati
           .single(); // voglio ritornato solo quell'elemento
 
-      return Folder.fromJson(response);
+      // Usa .fromMap come abbiamo corretto
+      return Folder.fromMap(response);
     } catch (e) {
       throw Exception('Failed to update folder: $e');
     }
   }
 
+  // --- DELETE: Elimina folder ---
   Future<void> deleteFolder(String id) async {
     try {
       await _supabase.from('folders').delete().eq('id', id);

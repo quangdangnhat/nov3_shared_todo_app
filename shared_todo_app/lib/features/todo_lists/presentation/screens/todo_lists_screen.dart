@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_todo_app/features/todo_lists/detail.dart/todo_list_detail_screen.dart';
-import '../../../../core/widget/app_drawer_widget.dart';
-import '../../../../core/widget/todo_list_title.dart';
+import '../../../../core/widgets/app_drawer_widget.dart';
+import '../../../../core/widgets/todo_list_title.dart';
 import '../../../../data/models/todo_list.dart';
 import '../../../../data/repositories/todo_list_repository.dart';
 import '../../../../core/utils/snackbar_utils.dart';
