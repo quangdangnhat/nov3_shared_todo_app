@@ -30,6 +30,7 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.blue,
         // ... altri stili
       ),
+      debugShowCheckedModeBanner: false,
       // 3. Usa uno StreamBuilder per reindirizzare l'utente
       home: StreamBuilder<AuthState>(
         stream: supabase.auth.onAuthStateChange,

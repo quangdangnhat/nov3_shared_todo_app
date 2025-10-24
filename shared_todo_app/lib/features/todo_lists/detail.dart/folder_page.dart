@@ -3,6 +3,7 @@ import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/widget/app_drawer_widget.dart';
 
 class FolderPage extends StatefulWidget {
   final TodoList todoList;
@@ -28,11 +29,12 @@ class _FolderPageState extends State<FolderPage> {
 
   // Metodo per ricaricare lo stream
   void _refreshStream() {
+    // TODO: Qui dovremmo filtrare per parent_id == null per mostrare solo la root
     _foldersStream = _folderRepo.getFoldersStream(widget.todoList.id);
   }
 
   // Mostra dialog per creare un folder
-  void _showCreateFolderDialog() {
+  void _showCreateFolderDialog({String? parentId}) { // Aggiunto parentId
     final formKey = GlobalKey<FormState>();
     final titleController = TextEditingController();
 
@@ -40,7 +42,7 @@ class _FolderPageState extends State<FolderPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Create New Folder'),
+          title: Text(parentId == null ? 'Create New Folder' : 'Create Subfolder'),
           content: Form(
             key: formKey,
             child: TextFormField(
@@ -70,6 +72,7 @@ class _FolderPageState extends State<FolderPage> {
                     await _folderRepo.createFolder(
                       todoListId: widget.todoList.id,
                       title: titleController.text.trim(),
+                      parentId: parentId, // Passa il parentId
                     );
 
                     if (mounted) {
@@ -212,8 +215,20 @@ class _FolderPageState extends State<FolderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // --- CORREZIONE APPLICATA ---
+        // Rimuoviamo il 'leading' esplicito, 
+        // così l'icona hamburger appare automaticamente.
+        // leading: const BackButton(), // <-- RIMOSSO
+        // --- FINE CORREZIONE ---
         title: Text(widget.todoList.title),
+        // --- NUOVA CORREZIONE ---
+        // Aggiungiamo il BackButton a destra, come richiesto
+        actions: [
+          const BackButton(),
+        ],
+        // --- FINE NUOVA CORREZIONE ---
       ),
+      drawer: const AppDrawer(), // <-- Il Drawer rimane
       body: StreamBuilder<List<Folder>>(
         stream: _foldersStream,
         builder: (context, snapshot) {
@@ -290,7 +305,7 @@ class _FolderPageState extends State<FolderPage> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateFolderDialog,
+        onPressed: () => _showCreateFolderDialog(), // Crea una folder root
         icon: const Icon(Icons.create_new_folder),
         label: const Text('New Folder'),
       ),
@@ -378,3 +393,4 @@ class _FolderPageState extends State<FolderPage> {
     }
   }
 }
+
