@@ -18,9 +18,20 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
   final AuthRepository _authRepo = AuthRepository();
   final TodoListRepository _todoListRepo = TodoListRepository();
 
+  // --- MODIFICA: Variabile di stato per lo stream ---
+  late Stream<List<TodoList>> _listsStream;
+
   // Stato per il calendario
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+
+  // --- MODIFICA: Aggiunto initState per inizializzare lo stream ---
+  @override
+  void initState() {
+    super.initState();
+    // Inizializziamo lo stream una sola volta qui
+    _listsStream = _todoListRepo.getTodoListsStream();
+  }
 
   // Mostra il Dialog per creare la lista ---
   void _showCreateListDialog() {
@@ -73,8 +84,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                     );
 
                     // Se tutto va bene, chiudi il dialog
+                    // Lo StreamBuilder aggiornerà automaticamente la UI
                     if (mounted) Navigator.of(context).pop();
-                    
                   } catch (error) {
                     // Mostra un errore
                     if (mounted) {
@@ -92,6 +103,66 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
+  // --- NUOVO: Mostra il popup di conferma eliminazione ---
+  void _showDeleteConfirmationDialog(TodoList list) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete List'),
+          content: Text(
+              'Are you sure you want to delete "${list.title}"? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              onPressed: () {
+                // Chiudi il dialog e procedi con l'eliminazione
+                Navigator.of(context).pop();
+                _handleDeleteList(list.id);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --- MODIFICATO: Logica per chiamare il repository e aggiornare la UI ---
+  Future<void> _handleDeleteList(String listId) async {
+    try {
+      await _todoListRepo.deleteTodoList(listId);
+
+      // Eliminazione riuscita
+      if (mounted) {
+        // Mostra un messaggio di successo
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('List deleted successfully.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // --- FORZA L'AGGIORNAMENTO DELLA UI ---
+        // Ricreando lo stream, forziamo lo StreamBuilder a
+        // ricaricare i dati (che ora non includono più la lista eliminata).
+        setState(() {
+          _listsStream = _todoListRepo.getTodoListsStream();
+        });
+      }
+    } catch (error) {
+      // Errore during l'eliminazione
+      if (mounted) {
+        showErrorSnackBar(context,
+            message: 'Failed to delete list: $error');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,7 +178,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
 
       // --- Corpo della pagina ---
       body: StreamBuilder<List<TodoList>>(
-        stream: _todoListRepo.getTodoListsStream(), // Ascolta lo stream
+        // --- MODIFICA: Usa la variabile di stato ---
+        stream: _listsStream, // Ascolta lo stream
         builder: (context, snapshot) {
           // 1. Stato di caricamento
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -129,8 +201,9 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
             return _buildEmptyState();
           }
 
-          // 5. Se ci sono liste, mostrale in una griglia
-          return _buildListGrid(lists);
+          // 5. Se ci sono liste, mostrale in una lista
+          // --- MODIFICA: Chiamata al metodo rinominato ---
+          return _buildList(lists);
         },
       ),
 
@@ -226,46 +299,63 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // --- Widget per la griglia delle liste ---
-  Widget _buildListGrid(List<TodoList> lists) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16.0),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // 2 colonne
-        crossAxisSpacing: 16.0,
-        mainAxisSpacing: 16.0,
-        childAspectRatio: 1, // Quadrato
-      ),
+  // --- MODIFICA: Widget per la lista (ex griglia) ---
+  Widget _buildList(List<TodoList> lists) {
+    return ListView.builder(
+      // Padding per la lista
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       itemCount: lists.length,
       itemBuilder: (context, index) {
         final list = lists[index];
         return Card(
           elevation: 4.0,
+          margin: const EdgeInsets.only(bottom: 12.0), // Spazio tra le card
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
-          child: InkWell(
-            onTap: () {
-              _onSelectedList(list); // ottengo la lista selezionata
-            },
-            borderRadius: BorderRadius.circular(12.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.list_alt_rounded,
-                    size: 50, color: Colors.blue),
-                const SizedBox(height: 12),
-                Text(
-                  list.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            leading: const Icon(Icons.list_alt_rounded,
+                size: 40, color: Colors.blue),
+            title: Text(
+              list.title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            subtitle: Text(
+              list.desc ?? 'No description', // Mostra la descrizione
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            // Il menu a 3 puntini va qui
+            trailing: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                if (value == 'edit') {
+                  // TODO: Implementa logica di modifica
+                } else if (value == 'delete') {
+                  _showDeleteConfirmationDialog(list);
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Text('Edit'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Text('Delete', style: TextStyle(color: Colors.red)),
                 ),
               ],
+            ),
+            onTap: () {
+              _onSelectedList(list);
+            },
+            shape: RoundedRectangleBorder( // Rende cliccabile l'intera area
+              borderRadius: BorderRadius.circular(12.0),
             ),
           ),
         );
@@ -273,14 +363,14 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // Navigare nella pagina della lista scelta 
-  void _onSelectedList(TodoList list){
-     Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => FolderPage(todoList: list),
-    ),
-  );
+  // Navigare nella pagina della lista scelta
+  void _onSelectedList(TodoList list) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FolderPage(todoList: list),
+      ),
+    );
   }
-
 }
+

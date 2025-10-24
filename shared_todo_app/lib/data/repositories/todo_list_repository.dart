@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../../main.dart'; // Per l'istanza 'supabase'
+import '../../main.dart';
 import '../models/todo_list.dart';
 
 class TodoListRepository {
@@ -10,11 +10,13 @@ class TodoListRepository {
     // 1. Ascolta in tempo reale la tabella 'participations'
     final participationStream = supabase
         .from('participations')
-        .stream(
+        .stream( // <-- PRIMA STREAM
+          // Ora usiamo la nuova chiave primaria 'id' singola
           primaryKey: ['id'],
         )
-        .eq('user_id', userId)
-        .order('created_at', ascending: false);
+        // .select('todoList_id, created_at') // <-- RIMOSSO: .select() non è supportato qui
+        .eq('user_id', userId) // <-- POI FILTRA
+        .order('created_at', ascending: false); // <-- POI ORDINA
 
     // 2. Trasforma lo stream di "partecipazioni" in uno stream di "liste"
     return participationStream.asyncMap((participationMaps) async {
@@ -44,8 +46,10 @@ class TodoListRepository {
       final todoListsData = await supabase
           .from('todo_lists')
           .select()
+          // --- ECCO LA CORREZIONE DEFINITIVA ---
           // Usiamo il metodo .filter() che non ha conflitti di keyword
           .filter('id', 'in', listIds)
+          // --- FINE CORREZIONE ---
           .order('created_at', ascending: false);
 
       debugPrint("Got ${todoListsData.length} list details");
@@ -70,6 +74,20 @@ class TodoListRepository {
       await supabase.from('todo_lists').insert(newRow);
     } catch (error) {
       debugPrint('Errore creazione lista: $error');
+      rethrow;
+    }
+  }
+
+  // --- NUOVO METODO PER ELIMINARE ---
+  Future<void> deleteTodoList(String listId) async {
+    try {
+      // Grazie alla policy RLS (che controlla se siamo 'admin')
+      // e a 'ON DELETE CASCADE' nel database,
+      // Supabase eliminerà la lista e PostgreSQL eliminerà
+      // in cascata tutte le 'participations', 'folders', 'tasks', ecc.
+      await supabase.from('todo_lists').delete().eq('id', listId);
+    } catch (error) {
+      debugPrint('Errore eliminazione lista: $error');
       rethrow;
     }
   }
