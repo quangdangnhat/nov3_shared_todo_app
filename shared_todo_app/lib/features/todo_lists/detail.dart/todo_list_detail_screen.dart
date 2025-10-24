@@ -4,20 +4,21 @@ import '../../../data/models/folder.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/widget/app_drawer_widget.dart';
+import '../presentation/widgets/folder_list_tile.dart';
 
-class FolderPage extends StatefulWidget {
+class TodoListDetailScreen extends StatefulWidget {
   final TodoList todoList;
 
-  const FolderPage({
+  const TodoListDetailScreen({
     super.key,
     required this.todoList,
   });
 
   @override
-  State<FolderPage> createState() => _FolderPageState();
+  State<TodoListDetailScreen> createState() => _TodoListDetailScreenState();
 }
 
-class _FolderPageState extends State<FolderPage> {
+class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   final FolderRepository _folderRepo = FolderRepository();
   late Stream<List<Folder>> _foldersStream;
 
@@ -215,20 +216,12 @@ class _FolderPageState extends State<FolderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // --- CORREZIONE APPLICATA ---
-        // Rimuoviamo il 'leading' esplicito, 
-        // così l'icona hamburger appare automaticamente.
-        // leading: const BackButton(), // <-- RIMOSSO
-        // --- FINE CORREZIONE ---
         title: Text(widget.todoList.title),
-        // --- NUOVA CORREZIONE ---
-        // Aggiungiamo il BackButton a destra, come richiesto
         actions: [
           const BackButton(),
         ],
-        // --- FINE NUOVA CORREZIONE ---
       ),
-      drawer: const AppDrawer(), // <-- Il Drawer rimane
+      drawer: const AppDrawer(), // <-- USA IL WIDGET SNELLITO
       body: StreamBuilder<List<Folder>>(
         stream: _foldersStream,
         builder: (context, snapshot) {
@@ -293,13 +286,26 @@ class _FolderPageState extends State<FolderPage> {
             );
           }
 
-          // Lista folder
+          // --- LISTA SNELLITA ---
+          // Ora usa il ListView.builder per chiamare il nostro nuovo widget
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: folders.length,
             itemBuilder: (context, index) {
               final folder = folders[index];
-              return _buildFolderCard(folder);
+              return FolderListTile(
+                folder: folder,
+                onTap: () {
+                  // TODO: Naviga alla pagina dei task del folder
+                  debugPrint('Apri folder: ${folder.title}');
+                },
+                onEdit: () {
+                  _showEditFolderDialog(folder);
+                },
+                onDelete: () {
+                  _showDeleteFolderDialog(folder);
+                },
+              );
             },
           );
         },
@@ -312,85 +318,6 @@ class _FolderPageState extends State<FolderPage> {
     );
   }
 
-  Widget _buildFolderCard(Folder folder) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue[100],
-          child: const Icon(Icons.folder, color: Colors.blue),
-        ),
-        title: Text(
-          folder.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Text(
-          'Created: ${_formatDate(folder.createdAt)}',
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'delete') {
-              _showDeleteFolderDialog(folder);
-            } else if (value == 'edit') {
-              _showEditFolderDialog(folder);
-            }
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(
-                children: [
-                  Icon(Icons.edit, size: 20),
-                  SizedBox(width: 8),
-                  Text('Edit'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, size: 20, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        onTap: () {
-          // TODO: Naviga alla pagina dei task del folder
-          debugPrint('Apri folder: ${folder.title}');
-        },
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return 'Today ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } else if (difference.inDays == 1) {
-      return 'Yesterday';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} days ago';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
-  }
+  // --- _buildFolderCard() RIMOSSO ---
+  // --- _formatDate() RIMOSSO ---
 }
-
