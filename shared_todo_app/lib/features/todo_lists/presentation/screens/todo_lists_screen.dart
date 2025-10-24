@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_todo_app/features/todo_lists/detail.dart/folder_page.dart';
+import 'package:shared_todo_app/features/todo_lists/detail.dart/folder_page.dart'; 
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../data/models/todo_list.dart';
 import '../../../../data/repositories/auth_repository.dart';
@@ -18,14 +18,13 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
   final AuthRepository _authRepo = AuthRepository();
   final TodoListRepository _todoListRepo = TodoListRepository();
 
-  // --- MODIFICA: Variabile di stato per lo stream ---
+  // Variabile di stato per lo stream (per forzare l'aggiornamento)
   late Stream<List<TodoList>> _listsStream;
 
   // Stato per il calendario
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  // --- MODIFICA: Aggiunto initState per inizializzare lo stream ---
   @override
   void initState() {
     super.initState();
@@ -103,7 +102,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // --- NUOVO: Mostra il popup di conferma eliminazione ---
+  // --- Mostra il popup di conferma eliminazione ---
   void _showDeleteConfirmationDialog(TodoList list) {
     showDialog(
       context: context,
@@ -132,7 +131,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // --- MODIFICATO: Logica per chiamare il repository e aggiornare la UI ---
+  // --- Logica per chiamare il repository e aggiornare la UI ---
   Future<void> _handleDeleteList(String listId) async {
     try {
       await _todoListRepo.deleteTodoList(listId);
@@ -148,8 +147,6 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
         );
 
         // --- FORZA L'AGGIORNAMENTO DELLA UI ---
-        // Ricreando lo stream, forziamo lo StreamBuilder a
-        // ricaricare i dati (che ora non includono più la lista eliminata).
         setState(() {
           _listsStream = _todoListRepo.getTodoListsStream();
         });
@@ -166,19 +163,11 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // --- AppBar con il pulsante hamburger ---
       appBar: AppBar(
         title: const Text('My To-Do Lists'),
-        // Il pulsante hamburger (leading) viene aggiunto automaticamente
-        // quando forniamo una 'drawer' allo Scaffold.
       ),
-
-      // --- Menu Laterale (Drawer) ---
       drawer: _buildAppDrawer(context),
-
-      // --- Corpo della pagina ---
       body: StreamBuilder<List<TodoList>>(
-        // --- MODIFICA: Usa la variabile di stato ---
         stream: _listsStream, // Ascolta lo stream
         builder: (context, snapshot) {
           // 1. Stato di caricamento
@@ -188,6 +177,9 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
 
           // 2. Stato di errore
           if (snapshot.hasError) {
+            // Aggiungi uno snapshot dell'errore per il debug
+            debugPrint('Errore StreamBuilder: ${snapshot.error}');
+            debugPrint('Stack trace: ${snapshot.stackTrace}');
             return Center(
               child: Text('Error: ${snapshot.error}'),
             );
@@ -202,13 +194,12 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
           }
 
           // 5. Se ci sono liste, mostrale in una lista
-          // --- MODIFICA: Chiamata al metodo rinominato ---
           return _buildList(lists);
         },
       ),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateListDialog, // --- MODIFICA APPLICATA ---
+        onPressed: _showCreateListDialog,
         tooltip: 'Create List',
         child: const Icon(Icons.add),
       ),
@@ -250,8 +241,6 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
             title: const Text('Log Out'),
             onTap: () {
               _authRepo.signOut();
-              // Non serve altro, lo StreamBuilder in main.dart
-              // gestirà il reindirizzamento alla pagina di login.
             },
           ),
 
@@ -265,7 +254,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
               focusedDay: _focusedDay,
               calendarFormat: CalendarFormat.month,
               headerStyle: const HeaderStyle(
-                formatButtonVisible: false, // Nasconde il selettore "2 weeks"
+                formatButtonVisible: false,
                 titleCentered: true,
               ),
               selectedDayPredicate: (day) {
@@ -274,12 +263,12 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
               onDaySelected: (selectedDay, focusedDay) {
                 setState(() {
                   _selectedDay = selectedDay;
-                  _focusedDay = focusedDay; // Aggiorna il giorno "focalizzato"
+                  _focusedDay = focusedDay; 
                 });
               },
             ),
           ),
-          const SizedBox(height: 20), // Un po' di spazio in basso
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -299,36 +288,98 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // --- MODIFICA: Widget per la lista (ex griglia) ---
+  // --- MODIFICA ESTETICA: Widget per la lista ---
   Widget _buildList(List<TodoList> lists) {
+    // Helper per formattare la data (puoi sostituirlo con 'package:intl')
+    String formatDate(DateTime date) {
+      final localDate = date.toLocal();
+      return '${localDate.day.toString().padLeft(2, '0')}/${localDate.month.toString().padLeft(2, '0')}/${localDate.year}';
+    }
+
+    // Helper per formattare il ruolo
+    String formatRole(String role) {
+      if (role == 'admin') return 'Admin';
+      if (role == 'collaborator') return 'Collaborator';
+      return role; // Gestisce 'Unknown' o altri futuri ruoli
+    }
+
     return ListView.builder(
       // Padding per la lista
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       itemCount: lists.length,
       itemBuilder: (context, index) {
         final list = lists[index];
+        
+        // Colore del "chip" del ruolo
+        final roleColor = list.role == 'admin' ? Colors.blue : Colors.grey;
+
         return Card(
-          elevation: 4.0,
+          elevation: 3.0,
           margin: const EdgeInsets.only(bottom: 12.0), // Spazio tra le card
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
           child: ListTile(
             contentPadding:
-                const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
             leading: const Icon(Icons.list_alt_rounded,
                 size: 40, color: Colors.blue),
             title: Text(
               list.title,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 17,
               ),
             ),
-            subtitle: Text(
-              list.desc ?? 'No description', // Mostra la descrizione
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            // --- SOTTOTITOLO MODIFICATO ---
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                // Descrizione
+                Text(
+                  list.desc ?? 'No description', // Mostra la descrizione
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 10), // Spaziatore
+                
+                // --- NUOVA RIGA PER I METADATI ---
+                Row(
+                  children: [
+                    // CHIP PER IL RUOLO
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: roleColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        formatRole(list.role),
+                        style: TextStyle(
+                          color: roleColor.shade700,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // DATA DI CREAZIONE
+                    Icon(Icons.calendar_today,
+                        size: 12, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      formatDate(list.createdAt),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
             // Il menu a 3 puntini va qui
             trailing: PopupMenuButton<String>(
@@ -354,7 +405,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
             onTap: () {
               _onSelectedList(list);
             },
-            shape: RoundedRectangleBorder( // Rende cliccabile l'intera area
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.0),
             ),
           ),

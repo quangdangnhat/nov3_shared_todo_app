@@ -4,6 +4,7 @@ class TodoList {
   final String? desc;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final String role; // <-- NUOVA PROPRIETÀ
 
   TodoList({
     required this.id,
@@ -11,6 +12,7 @@ class TodoList {
     this.desc,
     required this.createdAt,
     this.updatedAt,
+    required this.role, // <-- AGGIUNTO AL COSTRUTTORE
   });
 
   // Factory 'fromMap' (o fromJson)
@@ -26,6 +28,7 @@ class TodoList {
       // Controlla entrambi i formati per 'created_at'
       createdAt: DateTime.parse(map['created_at'] ?? map['createdAt']),
       updatedAt: uaValue != null ? DateTime.parse(uaValue) : null,
+      role: map['role'] ?? 'Unknown', // <-- AGGIUNTO PER IL RUOLO
     );
   }
 
@@ -38,6 +41,7 @@ class TodoList {
       'desc': desc,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      // Nota: non inviamo il 'role' quando creiamo/aggiorniamo una lista
     };
   }
 }

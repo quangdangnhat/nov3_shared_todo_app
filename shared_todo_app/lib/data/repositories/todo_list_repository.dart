@@ -10,13 +10,11 @@ class TodoListRepository {
     // 1. Ascolta in tempo reale la tabella 'participations'
     final participationStream = supabase
         .from('participations')
-        .stream( // <-- PRIMA STREAM
-          // Ora usiamo la nuova chiave primaria 'id' singola
+        .stream(
           primaryKey: ['id'],
         )
-        // .select('todoList_id, created_at') // <-- RIMOSSO: .select() non è supportato qui
-        .eq('user_id', userId) // <-- POI FILTRA
-        .order('created_at', ascending: false); // <-- POI ORDINA
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
 
     // 2. Trasforma lo stream di "partecipazioni" in uno stream di "liste"
     return participationStream.asyncMap((participationMaps) async {
@@ -26,14 +24,20 @@ class TodoListRepository {
         return <TodoList>[];
       }
 
-      // 3. Estrai gli ID delle liste (codice di sicurezza per i null)
-      // Questa logica funziona anche se riceviamo più colonne (come 'id', 'user_id', ecc.)
-      final listIds = participationMaps
-          // Controlla sia 'todoList_id' (snake_case) che 'todoListId' (camelCase)
-          .map((map) => map['todo_list_id'] ?? map['todoListId'])
-          .whereType<String>()
-          .toSet()
-          .toList();
+      // --- MODIFICA: Crea una mappa per cercare i ruoli velocemente ---
+      // (Es: {'listId_1': 'admin', 'listId_2': 'collaborator'})
+      final roleMap = <String, String>{};
+      for (final map in participationMaps) {
+        // Usa la logica robusta per trovare l'ID
+        final listId = map['todo_list_id'] ?? map['todoListId'];
+        final role = map['role'] as String?; // Il ruolo
+        if (listId != null && role != null) {
+          roleMap[listId] = role;
+        }
+      }
+      
+      final listIds = roleMap.keys.toList();
+      // --- FINE MODIFICA ---
 
       if (listIds.isEmpty) {
         debugPrint("No valid list IDs found after filtering");
@@ -46,17 +50,34 @@ class TodoListRepository {
       final todoListsData = await supabase
           .from('todo_lists')
           .select()
-          // --- ECCO LA CORREZIONE DEFINITIVA ---
-          // Usiamo il metodo .filter() che non ha conflitti di keyword
-          .filter('id', 'in', listIds)
-          // --- FINE CORREZIONE ---
-          .order('created_at', ascending: false);
+          .filter('id', 'in', listIds);
+          // Rimuoviamo l'ordine qui, lo applicheremo dopo il merge
 
       debugPrint("Got ${todoListsData.length} list details");
 
-      // 5. Trasforma i dati grezzi in oggetti TodoList
-      // Assicurati che anche 'TodoList.fromMap' sia robusto (vedi file successivo)
-      return todoListsData.map((map) => TodoList.fromMap(map)).toList();
+      // --- MODIFICA: Fondi i dati della lista con i dati del ruolo ---
+      final mergedData = todoListsData.map((listMap) {
+        final listId = listMap['id'] as String;
+        final role = roleMap[listId] ?? 'Unknown'; // Recupera il ruolo
+
+        // Ritorna una nuova mappa con *tutti* i dati
+        return {
+          ...listMap, // Dati della lista (id, title, desc, created_at)
+          'role': role,  // Aggiungi il ruolo
+        };
+      }).toList();
+
+      // Ordina la lista finale in Dart per data di creazione
+      mergedData.sort((a, b) {
+         // Usa la logica robusta per la data
+         final dateA = DateTime.parse(a['created_at'] ?? a['createdAt']);
+         final dateB = DateTime.parse(b['created_at'] ?? b['createdAt']);
+         return dateB.compareTo(dateA); // Decrescente (più recenti prima)
+      });
+      // --- FINE MODIFICA ---
+
+      // 5. Trasforma le mappe unite in oggetti TodoList
+      return mergedData.map((map) => TodoList.fromMap(map)).toList();
     });
   }
 
@@ -78,13 +99,9 @@ class TodoListRepository {
     }
   }
 
-  // --- NUOVO METODO PER ELIMINARE ---
+  // Metodo per eliminare una lista
   Future<void> deleteTodoList(String listId) async {
     try {
-      // Grazie alla policy RLS (che controlla se siamo 'admin')
-      // e a 'ON DELETE CASCADE' nel database,
-      // Supabase eliminerà la lista e PostgreSQL eliminerà
-      // in cascata tutte le 'participations', 'folders', 'tasks', ecc.
       await supabase.from('todo_lists').delete().eq('id', listId);
     } catch (error) {
       debugPrint('Errore eliminazione lista: $error');
