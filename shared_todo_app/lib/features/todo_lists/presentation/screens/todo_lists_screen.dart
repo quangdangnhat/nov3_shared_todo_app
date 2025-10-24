@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_todo_app/features/todo_lists/detail.dart/folder_page.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../data/models/todo_list.dart';
 import '../../../../data/repositories/auth_repository.dart';
@@ -245,7 +246,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
           ),
           child: InkWell(
             onTap: () {
-              // TODO: Navigare alla pagina di dettaglio della lista
+              _onSelectedList(list); // ottengo la lista selezionata
             },
             borderRadius: BorderRadius.circular(12.0),
             child: Column(
@@ -271,4 +272,15 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       },
     );
   }
+
+  // Navigare nella pagina della lista scelta 
+  void _onSelectedList(TodoList list){
+     Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => FolderPage(todoList: list),
+    ),
+  );
+  }
+
 }
