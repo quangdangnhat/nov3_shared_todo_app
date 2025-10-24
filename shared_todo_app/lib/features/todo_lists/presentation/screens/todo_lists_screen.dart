@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:shared_todo_app/features/todo_lists/detail.dart/folder_page.dart'; 
-import 'package:table_calendar/table_calendar.dart';
+import 'package:shared_todo_app/features/todo_lists/detail.dart/folder_page.dart';
+import '../../../../core/widget/app_drawer_widget.dart';
+import '../../../../core/widget/todo_list_title.dart';
 import '../../../../data/models/todo_list.dart';
-import '../../../../data/repositories/auth_repository.dart';
 import '../../../../data/repositories/todo_list_repository.dart';
-import '../../../../core/utils/snackbar_utils.dart'; // Import per gli snackbar
+import '../../../../core/utils/snackbar_utils.dart';
 
 class TodoListsScreen extends StatefulWidget {
   const TodoListsScreen({super.key});
@@ -15,15 +15,13 @@ class TodoListsScreen extends StatefulWidget {
 
 class _TodoListsScreenState extends State<TodoListsScreen> {
   // Istanziamo i repository
-  final AuthRepository _authRepo = AuthRepository();
   final TodoListRepository _todoListRepo = TodoListRepository();
 
   // Variabile di stato per lo stream (per forzare l'aggiornamento)
   late Stream<List<TodoList>> _listsStream;
 
-  // Stato per il calendario
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
+  // --- STATO DEL CALENDARIO RIMOSSO ---
+  // (ora è gestito internamente da AppDrawer)
 
   @override
   void initState() {
@@ -160,13 +158,24 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     }
   }
 
+  // --- Logica per la modifica (da implementare) ---
+  void _handleEditList(TodoList list) {
+    // TODO: Implementa la logica di modifica
+    // (es. mostra un dialog simile a _showCreateListDialog
+    // ma pre-compilato con i dati di 'list')
+    debugPrint('Edit list: ${list.title}');
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My To-Do Lists'),
       ),
-      drawer: _buildAppDrawer(context),
+      // --- DRAWER SNELLITO ---
+      // Ora usiamo il nostro widget personalizzato
+      drawer: const AppDrawer(),
       body: StreamBuilder<List<TodoList>>(
         stream: _listsStream, // Ascolta lo stream
         builder: (context, snapshot) {
@@ -206,73 +215,10 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // --- Widget per il Menu Laterale (Drawer) ---
-  Widget _buildAppDrawer(BuildContext context) {
-    return Drawer(
-      child: Column(
-        children: [
-          // Header del Drawer
-          const UserAccountsDrawerHeader(
-            accountName: Text('Francesco'), // TODO: Sostituire con nome utente
-            accountEmail:
-                Text('francesco@abc.com'), // TODO: Sostituire con email utente
-            currentAccountPicture: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Text(
-                'F', // TODO: Sostituire con iniziali utente
-                style: TextStyle(fontSize: 40.0),
-              ),
-            ),
-          ),
 
-          // Voce: Account
-          ListTile(
-            leading: const Icon(Icons.account_circle),
-            title: const Text('Account'),
-            onTap: () {
-              // TODO: Navigare alla pagina dell'account
-              Navigator.pop(context); // Chiude il drawer
-            },
-          ),
+  // --- WIDGET PER IL DRAWER RIMOSSO ---
+  // (Ora si trova in 'app_drawer.dart')
 
-          // Voce: Logout
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Log Out'),
-            onTap: () {
-              _authRepo.signOut();
-            },
-          ),
-
-          // --- Calendario in fondo al Drawer ---
-          const Spacer(), // Spinge il calendario in fondo
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TableCalendar(
-              firstDay: DateTime.utc(2010, 10, 16),
-              lastDay: DateTime.utc(2030, 3, 14),
-              focusedDay: _focusedDay,
-              calendarFormat: CalendarFormat.month,
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-              ),
-              selectedDayPredicate: (day) {
-                return isSameDay(_selectedDay, day);
-              },
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay; 
-                });
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
 
   // --- Widget per lo stato vuoto ---
   Widget _buildEmptyState() {
@@ -288,21 +234,9 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // --- MODIFICA ESTETICA: Widget per la lista ---
+  // --- LISTA SNELLITA ---
+  // Ora questo metodo è molto più pulito e usa il nuovo widget
   Widget _buildList(List<TodoList> lists) {
-    // Helper per formattare la data (puoi sostituirlo con 'package:intl')
-    String formatDate(DateTime date) {
-      final localDate = date.toLocal();
-      return '${localDate.day.toString().padLeft(2, '0')}/${localDate.month.toString().padLeft(2, '0')}/${localDate.year}';
-    }
-
-    // Helper per formattare il ruolo
-    String formatRole(String role) {
-      if (role == 'admin') return 'Admin';
-      if (role == 'collaborator') return 'Collaborator';
-      return role; // Gestisce 'Unknown' o altri futuri ruoli
-    }
-
     return ListView.builder(
       // Padding per la lista
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -310,105 +244,12 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       itemBuilder: (context, index) {
         final list = lists[index];
         
-        // Colore del "chip" del ruolo
-        final roleColor = list.role == 'admin' ? Colors.blue : Colors.grey;
-
-        return Card(
-          elevation: 3.0,
-          margin: const EdgeInsets.only(bottom: 12.0), // Spazio tra le card
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
-            leading: const Icon(Icons.list_alt_rounded,
-                size: 40, color: Colors.blue),
-            title: Text(
-              list.title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 17,
-              ),
-            ),
-            // --- SOTTOTITOLO MODIFICATO ---
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                // Descrizione
-                Text(
-                  list.desc ?? 'No description', // Mostra la descrizione
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14),
-                ),
-                const SizedBox(height: 10), // Spaziatore
-                
-                // --- NUOVA RIGA PER I METADATI ---
-                Row(
-                  children: [
-                    // CHIP PER IL RUOLO
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: roleColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        formatRole(list.role),
-                        style: TextStyle(
-                          color: roleColor.shade700,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // DATA DI CREAZIONE
-                    Icon(Icons.calendar_today,
-                        size: 12, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text(
-                      formatDate(list.createdAt),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            // Il menu a 3 puntini va qui
-            trailing: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (value) {
-                if (value == 'edit') {
-                  // TODO: Implementa logica di modifica
-                } else if (value == 'delete') {
-                  _showDeleteConfirmationDialog(list);
-                }
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'edit',
-                  child: Text('Edit'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Text('Delete', style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            ),
-            onTap: () {
-              _onSelectedList(list);
-            },
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-          ),
+        // Ritorna il nostro nuovo widget personalizzato
+        return TodoListTile(
+          list: list,
+          onTap: () => _onSelectedList(list),
+          onEdit: () => _handleEditList(list),
+          onDelete: () => _showDeleteConfirmationDialog(list),
         );
       },
     );
@@ -419,6 +260,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
+        // Assicurati che 'FolderPage' sia importato correttamente
         builder: (context) => FolderPage(todoList: list),
       ),
     );
