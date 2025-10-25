@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
-import '../../../core/widgets/app_drawer_widget.dart';
+import '../../../core/widgets/app_drawer_widget.dart'; // Import corretto del Drawer
 import '../presentation/widgets/folder_list_tile.dart';
+import '../../../app/config/app_router.dart';
 
 class TodoListDetailScreen extends StatefulWidget {
   final TodoList todoList;
-  final Folder? parentFolder; // Se null, stiamo visualizzando la "root"
+  // Ora ci aspettiamo SEMPRE una cartella qui (la root o una sottocartella)
+  final Folder parentFolder;
 
   const TodoListDetailScreen({
     super.key,
     required this.todoList,
-    this.parentFolder,
+    required this.parentFolder,
   });
 
   @override
@@ -22,73 +25,26 @@ class TodoListDetailScreen extends StatefulWidget {
 
 class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   final FolderRepository _folderRepo = FolderRepository();
-  
-  // --- LOGICA PER GESTIRE LA CARTELLA CORRENTE ---
-  Folder? _currentParentFolder; // La cartella di cui mostriamo il contenuto
-  Stream<List<Folder>> _foldersStream = Stream.empty();
-  bool _isLoadingInitialFolder = false; // Stato per caricamento iniziale
+  late Stream<List<Folder>> _foldersStream;
 
   @override
   void initState() {
     super.initState();
-    _loadInitialFolderAndStream(); // Carica la cartella iniziale e imposta lo stream
+    _refreshStream(); // Carica direttamente il contenuto della cartella passata
   }
-
-  // Carica la cartella iniziale (root o passata) e poi il suo contenuto
-  Future<void> _loadInitialFolderAndStream() async {
-    setState(() {
-      _isLoadingInitialFolder = true; 
-    });
-    
-    try {
-      if (widget.parentFolder == null) {
-        // Siamo al livello principale: dobbiamo trovare la cartella Root
-        _currentParentFolder = await _folderRepo.getRootFolder(widget.todoList.id);
-      } else {
-        // Stiamo navigando in una sottocartella
-        _currentParentFolder = widget.parentFolder;
-      }
-      // Una volta trovata la cartella corrente, carichiamo il suo stream
-      _refreshStream(); // Questo chiamerà setState internamente
-    } catch (e) {
-       if (mounted) {
-         showErrorSnackBar(context, message: 'Error loading folder: $e');
-         // Eventualmente, potremmo tornare indietro nella schermata precedente qualora non venisse trovata la cartella
-         // Navigator.of(context).pop();
-       }
-    } finally {
-       if (mounted) {
-         setState(() {
-           _isLoadingInitialFolder = false;
-         });
-       }
-    }
-  }
-
 
   // Metodo per (ri)caricare lo stream dei figli della cartella corrente
   void _refreshStream() {
-    // Si assicura di avere una cartella corrente prima di caricare
-    if (_currentParentFolder != null) {
-      setState(() {
-        _foldersStream = _folderRepo.getFoldersStream(
-          widget.todoList.id,
-          parentId: _currentParentFolder!.id, // Carica i figli della cartella corrente
-        );
-      });
-    } else {
-       // Se _currentParentFolder è null (es. errore in caricamento root), mostra stream vuoto
-       setState(() {
-         _foldersStream = Stream.value([]);
-       });
-    }
+    setState(() {
+       _foldersStream = _folderRepo.getFoldersStream(
+        widget.todoList.id,
+        parentId: widget.parentFolder.id,
+      );
+    });
   }
 
   // Mostra dialog per creare un folder
   void _showCreateFolderDialog() {
-    // Non crea se non abbiamo ancora caricato la cartella corrente
-    if (_currentParentFolder == null) return; 
-
     final formKey = GlobalKey<FormState>();
     final titleController = TextEditingController();
 
@@ -96,8 +52,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          // Il titolo è sempre 'Create Subfolder' perché siamo dentro la root o una subfolder
-          title: const Text('Create Subfolder'), 
+          title: const Text('Create Subfolder'),
           content: Form(
             key: formKey,
             child: TextFormField(
@@ -127,12 +82,11 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                     await _folderRepo.createFolder(
                       todoListId: widget.todoList.id,
                       title: titleController.text.trim(),
-                      parentId: _currentParentFolder!.id, // Crea nella cartella corrente
+                      parentId: widget.parentFolder.id, // Crea nella cartella corrente
                     );
 
                     if (mounted) {
                       Navigator.of(context).pop();
-                      // Lo stream si aggiornerà automaticamente grazie a Supabase Realtime
                       showSuccessSnackBar(context,
                           message: 'Folder created successfully');
                     }
@@ -195,7 +149,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
 
                     if (mounted) {
                       Navigator.of(context).pop();
-                      // Lo stream si aggiornerà automaticamente
                       showSuccessSnackBar(context,
                           message: 'Folder updated successfully');
                     }
@@ -236,10 +189,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                     Navigator.of(context).pop();
                     showSuccessSnackBar(context,
                         message: 'Folder deleted successfully');
-                    
-                    // --- AGGIORNAMENTO ISTANTANEO ---
                     // Forza il refresh dello stream dopo l'eliminazione
-                    _refreshStream(); 
+                    _refreshStream();
                   }
                 } catch (error) {
                   if (mounted) {
@@ -262,31 +213,46 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Determina se siamo nella cartella root controllando se parentId è null
+    final bool isRootFolder = widget.parentFolder.parentId == null;
+
     return Scaffold(
       appBar: AppBar(
-        // Mostra il nome della cartella corrente o della lista se siamo nella root
-        title: Text(_currentParentFolder?.title ?? widget.todoList.title), 
+        // Mostra il nome della cartella corrente
+        title: Text(widget.parentFolder.title),
+        automaticallyImplyLeading: false, // Disabilita hamburger/back automatico
+
+        // --- MODIFICA LEADING ---
+        // Mostra SEMPRE l'hamburger per il drawer
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+          ),
+        ),
+        // --- FINE MODIFICA ---
+
         actions: [
-          const BackButton(),
+          // --- MODIFICA ACTIONS ---
+          // Mostra SEMPRE un pulsante Indietro che usa GoRouter
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            onPressed: () {
+              // Usa context.pop() per tornare indietro nello stack di GoRouter
+              context.pop(); 
+            },
+          ),
+          // --- FINE MODIFICA ---
         ],
       ),
       drawer: const AppDrawer(),
-      body: _isLoadingInitialFolder // Mostra caricamento iniziale se necessario
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Loading folder content...'),
-                ],
-              ),
-            )
-          : StreamBuilder<List<Folder>>( // Altrimenti mostra lo stream
+      body: StreamBuilder<List<Folder>>(
               stream: _foldersStream, // Ascolta i figli della cartella corrente
               builder: (context, snapshot) {
-                // Loading dello stream (diverso da quello iniziale)
-                if (snapshot.connectionState == ConnectionState.waiting && !_isLoadingInitialFolder) {
+                // Loading dello stream
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
@@ -302,7 +268,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         Text('Error: ${snapshot.error}'),
                         const SizedBox(height: 16),
                         ElevatedButton(
-                          onPressed: _refreshStream, // Ricarica lo stream
+                          onPressed: _refreshStream,
                           child: const Text('Retry'),
                         ),
                       ],
@@ -323,7 +289,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                             size: 80, color: Colors.grey[400]),
                         const SizedBox(height: 16),
                         Text(
-                          'This folder is empty', 
+                          'This folder is empty',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.grey[600],
@@ -352,15 +318,17 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                     return FolderListTile(
                       folder: folder,
                       onTap: () {
-                        // Naviga nella sottocartella cliccata
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TodoListDetailScreen(
-                              todoList: widget.todoList,
-                              parentFolder: folder, // Passa la cartella cliccata come nuova parente
-                            ),
-                          ),
+                        // Usa GoRouter per navigare nella sottocartella
+                        context.pushNamed(
+                          AppRouter.folderDetail, // Usa il nome della rotta per le cartelle
+                          pathParameters: { // Passa gli ID necessari per l'URL
+                            'listId': widget.todoList.id,
+                            'folderId': folder.id,
+                          },
+                          extra: { // Passa gli oggetti come extra
+                            'todoList': widget.todoList,
+                            'parentFolder': folder, // La cartella cliccata diventa la nuova parent
+                          },
                         );
                       },
                       onEdit: () {
@@ -375,14 +343,12 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
               },
             ),
       // FAB ora crea cartelle nella cartella corrente
-      // Mostra il FAB solo se la cartella corrente è stata caricata
-      floatingActionButton: _isLoadingInitialFolder || _currentParentFolder == null
-          ? null 
-          : FloatingActionButton.extended(
-              onPressed: _showCreateFolderDialog, 
+      floatingActionButton: FloatingActionButton.extended(
+              onPressed: _showCreateFolderDialog,
               icon: const Icon(Icons.create_new_folder),
               label: const Text('New Folder'),
             ),
     );
   }
 }
+

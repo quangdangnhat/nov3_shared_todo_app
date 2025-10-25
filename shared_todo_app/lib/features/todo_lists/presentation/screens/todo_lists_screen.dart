@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+//import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../app/config/app_router.dart';
 import '../../../../data/models/todo_list.dart';
 import '../../../../data/repositories/todo_list_repository.dart';
-import '../../../../data/repositories/folder_repository.dart'; // Import per FolderRepository
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../core/widgets/app_drawer_widget.dart';
-import '../../../../core/widgets/todo_list_title.dart';
-import '../../detail.dart/todo_list_detail_screen.dart';
+import '../widgets/todo_list_title.dart';
+import '../../../../data/models/folder.dart'; // Necessario per Folder
+import '../../../../data/repositories/folder_repository.dart'; // Necessario per getRootFolder
 
+
+// Schermata principale che mostra l'elenco delle TodoList dell'utente.
 class TodoListsScreen extends StatefulWidget {
   const TodoListsScreen({super.key});
 
@@ -15,17 +20,21 @@ class TodoListsScreen extends StatefulWidget {
 }
 
 class _TodoListsScreenState extends State<TodoListsScreen> {
+  // Istanziamo i repository necessari
   final TodoListRepository _todoListRepo = TodoListRepository();
-  final FolderRepository _folderRepo = FolderRepository(); // Aggiunto FolderRepository
+  final FolderRepository _folderRepo = FolderRepository(); // Aggiunto per trovare la root
+
+  // Mantiene lo stato dello stream per poterlo aggiornare
   late Stream<List<TodoList>> _listsStream;
 
   @override
   void initState() {
     super.initState();
+    // Inizializza lo stream all'avvio dello stato
     _listsStream = _todoListRepo.getTodoListsStream();
   }
 
-  // Mostra il Dialog per creare la lista
+  // Mostra un dialog per creare una nuova TodoList.
   void _showCreateListDialog() {
     final formKey = GlobalKey<FormState>();
     final titleController = TextEditingController();
@@ -75,7 +84,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                           : null,
                     );
                     if (mounted) Navigator.of(context).pop();
-                    // Non serve refresh, il trigger e lo stream aggiornano
+                    // Lo StreamBuilder aggiornerà automaticamente la UI
                   } catch (error) {
                     if (mounted) {
                       showErrorSnackBar(context,
@@ -92,10 +101,10 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // Mostra il Dialog per modificare la lista
-   void _showEditListDialog(TodoList list) {
+   /// Mostra un dialog per modificare una TodoList esistente.
+  void _showEditListDialog(TodoList list) {
     final formKey = GlobalKey<FormState>();
-    // Pre-compila con i dati esistenti
+    // Pre-compila i campi con i valori esistenti
     final titleController = TextEditingController(text: list.title);
     final descController = TextEditingController(text: list.desc);
 
@@ -136,24 +145,21 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   try {
-                    // --- CORREZIONE: Usa listId invece di id ---
                     await _todoListRepo.updateTodoList(
-                      listId: list.id, // Passa l'ID della lista da aggiornare
+                      listId: list.id, // Passa l'ID corretto
                       title: titleController.text.trim(),
                       desc: descController.text.trim().isNotEmpty
                           ? descController.text.trim()
                           : null,
                     );
-                    // --- FINE CORREZIONE ---
-
                     if (mounted) {
-                       Navigator.of(context).pop();
-                       showSuccessSnackBar(context, message: 'List updated successfully.');
-                       // --- FORZA L'AGGIORNAMENTO DELLO STREAM ---
+                      Navigator.of(context).pop();
+                       showSuccessSnackBar(context,
+                          message: 'List updated successfully');
+                       // Forza l'aggiornamento dello stream per vedere le modifiche
                        setState(() {
                          _listsStream = _todoListRepo.getTodoListsStream();
                        });
-                       // --- FINE AGGIORNAMENTO ---
                     }
                   } catch (error) {
                     if (mounted) {
@@ -163,7 +169,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                   }
                 }
               },
-              child: const Text('Save Changes'), // Testo bottone modificato
+              child: const Text('Save Changes'),
             ),
           ],
         );
@@ -171,7 +177,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // Mostra il popup di conferma eliminazione
+  /// Mostra un popup di conferma prima di eliminare una lista.
   void _showDeleteConfirmationDialog(TodoList list) {
     showDialog(
       context: context,
@@ -188,8 +194,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
             TextButton(
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               onPressed: () {
-                Navigator.of(context).pop();
-                _handleDeleteList(list.id);
+                Navigator.of(context).pop(); // Chiude il dialog
+                _handleDeleteList(list.id); // Procede con l'eliminazione
               },
               child: const Text('Delete'),
             ),
@@ -199,7 +205,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // Logica per chiamare il repository e aggiornare la UI
+  /// Gestisce l'effettiva eliminazione della lista e aggiorna lo stream.
   Future<void> _handleDeleteList(String listId) async {
     try {
       await _todoListRepo.deleteTodoList(listId);
@@ -210,6 +216,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
             backgroundColor: Colors.green,
           ),
         );
+        // Forza l'aggiornamento dello stream per riflettere l'eliminazione
         setState(() {
           _listsStream = _todoListRepo.getTodoListsStream();
         });
@@ -222,39 +229,44 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     }
   }
 
-   // --- NUOVA LOGICA: Carica Root e Naviga ---
+  /// Naviga alla schermata di dettaglio della lista selezionata.
+  /// Ora usa GoRouter e carica la cartella root prima di navigare.
   Future<void> _onSelectedList(TodoList list) async {
-    // 1. Mostra un dialog di caricamento
+     // Mostra un dialog di caricamento mentre troviamo la root folder
     showDialog(
       context: context,
-      barrierDismissible: false, // Impedisce all'utente di chiuderlo
+      barrierDismissible: false, // Impedisce la chiusura accidentale
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
-      // 2. Trova la cartella Root associata alla lista
-      final rootFolder = await _folderRepo.getRootFolder(list.id);
-      
-      // 3. Chiudi il dialog di caricamento
-      if (mounted) Navigator.of(context).pop(); 
+      // Trova la cartella root associata alla lista
+      final Folder rootFolder = await _folderRepo.getRootFolder(list.id);
 
-      // 4. Naviga alla pagina di dettaglio, passando la root trovata
       if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TodoListDetailScreen(
-              todoList: list,
-              parentFolder: rootFolder, // Passa la root direttamente
-            ),
-          ),
+        Navigator.of(context).pop(); // Chiudi il dialog di caricamento
+
+        // --- NAVIGAZIONE CON GOROUTER ---
+        context.pushNamed(
+          AppRouter.listDetail, // Usa il nome della rotta
+          pathParameters: {'listId': list.id}, // Passa l'ID nei parametri URL
+          extra: { // Passa gli oggetti necessari come 'extra' in una Map
+            'todoList': list,
+            'parentFolder': rootFolder,
+          },
         );
+        // --- FINE NAVIGAZIONE ---
       }
-    } catch (e) {
-      // 5. In caso di errore, chiudi il loading e mostra un errore
+    } on Exception catch (e) { // Gestisce specificamente l'eccezione da getRootFolder
+       if (mounted) {
+         Navigator.of(context).pop(); // Chiudi il dialog di caricamento
+         showErrorSnackBar(context, message: 'Could not load list details: ${e.toString().replaceFirst("Exception: ","")}');
+       }
+    } 
+    catch (error) { // Gestione generica per altri errori
       if (mounted) {
-        Navigator.of(context).pop(); // Chiudi il loading
-        showErrorSnackBar(context, message: 'Could not load list content: $e');
+        Navigator.of(context).pop(); // Chiudi il dialog di caricamento
+        showErrorSnackBar(context, message: 'An unexpected error occurred: $error');
       }
     }
   }
@@ -266,24 +278,30 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       appBar: AppBar(
         title: const Text('My To-Do Lists'),
       ),
-      drawer: const AppDrawer(),
+      drawer: const AppDrawer(), // Usa il widget Drawer esterno
       body: StreamBuilder<List<TodoList>>(
         stream: _listsStream,
         builder: (context, snapshot) {
+          // Stato di caricamento
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+
+          // Stato di errore
           if (snapshot.hasError) {
             debugPrint('Errore StreamBuilder: ${snapshot.error}');
             debugPrint('Stack trace: ${snapshot.stackTrace}');
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
+            return Center(child: Text('Error loading lists: ${snapshot.error}'));
           }
+
           final lists = snapshot.data;
+
+          // Stato vuoto (nessuna lista)
           if (lists == null || lists.isEmpty) {
             return _buildEmptyState();
           }
+
+          // Mostra la lista usando il widget Tile esterno
           return _buildList(lists);
         },
       ),
@@ -295,6 +313,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
+  /// Costruisce il widget da mostrare quando non ci sono liste.
   Widget _buildEmptyState() {
     return const Center(
       child: Padding(
@@ -308,7 +327,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-  // Widget per la lista (ora usa TodoListTile)
+  /// Costruisce la ListView usando il widget TodoListTile.
   Widget _buildList(List<TodoList> lists) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -317,11 +336,12 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
         final list = lists[index];
         return TodoListTile(
           list: list,
-          onTap: () => _onSelectedList(list), // Chiama la nuova logica async
-          onEdit: () => _showEditListDialog(list),
-          onDelete: () => _showDeleteConfirmationDialog(list),
+          onTap: () => _onSelectedList(list), // Chiama la navigazione
+          onEdit: () => _showEditListDialog(list), // Apre il dialog di modifica
+          onDelete: () => _showDeleteConfirmationDialog(list), // Apre il dialog di conferma
         );
       },
     );
   }
 }
+
