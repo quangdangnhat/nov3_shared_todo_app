@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import '../../../config/router/app_router.dart';
 import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
+import '../../../data/models/task.dart';
 import '../../../data/repositories/folder_repository.dart';
+import '../../../data/repositories/task_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
-import '../../../core/widgets/app_drawer_widget.dart'; // Import corretto del Drawer
+import '../../../core/widgets/app_drawer.dart'; // Import corretto
 import '../presentation/widgets/folder_list_tile.dart';
-import '../../../app/config/app_router.dart';
+import '../presentation/widgets/folder_dialog.dart';
+import '../presentation/widgets/task_dialog.dart';
+// import '../presentation/widgets/task_list_tile.dart';
+
 
 class TodoListDetailScreen extends StatefulWidget {
   final TodoList todoList;
-  // Ora ci aspettiamo SEMPRE una cartella qui (la root o una sottocartella)
-  final Folder parentFolder;
+  final Folder parentFolder; // Riceve sempre la cartella corrente (root o sub)
 
   const TodoListDetailScreen({
     super.key,
@@ -24,206 +30,121 @@ class TodoListDetailScreen extends StatefulWidget {
 }
 
 class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
+  // Repository
   final FolderRepository _folderRepo = FolderRepository();
+  final TaskRepository _taskRepo = TaskRepository();
+
+  // Streams per cartelle e task
   late Stream<List<Folder>> _foldersStream;
+  late Stream<List<Task>> _tasksStream;
+
+  // Stato per il collapse
+  bool _isFoldersCollapsed = false;
+  bool _isTasksCollapsed = false;
 
   @override
   void initState() {
     super.initState();
-    _refreshStream(); // Carica direttamente il contenuto della cartella passata
+    _refreshStreams(); // Carica entrambi gli stream
   }
 
-  // Metodo per (ri)caricare lo stream dei figli della cartella corrente
-  void _refreshStream() {
+  // Ricarica entrambi gli stream (figli della cartella corrente)
+  void _refreshStreams() {
+    if (!mounted) return;
     setState(() {
-       _foldersStream = _folderRepo.getFoldersStream(
+      _foldersStream = _folderRepo.getFoldersStream(
         widget.todoList.id,
         parentId: widget.parentFolder.id,
+      );
+      _tasksStream = _taskRepo.getTasksStream(
+        widget.parentFolder.id, // Carica i task della cartella corrente
       );
     });
   }
 
-  // Mostra dialog per creare un folder
-  void _showCreateFolderDialog() {
-    final formKey = GlobalKey<FormState>();
-    final titleController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Create Subfolder'),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Folder Name',
-                prefixIcon: Icon(Icons.folder),
-              ),
-              autofocus: true,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a folder name';
-                }
-                return null;
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  try {
-                    await _folderRepo.createFolder(
-                      todoListId: widget.todoList.id,
-                      title: titleController.text.trim(),
-                      parentId: widget.parentFolder.id, // Crea nella cartella corrente
-                    );
-
-                    if (mounted) {
-                      Navigator.of(context).pop();
-                      showSuccessSnackBar(context,
-                          message: 'Folder created successfully');
-                    }
-                  } catch (error) {
-                    if (mounted) {
-                      showErrorSnackBar(context,
-                          message: 'Failed to create folder: $error');
-                    }
-                  }
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        );
-      },
-    );
+  // Funzione per mostrare il FolderDialog
+  Future<void> _openFolderDialog({Folder? folderToEdit}) async {
+     if (!mounted) return;
+     final bool? result = await showDialog<bool>(
+       context: context,
+       builder: (dialogContext) => FolderDialog(
+         todoListId: widget.todoList.id,
+         parentId: widget.parentFolder.id,
+         folderToEdit: folderToEdit,
+       ),
+     );
+     if (result == true && mounted) {
+       _refreshStreams();
+     }
   }
 
-  // Mostra dialog per modificare un folder
-  void _showEditFolderDialog(Folder folder) {
-    final formKey = GlobalKey<FormState>();
-    final titleController = TextEditingController(text: folder.title);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Folder'),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Folder Name',
-                prefixIcon: Icon(Icons.folder),
-              ),
-              autofocus: true,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a folder name';
-                }
-                return null;
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  try {
-                    await _folderRepo.updateFolder(
-                      id: folder.id,
-                      title: titleController.text.trim(),
-                    );
-
-                    if (mounted) {
-                      Navigator.of(context).pop();
-                      showSuccessSnackBar(context,
-                          message: 'Folder updated successfully');
-                    }
-                  } catch (error) {
-                    if (mounted) {
-                      showErrorSnackBar(context,
-                          message: 'Failed to update folder: $error');
-                    }
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Mostra dialog per eliminare un folder
+  // Dialog per eliminare Folder
   void _showDeleteFolderDialog(Folder folder) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete Folder'),
-          content: Text('Are you sure you want to delete "${folder.title}"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  await _folderRepo.deleteFolder(folder.id);
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    showSuccessSnackBar(context,
-                        message: 'Folder deleted successfully');
-                    // Forza il refresh dello stream dopo l'eliminazione
-                    _refreshStream();
-                  }
-                } catch (error) {
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    showErrorSnackBar(context,
-                        message: 'Failed to delete folder: $error');
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
+     if (!mounted) return;
+     showDialog<void>(
+       context: context,
+       builder: (BuildContext dialogContext) {
+         return AlertDialog(
+           title: const Text('Delete Folder'),
+           content: Text('Are you sure you want to delete "${folder.title}"?'),
+           actions: <Widget>[
+             TextButton(
+                 onPressed: () => Navigator.of(dialogContext).pop(),
+                 child: const Text('Cancel')),
+             ElevatedButton(
+               onPressed: () async {
+                 bool deleting = false;
+                 if (deleting) return;
+                 deleting = true;
+                 try {
+                   await _folderRepo.deleteFolder(folder.id);
+                   if (mounted) Navigator.of(dialogContext).pop();
+                   if (mounted) {
+                     showSuccessSnackBar(context, message: 'Folder deleted successfully');
+                     _refreshStreams();
+                   }
+                 } catch (error) {
+                   if (mounted) Navigator.of(dialogContext).pop();
+                   if (mounted) {
+                     showErrorSnackBar(context, message: 'Failed to delete folder: $error');
+                   }
+                 } finally {
+                   deleting = false;
+                 }
+               },
+               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+               child: const Text('Delete'),
+             ),
+           ],
+         );
+       },
+     );
   }
+
+  // Funzione per mostrare il TaskDialog
+  Future<void> _openTaskDialog({Task? taskToEdit}) async {
+     if (!mounted) return;
+     final bool? result = await showDialog<bool>(
+       context: context,
+       builder: (dialogContext) => TaskDialog(
+         folderId: widget.parentFolder.id,
+         // taskToEdit: taskToEdit,
+       ),
+     );
+     if (result == true && mounted) {
+       _refreshStreams();
+     }
+  }
+
 
   @override
   Widget build(BuildContext context) {
-    // Determina se siamo nella cartella root controllando se parentId è null
     final bool isRootFolder = widget.parentFolder.parentId == null;
 
     return Scaffold(
       appBar: AppBar(
-        // Mostra il nome della cartella corrente
-        title: Text(widget.parentFolder.title),
-        automaticallyImplyLeading: false, // Disabilita hamburger/back automatico
-
-        // --- MODIFICA LEADING ---
-        // Mostra SEMPRE l'hamburger per il drawer
+         title: Text(widget.parentFolder.title),
+        automaticallyImplyLeading: false,
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
@@ -231,123 +152,198 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
           ),
         ),
-        // --- FINE MODIFICA ---
-
         actions: [
-          // --- MODIFICA ACTIONS ---
-          // Mostra SEMPRE un pulsante Indietro che usa GoRouter
           IconButton(
             icon: const Icon(Icons.arrow_back),
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             onPressed: () {
-              // Usa context.pop() per tornare indietro nello stack di GoRouter
-              context.pop(); 
+              context.pop();
             },
           ),
-          // --- FINE MODIFICA ---
         ],
       ),
       drawer: const AppDrawer(),
-      body: StreamBuilder<List<Folder>>(
-              stream: _foldersStream, // Ascolta i figli della cartella corrente
+      body: RefreshIndicator(
+        onRefresh: () async => _refreshStreams(),
+        child: CustomScrollView(
+          slivers: [
+            // --- Sezione Cartelle con Bottone Collapse ---
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
+                    .copyWith(top: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Folders', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
+                    IconButton(
+                      icon: Icon(_isFoldersCollapsed ? Icons.expand_more : Icons.expand_less, color: Colors.grey),
+                      onPressed: () => setState(() => _isFoldersCollapsed = !_isFoldersCollapsed),
+                      tooltip: _isFoldersCollapsed ? 'Expand Folders' : 'Collapse Folders',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // --- MODIFICA COLLAPSE FOLDERS ---
+            // StreamBuilder costruisce direttamente il sliver corretto
+            StreamBuilder<List<Folder>>(
+              stream: _foldersStream,
               builder: (context, snapshot) {
-                // Loading dello stream
+                // Se è collassato, ritorna un sliver vuoto
+                if (_isFoldersCollapsed) {
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                }
+                // Gestione Loading
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())));
                 }
-
-                // Error
+                // Gestione Error
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline,
-                            size: 60, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text('Error: ${snapshot.error}'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _refreshStream,
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
+                  return SliverToBoxAdapter(child: Center(child: Text('Error loading folders: ${snapshot.error}')));
                 }
-
-                final folders = snapshot.data;
-
-                // Empty state
-                if (folders == null || folders.isEmpty) {
-                  // TODO: Qui dovremmo mostrare anche i task della cartella corrente
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.folder_open,
-                            size: 80, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          'This folder is empty',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Create a subfolder or add tasks',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
+                final folders = snapshot.data ?? [];
+                // Se non è collassato e vuoto, ritorna uno sliver vuoto
+                if (folders.isEmpty) {
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
                 }
-
-                // Lista folder
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: folders.length,
-                  itemBuilder: (context, index) {
-                    final folder = folders[index];
-                    return FolderListTile(
-                      folder: folder,
-                      onTap: () {
-                        // Usa GoRouter per navigare nella sottocartella
-                        context.pushNamed(
-                          AppRouter.folderDetail, // Usa il nome della rotta per le cartelle
-                          pathParameters: { // Passa gli ID necessari per l'URL
-                            'listId': widget.todoList.id,
-                            'folderId': folder.id,
-                          },
-                          extra: { // Passa gli oggetti come extra
-                            'todoList': widget.todoList,
-                            'parentFolder': folder, // La cartella cliccata diventa la nuova parent
-                          },
-                        );
-                      },
-                      onEdit: () {
-                        _showEditFolderDialog(folder);
-                      },
-                      onDelete: () {
-                        _showDeleteFolderDialog(folder);
-                      },
-                    );
-                  },
+                // Altrimenti, ritorna la SliverList
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate( (context, index) {
+                      final folder = folders[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: FolderListTile(
+                           folder: folder,
+                           onTap: () => context.pushNamed(
+                            AppRouter.folderDetail,
+                            pathParameters: {
+                              'listId': widget.todoList.id,
+                              'folderId': folder.id,
+                            },
+                            extra: {
+                              'todoList': widget.todoList,
+                              'parentFolder': folder,
+                            },
+                          ),
+                          onEdit: () => _openFolderDialog(folderToEdit: folder),
+                          onDelete: () => _showDeleteFolderDialog(folder),
+                        ),
+                      );
+                    }, childCount: folders.length, ),
                 );
               },
             ),
-      // FAB ora crea cartelle nella cartella corrente
-      floatingActionButton: FloatingActionButton.extended(
-              onPressed: _showCreateFolderDialog,
-              icon: const Icon(Icons.create_new_folder),
-              label: const Text('New Folder'),
+            // --- FINE MODIFICA ---
+
+            // --- Sezione Task con Bottone Collapse ---
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
+                    .copyWith(top: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                     Text('Tasks', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
+                     IconButton(
+                       icon: Icon(_isTasksCollapsed ? Icons.expand_more : Icons.expand_less, color: Colors.grey),
+                       onPressed: () => setState(() => _isTasksCollapsed = !_isTasksCollapsed),
+                       tooltip: _isTasksCollapsed ? 'Expand Tasks' : 'Collapse Tasks',
+                    ),
+                  ],
+                ),
+              ),
             ),
+             // --- MODIFICA COLLAPSE TASKS ---
+             // StreamBuilder costruisce direttamente il sliver corretto
+            StreamBuilder<List<Task>>(
+              stream: _tasksStream,
+              builder: (context, snapshot) {
+                 // Se è collassato, ritorna un sliver vuoto
+                 if (_isTasksCollapsed) {
+                   return const SliverToBoxAdapter(child: SizedBox.shrink());
+                 }
+                 // Gestione Loading
+                 if (snapshot.connectionState == ConnectionState.waiting) {
+                   return const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())));
+                 }
+                 // Gestione Error
+                 if (snapshot.hasError) {
+                   return SliverToBoxAdapter(child: Center(child: Text('Error loading tasks: ${snapshot.error}')));
+                 }
+                 final tasks = snapshot.data ?? [];
+                 // Se non è collassato e vuoto, ritorna lo stato vuoto
+                 if (tasks.isEmpty) {
+                    return SliverToBoxAdapter(
+                     child: Padding(
+                       padding: const EdgeInsets.symmetric(vertical: 32.0),
+                       child: Center(
+                         child: Text(
+                           'No tasks in this folder yet.',
+                            style: TextStyle(color: Colors.grey[600]),
+                         ),
+                       ),
+                     ),
+                   );
+                 }
+                 // Altrimenti, ritorna la SliverList dei task
+                 return SliverList(
+                   delegate: SliverChildBuilderDelegate(
+                     (context, index) {
+                       final task = tasks[index];
+                       // TODO: Crea e usa un widget TaskListTile
+                       return Padding(
+                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                         child: Card(
+                           margin: const EdgeInsets.only(bottom: 8),
+                           child: ListTile(
+                             leading: const Icon(Icons.check_box_outline_blank),
+                             title: Text(task.title),
+                             subtitle: Text(
+                                 'Due: ${DateFormat('dd/MM/yyyy').format(task.dueDate)} - ${task.priority}'),
+                             trailing: const Icon(Icons.more_vert),
+                             onTap: () { /* TODO: Apri dettaglio task */ },
+                           ),
+                          ),
+                       );
+                     },
+                     childCount: tasks.length,
+                   ),
+                 );
+               },
+             ),
+             // --- FINE MODIFICA ---
+             const SliverToBoxAdapter(
+               child: SizedBox(height: 160), // Spacer per i FAB
+             )
+          ],
+        ),
+      ),
+      floatingActionButton: Stack( // Stack per i FAB
+         children: <Widget>[
+           Positioned(
+             bottom: 80.0,
+             right: 16.0,
+             child: FloatingActionButton(
+                onPressed: () => _openFolderDialog(),
+                tooltip: 'New Folder',
+                heroTag: 'fabFolder',
+                child: const Icon(Icons.create_new_folder),
+             ),
+           ),
+           Positioned(
+             bottom: 16.0,
+             right: 16.0,
+             child: FloatingActionButton.extended(
+                onPressed: () => _openTaskDialog(),
+                tooltip: 'New Task',
+                heroTag: 'fabTask',
+                icon: const Icon(Icons.add_task),
+                label: const Text('New Task'),
+             ),
+           ),
+         ],
+      ),
     );
   }
 }

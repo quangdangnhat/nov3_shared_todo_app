@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 // Rimuovi import non necessari qui (supabase, schermate, main)
-import './config/app_theme.dart'; 
-import './config/app_router.dart'; // Importa la configurazione del router
+import '../config/app_theme.dart'; 
+import '../config/router/app_router.dart'; // Importa la configurazione del router
 
 /// Il widget radice dell'applicazione.
 /// 

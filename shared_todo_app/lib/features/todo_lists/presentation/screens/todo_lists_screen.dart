@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 //import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../app/config/app_router.dart';
+import '../../../../config/router/app_router.dart';
 import '../../../../data/models/todo_list.dart';
 import '../../../../data/repositories/todo_list_repository.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../../../../core/widgets/app_drawer_widget.dart';
+import '../../../../core/widgets/app_drawer.dart';
 import '../widgets/todo_list_title.dart';
 import '../../../../data/models/folder.dart'; // Necessario per Folder
 import '../../../../data/repositories/folder_repository.dart'; // Necessario per getRootFolder
