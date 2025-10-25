@@ -1,20 +1,56 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/folder.dart';
 
 class FolderRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // --- GET: Stream di tutti i folder di una TodoList ---
-  Stream<List<Folder>> getFoldersStream(String todoListId) {
-    return _supabase
+  // --- GET: Stream di folder DENTRO una cartella ---
+  Stream<List<Folder>> getFoldersStream(String todoListId, {String? parentId}) {
+    
+    // --- MODIFICA CON FILTRO LATO CLIENT ---
+    
+    // 1. Crea lo stream filtrando SOLO per todo_list_id (che è supportato)
+    final stream = _supabase
         .from('folders')
         .stream(primaryKey: ['id'])
         .eq('todo_list_id', todoListId)
-        .order('created_at', ascending: false) // Aggiungiamo un ordine
-        .map((data) {
-      // Usa .fromMap come abbiamo corretto
-      return data.map((json) => Folder.fromMap(json)).toList();
+        .order('created_at', ascending: false);
+        
+    // 2. Mappa i risultati e filtra in Dart
+    return stream.map((data) {
+      // 'data' contiene TUTTE le cartelle della lista
+      final allFolders = data.map((json) => Folder.fromMap(json));
+      
+      // 3. Applica il filtro parentId in Dart
+      if (parentId == null) {
+        // Cerca le cartelle root
+        return allFolders.where((folder) => folder.parentId == null).toList();
+      } else {
+        // Cerca le sottocartelle
+        return allFolders.where((folder) => folder.parentId == parentId).toList();
+      }
     });
+    // --- FINE MODIFICA ---
+  }
+
+  // --- NUOVO METODO: Trova la cartella "Root" ---
+  // (Questo metodo era già corretto, .filter() funziona qui
+  // perché non stiamo usando .stream())
+  Future<Folder> getRootFolder(String todoListId) async {
+    try {
+      final response = await _supabase
+          .from('folders')
+          .select()
+          .eq('todo_list_id', todoListId)
+          .filter('parent_id', 'is', null) // Cerca la cartella root
+          .single(); // Ci aspettiamo che ce ne sia solo UNA
+          
+      return Folder.fromMap(response);
+    } catch (e) {
+      debugPrint("Errore in getRootFolder: $e");
+      throw Exception('Could not find Root folder for list $todoListId');
+    }
   }
 
   // --- CREATE: Nuovo folder ---
@@ -27,17 +63,13 @@ class FolderRepository {
       final response = await _supabase
           .from('folders')
           .insert({
-            // --- CORREZIONE ---
-            // 'created_at' rimosso. Lasciamo che il DB lo imposti.
-            // --- FINE CORREZIONE ---
+            // 'created_at' rimosso (il DB lo imposta)
             'todo_list_id': todoListId,
             'title': title,
             'parent_id': parentId,
           })
           .select()
           .single();
-      
-      // Usa .fromMap come abbiamo corretto
       return Folder.fromMap(response);
     } catch (e) {
       throw Exception('Failed to create folder: $e');
@@ -48,7 +80,7 @@ class FolderRepository {
   Future<Folder> updateFolder({
     required String id,
     String? title,
-    String? parentId, // se vogliamo spostare la cartella in una diversa
+    String? parentId,
   }) async {
     try {
       final updates = <String, dynamic>{
@@ -66,10 +98,9 @@ class FolderRepository {
           .from('folders')
           .update(updates)
           .eq('id', id)
-          .select() // in modo che verifico che i dati siano stati aggiornati
-          .single(); // voglio ritornato solo quell'elemento
+          .select()
+          .single();
 
-      // Usa .fromMap come abbiamo corretto
       return Folder.fromMap(response);
     } catch (e) {
       throw Exception('Failed to update folder: $e');
@@ -85,3 +116,4 @@ class FolderRepository {
     }
   }
 }
+
