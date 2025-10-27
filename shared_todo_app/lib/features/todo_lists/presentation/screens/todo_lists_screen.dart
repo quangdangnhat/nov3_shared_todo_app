@@ -6,7 +6,7 @@ import '../../../../data/models/todo_list.dart';
 import '../../../../data/repositories/todo_list_repository.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../core/widgets/app_drawer.dart';
-import '../widgets/todo_list_title.dart';
+import '../widgets/todo_list_tile.dart';
 import '../../../../data/models/folder.dart'; // Necessario per Folder
 import '../../../../data/repositories/folder_repository.dart'; // Necessario per getRootFolder
 

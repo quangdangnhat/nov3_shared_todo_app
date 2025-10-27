@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../data/models/task.dart'; // Assicurati che il modello Task sia importato
 import '../../../../data/repositories/task_repository.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 
@@ -7,7 +8,7 @@ import '../../../../core/utils/snackbar_utils.dart';
 class TaskDialog extends StatefulWidget {
   final String folderId;
   // Aggiungeremo taskToEdit quando implementeremo la modifica
-  // final Task? taskToEdit; 
+  // final Task? taskToEdit;
 
   const TaskDialog({
     super.key,
@@ -72,7 +73,7 @@ class _TaskDialogState extends State<TaskDialog> {
     if (!_formKey.currentState!.validate() || _selectedDueDate == null) {
        // Se la form non è valida o manca la data, forza l'aggiornamento
        // dello stato del dialog per mostrare eventuali errori
-      setState(() {}); 
+      setState(() {});
       return;
     }
 
@@ -90,14 +91,15 @@ class _TaskDialogState extends State<TaskDialog> {
         dueDate: _selectedDueDate!,
       );
       if (mounted) {
-        showSuccessSnackBar(context, message: 'Task created successfully');
-        Navigator.of(context).pop(true); // Passa true per indicare successo
+        Navigator.of(context).pop(true); // Chiudi e indica successo
       }
     } catch (e) {
+      // Mostra l'errore qui, perché l'utente è ancora nel dialog
       if (mounted) {
          showErrorSnackBar(context, message: 'Failed to create task: $e');
       }
     } finally {
+      // Assicurati che il loading venga disattivato anche in caso di errore
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -108,7 +110,7 @@ class _TaskDialogState extends State<TaskDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text(/*_isEditing ? 'Edit Task' :*/ 'Create New Task'),
+      title: const Text('Create New Task'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -124,31 +126,42 @@ class _TaskDialogState extends State<TaskDialog> {
               TextFormField(
                 controller: _descController,
                 decoration: const InputDecoration(labelText: 'Description (Optional)'),
-                maxLines: 3, // Permetti più righe per la descrizione
+                maxLines: 3,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _selectedPriority,
-                decoration: const InputDecoration(labelText: 'Priority'),
-                items: _priorities.map((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
+                items: _priorities.map((priority) {
+                  return DropdownMenuItem<String>(
+                    value: priority,
+                    child: Text(priority),
+                  );
                 }).toList(),
-                onChanged: (newValue) {
-                  setState(() => _selectedPriority = newValue!);
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPriority = value!;
+                  });
                 },
+                decoration: const InputDecoration(labelText: 'Priority'),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _selectedStatus,
-                decoration: const InputDecoration(labelText: 'Status'),
-                items: _statuses.map((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
+                items: _statuses.map((status) {
+                  return DropdownMenuItem<String>(
+                    value: status,
+                    child: Text(status),
+                  );
                 }).toList(),
-                onChanged: (newValue) {
-                  setState(() => _selectedStatus = newValue!);
+                onChanged: (value) {
+                  setState(() {
+                    _selectedStatus = value!;
+                  });
                 },
+                decoration: const InputDecoration(labelText: 'Status'),
               ),
               const SizedBox(height: 8),
+              // --- LISTTILE START DATE RIPRISTINATO ---
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(_selectedStartDate == null
@@ -158,10 +171,11 @@ class _TaskDialogState extends State<TaskDialog> {
                 onTap: () async {
                   final date = await _selectDate(context, _selectedStartDate);
                   if (date != null) {
-                    setState(() => _selectedStartDate = date);
+                    setState(() => _selectedStartDate = date); // Usa setState qui
                   }
                 },
               ),
+              // --- LISTTILE DUE DATE RIPRISTINATO ---
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(_selectedDueDate == null
@@ -171,7 +185,7 @@ class _TaskDialogState extends State<TaskDialog> {
                 onTap: () async {
                   final date = await _selectDate(context, _selectedDueDate);
                   if (date != null) {
-                    setState(() => _selectedDueDate = date);
+                    setState(() => _selectedDueDate = date); // Usa setState qui
                   }
                 },
               ),
@@ -192,16 +206,17 @@ class _TaskDialogState extends State<TaskDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false), // Passa false
+          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           child: _isLoading
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text(/*_isEditing ? 'Save Task' :*/ 'Create Task'),
+              : const Text('Create Task'),
         ),
       ],
     );
   }
 }
+
