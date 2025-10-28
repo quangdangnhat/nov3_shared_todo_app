@@ -7,18 +7,14 @@ class TaskRepository {
 
   /// Ottiene uno stream dei task all'interno di una specifica cartella.
   Stream<List<Task>> getTasksStream(String folderId) {
-     // --- CORREZIONE ORDINE STREAM ---
-     // Chiama prima .stream() e poi applica i filtri
      final stream = _supabase
         .from('tasks')
         .stream(primaryKey: ['id']) // Chiama stream() prima
         .eq('folder_id', folderId) // Applica filtro DOPO stream()
         .order('created_at', ascending: false); // Applica ordine DOPO stream()
-     // --- FINE CORREZIONE ---
 
      // Mappa i dati JSON ricevuti in oggetti Task
      return stream.map((data) {
-          // Task.fromMap gestirà tutte le colonne ricevute dallo stream (*)
           return data.map((json) => Task.fromMap(json)).toList();
         });
   }
@@ -30,12 +26,10 @@ class TaskRepository {
     String? desc,
     required String priority,
     required String status,
-    // startDate ora è opzionale
-    DateTime? startDate,
+    DateTime? startDate, // Opzionale, usa default DB
     required DateTime dueDate,
   }) async {
     try {
-      // Costruisci il payload base
       final Map<String, dynamic> payload = {
             'folder_id': folderId,
             'title': title,
@@ -44,28 +38,78 @@ class TaskRepository {
             'status': status,
             'due_date': dueDate.toIso8601String(),
       };
-
-      // Aggiungi start_date solo se fornita dall'utente.
+      // Aggiungi start_date solo se fornita (altrimenti usa DEFAULT now())
       if (startDate != null) {
          payload['start_date'] = startDate.toIso8601String();
       }
 
-      // Esegui l'inserimento nel database
       final response = await _supabase
           .from('tasks')
-          .insert(payload) // Inserisci il payload costruito
-          .select() // Restituisce il record appena creato
-          .single(); // Ci aspettiamo un solo risultato
+          .insert(payload)
+          .select()
+          .single();
 
-      // Converte la risposta del database in un oggetto Task
       return Task.fromMap(response);
     } catch (e) {
-      // Stampa l'errore per il debug e rilancia un'eccezione più specifica
       debugPrint('Errore durante la creazione del task: $e');
       throw Exception('Failed to create task: $e');
     }
   }
 
-  // TODO: Aggiungere metodi per updateTask e deleteTask
+  // --- Aggiorna un task esistente ---
+  Future<Task> updateTask({
+    required String taskId,
+    String? title,
+    String? desc,
+    String? priority,
+    String? status,
+    DateTime? startDate,
+    DateTime? dueDate,
+  }) async {
+     try {
+       // Costruisci dinamicamente il payload con solo i campi da aggiornare
+       final updates = <String, dynamic>{
+         'updated_at': DateTime.now().toIso8601String(), // Aggiorna sempre 'updated_at'
+       };
+       if (title != null) updates['title'] = title;
+       if (desc != null) updates['desc'] = desc; // Permetti di impostare a null? Serve 'desc': desc ?? null?
+       if (priority != null) updates['priority'] = priority;
+       if (status != null) updates['status'] = status;
+       if (startDate != null) updates['start_date'] = startDate.toIso8601String();
+       if (dueDate != null) updates['due_date'] = dueDate.toIso8601String();
+
+       // Se non ci sono campi da aggiornare (a parte updated_at), potremmo voler uscire prima
+       if (updates.length <= 1) {
+          // Potresti lanciare un errore o restituire il task non modificato
+          // Per ora, procediamo comunque per aggiornare 'updated_at'
+          debugPrint("Nessun campo da aggiornare per il task $taskId (solo updated_at)");
+       }
+
+       final response = await _supabase
+           .from('tasks')
+           .update(updates)
+           .eq('id', taskId)
+           .select() // Restituisce il record aggiornato
+           .single(); // Ci aspettiamo un solo risultato
+
+       return Task.fromMap(response);
+     } catch (e) {
+       debugPrint('Errore durante l\'aggiornamento del task $taskId: $e');
+       throw Exception('Failed to update task: $e');
+     }
+  }
+
+  // --- Elimina un task ---
+  Future<void> deleteTask(String taskId) async {
+     try {
+       await _supabase
+           .from('tasks')
+           .delete()
+           .eq('id', taskId);
+     } catch (e) {
+       debugPrint('Errore durante l\'eliminazione del task $taskId: $e');
+       throw Exception('Failed to delete task: $e');
+     }
+  }
 }
 
