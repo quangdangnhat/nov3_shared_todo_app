@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/screens/createPage/create_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/folder.dart';
 import '../../data/models/todo_list.dart';
@@ -9,13 +10,14 @@ import '../../features/auth/presentation/screens/signup_screen.dart';
 
 // --- MODIFICA IMPORT CON PREFISSI ---
 // Importa la schermata di dettaglio con un prefisso
-import '../../features/todo_lists/detail.dart/todo_list_detail_screen.dart' as detail_screen;
+import '../../features/todo_lists/detail.dart/todo_list_detail_screen.dart'
+    as detail_screen;
 // Importa la schermata delle liste con un altro prefisso
-import '../../features/todo_lists/presentation/screens/todo_lists_screen.dart' as lists_screen;
+import '../../features/todo_lists/presentation/screens/todo_lists_screen.dart'
+    as lists_screen;
 // --- FINE MODIFICA IMPORT ---
 
 import '../../main.dart'; // Importa 'supabase' helper
-
 
 /// Notifier che ascolta i cambiamenti dello stato di autenticazione
 /// e notifica GoRouter quando deve aggiornarsi.
@@ -40,7 +42,6 @@ class _AuthNotifier extends ChangeNotifier {
   }
 }
 
-
 /// Contiene la configurazione delle rotte (pagine) dell'applicazione
 /// utilizzando il pacchetto GoRouter.
 class AppRouter {
@@ -50,12 +51,15 @@ class AppRouter {
   static const String listDetail = '/list/:listId';
   static const String folderDetail = '/list/:listId/folder/:folderId';
 
+  // aggiunta per la creazione della pagina ( CREATE )
+  static const String create =
+      '/create'; // non credo di avere bisogno di qualcosa da passare
+
   static final _authNotifier = _AuthNotifier();
 
   static final GoRouter router = GoRouter(
     initialLocation: home,
     refreshListenable: _authNotifier,
-
     routes: <RouteBase>[
       GoRoute(
         path: login,
@@ -81,50 +85,54 @@ class AppRouter {
         },
         routes: <RouteBase>[
           GoRoute(
-            path: 'list/:listId', // Relativo alla home
+            path: 'list/:listId',
             name: listDetail,
             builder: (BuildContext context, GoRouterState state) {
               final String listId = state.pathParameters['listId']!;
-              final Map<String, dynamic> extras = state.extra as Map<String, dynamic>;
+              final Map<String, dynamic> extras =
+                  state.extra as Map<String, dynamic>;
               final TodoList todoListExtra = extras['todoList'] as TodoList;
               final Folder parentFolderExtra = extras['parentFolder'] as Folder;
 
-              // --- USA IL PREFISSO ---
               return detail_screen.TodoListDetailScreen(
                 todoList: todoListExtra,
                 parentFolder: parentFolderExtra,
               );
-              // --- FINE ---
             },
             routes: <RouteBase>[
-                GoRoute(
-                  path: 'folder/:folderId', // Relativo a listDetail
-                  name: folderDetail,
-                  builder: (BuildContext context, GoRouterState state) {
-                    final String listId = state.pathParameters['listId']!;
-                    final String folderId = state.pathParameters['folderId']!;
-                    final Map<String, dynamic> extras = state.extra as Map<String, dynamic>;
-                    final TodoList todoListExtra = extras['todoList'] as TodoList;
-                    final Folder parentFolderExtra = extras['parentFolder'] as Folder;
+              GoRoute(
+                path: 'folder/:folderId',
+                name: folderDetail,
+                builder: (BuildContext context, GoRouterState state) {
+                  final Map<String, dynamic> extras =
+                      state.extra as Map<String, dynamic>;
+                  final TodoList todoListExtra = extras['todoList'] as TodoList;
+                  final Folder parentFolderExtra =
+                      extras['parentFolder'] as Folder;
 
-                    // --- USA IL PREFISSO ---
-                    return detail_screen.TodoListDetailScreen(
-                      todoList: todoListExtra,
-                      parentFolder: parentFolderExtra,
-                    );
-                    // --- FINE ---
-                  }
-                )
-            ]
+                  return detail_screen.TodoListDetailScreen(
+                    todoList: todoListExtra,
+                    parentFolder: parentFolderExtra,
+                  );
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/create',
+            name: create, // usa la costante definita
+            builder: (BuildContext context, GoRouterState state) {
+              return CreatePage();
+            },
           ),
         ],
       ),
     ],
-
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = supabase.auth.currentUser != null;
       // Usa state.matchedLocation o state.fullPath per controllare la rotta corrente
-      final bool loggingIn = state.matchedLocation == login || state.matchedLocation == signup;
+      final bool loggingIn =
+          state.matchedLocation == login || state.matchedLocation == signup;
 
       if (!loggedIn && !loggingIn) {
         return login; // Reindirizza al login se non loggato e non su pagine auth
@@ -136,4 +144,3 @@ class AppRouter {
     },
   );
 }
-
