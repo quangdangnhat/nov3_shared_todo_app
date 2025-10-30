@@ -111,5 +111,36 @@ class TaskRepository {
        throw Exception('Failed to delete task: $e');
      }
   }
+
+  // Nel tuo TaskRepository:
+
+  /// Ottiene i task per il calendario una singola volta (NON in tempo reale)
+  Future<List<Task>> getTasksForCalendar_Future(
+      DateTime rangeStart,
+      DateTime rangeEnd,
+      ) async {
+    // Normalizza alle date “secche” per robustezza (se vuoi inclusivo-esclusivo lascia pure così)
+    final rangeStartIso = rangeStart.toIso8601String();
+    final rangeEndIso   = rangeEnd.toIso8601String();
+
+    try {
+      final data = await _supabase
+          .from('tasks')
+          .select()
+      // Overlap: in calendario vogliamo i task che toccano il range visibile
+          .lte('start_date', rangeEndIso)   // inizia PRIMA o entro la fine del range
+          .gte('due_date', rangeStartIso)   // finisce DOPO o entro l’inizio del range
+          .order('due_date', ascending: true);
+
+      return (data as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .map((json) => Task.fromMap(json))
+          .toList();
+    } catch (e) {
+      debugPrint('Errore nel fetch (Future) dei task: $e');
+      throw Exception('Failed to fetch tasks: $e');
+    }
+  }
+
 }
 

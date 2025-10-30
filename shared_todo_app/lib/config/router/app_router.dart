@@ -6,6 +6,7 @@ import '../../data/models/folder.dart';
 import '../../data/models/todo_list.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
+import '../../features/todo_lists/presentation/calendar/calendar_screen.dart';
 
 // --- MODIFICA IMPORT CON PREFISSI ---
 // Importa la schermata di dettaglio con un prefisso
@@ -47,6 +48,7 @@ class AppRouter {
   static const String login = '/login';
   static const String signup = '/signup';
   static const String home = '/';
+  static const String calendar = '/calendar';
   static const String listDetail = '/list/:listId';
   static const String folderDetail = '/list/:listId/folder/:folderId';
 
@@ -69,6 +71,13 @@ class AppRouter {
         name: signup,
         builder: (BuildContext context, GoRouterState state) {
           return const SignUpScreen();
+        },
+      ),
+      GoRoute(
+        path: calendar,
+        name: calendar,
+        builder: (BuildContext context, GoRouterState state) {
+          return const CalendarScreen();
         },
       ),
       GoRoute(
@@ -135,5 +144,7 @@ class AppRouter {
       return null; // Nessun redirect necessario
     },
   );
+
+
 }
 
