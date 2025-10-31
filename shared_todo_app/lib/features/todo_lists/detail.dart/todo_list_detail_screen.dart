@@ -9,10 +9,13 @@ import '../../../data/repositories/folder_repository.dart';
 import '../../../data/repositories/task_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/widgets/app_drawer.dart'; // Corretto import Drawer
+import '../../../core/utils/task_sorter.dart'; //ADD: import TaskSorter
+import '../../../core/enums/task_filter_type.dart'; //ADD: import TaskFilterType
 import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
 import '../presentation/widgets/task_list_tile.dart';
+import '../presentation/widgets/task_filter_dropdown.dart'; //ADD: import TaskFilterDropdown
 
 
 class TodoListDetailScreen extends StatefulWidget {
@@ -41,6 +44,9 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   // Stato per il collapse
   bool _isFoldersCollapsed = false;
   bool _isTasksCollapsed = false;
+
+  // ADD: Filter state
+  TaskFilterType _currentFilter = TaskFilterType.createdAtNewest;
 
   @override
   void initState() {
@@ -317,6 +323,18 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                    children: [
                      Text('Tasks', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
+                     Row( // ADD: Row per Dropdown e Icona Collapse
+                       mainAxisSize: MainAxisSize.min,
+                       children: [
+                         // ADD: Filter Dropdown
+                         TaskFilterDropdown(
+                           selectedFilter: _currentFilter,
+                           onFilterChanged: (TaskFilterType newFilter) {
+                             setState(() {
+                               _currentFilter = newFilter;
+                             });
+                           },
+                         ),
                      IconButton(
                        icon: Icon(_isTasksCollapsed ? Icons.expand_more : Icons.expand_less, color: Colors.grey),
                        onPressed: () => setState(() => _isTasksCollapsed = !_isTasksCollapsed),
@@ -324,8 +342,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                     ),
                    ],
                  ),
+                ]              
               ),
             ),
+          ),
              StreamBuilder<List<Task>>(
               stream: _tasksStream,
                // Il builder è obbligatorio
@@ -336,8 +356,12 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    debugPrint('Errore StreamBuilder Tasks: ${snapshot.error}');
                    return SliverToBoxAdapter(child: Center(child: Text('Error loading tasks: ${snapshot.error}')));
                  }
-                 final tasks = snapshot.data ?? [];
-                 if (tasks.isEmpty) { 
+
+                //ADD: Apply the filter
+                 final rawTasks = snapshot.data ?? [];
+                 final filteredTasks = TaskSorter.sortTasks(rawTasks, _currentFilter); 
+
+                 if (filteredTasks.isEmpty) { 
                     return SliverToBoxAdapter(
                      child: Padding(
                        // Il padding è obbligatorio
@@ -357,7 +381,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    // Il delegate è obbligatorio
                    delegate: SliverChildBuilderDelegate( 
                      (context, index) {
-                       final task = tasks[index];
+                       final task = filteredTasks[index]; // Usa filteredTasks qui
                        return Padding(
                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
                          child: TaskListTile(
@@ -369,7 +393,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                          ),
                        );
                      },
-                     childCount: tasks.length,
+                     childCount: filteredTasks.length, // Usa filteredTasks.length qui
                    ),
                  );
                },
