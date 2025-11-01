@@ -52,6 +52,7 @@ class AppRouter {
   static const String calendar = '/calendar';
   static const String listDetail = '/list/:listId';
   static const String folderDetail = '/list/:listId/folder/:folderId';
+  static const String account = '/account';
 
   // aggiunta per la creazione della pagina ( CREATE )
   static const String create =
@@ -93,6 +94,12 @@ class AppRouter {
           // --- FINE ---
         },
         routes: <RouteBase>[
+          // ➕ Rotta figlia: /account
+          GoRoute(
+            path: 'account',
+            name: account,
+            builder: (context, state) => const AccountScreen(),
+          ),
           GoRoute(
             path: 'list/:listId',
             name: listDetail,
@@ -152,6 +159,89 @@ class AppRouter {
       return null; // Nessun redirect necessario
     },
   );
-
-
 }
+
+/// 🔻 Definizione inline di AccountScreen per risolvere l'errore.
+/// (Puoi spostarla in lib/features/todo_lists/presentation/screens/account_screen.dart)
+class AccountScreen extends StatelessWidget {
+  const AccountScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final username = (user?.userMetadata?['username'] as String?) ?? 'Sconosciuto';
+    final email = user?.email ?? '—';
+    final initial = username.isNotEmpty ? username[0].toUpperCase() : 'U';
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Account')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const SizedBox(height: 8),
+          Center(
+            child: CircleAvatar(
+              radius: 40,
+              child: Text(initial, style: const TextStyle(fontSize: 32)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(child: Text(username, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600))),
+          const SizedBox(height: 24),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('Username'),
+            subtitle: Text(username),
+          ),
+          ListTile(
+            leading: const Icon(Icons.email),
+            title: const Text('Email'),
+            subtitle: Text(email),
+          ),
+          const ListTile(
+            leading: Icon(Icons.lock),
+            title: Text('Password'),
+            subtitle: Text('••••••••'),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.delete_forever),
+            label: const Text('Elimina account'),
+            onPressed: () async {
+              final ok = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Eliminare l’account?'),
+                  content: const Text('Questa azione è definitiva. Confermi di voler eliminare il tuo account?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annulla')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Elimina'),
+                    ),
+                  ],
+                ),
+              );
+              if (ok != true) return;
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Eliminazione account: da implementare lato backend'), backgroundColor: Colors.orange),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+

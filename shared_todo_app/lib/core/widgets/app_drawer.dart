@@ -43,7 +43,10 @@ class _AppDrawerState extends State<AppDrawer> {
             ListTile(
               leading: const Icon(Icons.account_circle),
               title: const Text('Account'),
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+              Navigator.pop(context);            // chiude il drawer
+              context.push(AppRouter.account);   // naviga a /account
+            },
             ),
             ListTile(
               leading: const Icon(Icons.logout),
