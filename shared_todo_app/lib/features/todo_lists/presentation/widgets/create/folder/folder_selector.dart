@@ -2,10 +2,11 @@
 
 import 'package:flutter/material.dart';
 import '../../../../../../data/models/folder.dart';
-import '../../../controllers/folder/folder_create_page.dart';
+import '../../../controllers/base_controller.dart';
+
 
 class FolderSelector extends StatelessWidget {
-  final FolderCreateController controller;
+  final BaseFolderSelectionController controller;
   final ValueChanged<Folder> onFolderSelected;
 
   const FolderSelector({

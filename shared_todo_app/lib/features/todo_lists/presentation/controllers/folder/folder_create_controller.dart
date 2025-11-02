@@ -1,11 +1,13 @@
-import 'package:flutter/material.dart';
+// lib/presentation/controllers/folder/folder_create_controller.dart
+
 import '../../../../../data/models/folder.dart';
 import '../../../../../data/models/todo_list.dart';
 import '../../../../../data/repositories/folder_repository.dart';
 import '../../../../../data/repositories/todo_list_repository.dart';
-import 'package:flutter/foundation.dart';
+import '../base_controller.dart';
 
-class FolderCreateController extends ChangeNotifier {
+
+class FolderCreateController extends BaseFolderSelectionController {
   final TodoListRepository _todoListRepo;
   final FolderRepository _folderRepo;
 
@@ -113,6 +115,18 @@ class FolderCreateController extends ChangeNotifier {
   bool canCreateFolder(String folderName) {
     return _selectedTodoList != null && folderName.trim().isNotEmpty;
   }
+
+
+  // Reset form to initial state
+  void resetForm() {
+    _selectedTodoList = null;
+    _selectedFolder = null;
+    _rootFolder = null;
+    _folderStream = null;
+    _searchQuery = '';
+    notifyListeners();
+  }
+
 
   @override
   void dispose() {
