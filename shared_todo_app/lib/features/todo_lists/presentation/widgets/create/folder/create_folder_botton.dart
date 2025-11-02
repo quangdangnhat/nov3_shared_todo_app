@@ -19,7 +19,7 @@ class CreateFolderButton extends StatelessWidget {
         onPressed: isEnabled ? onPressed : null,
         icon: const Icon(Icons.add),
         label: const Text(
-          'Crea Cartella',
+          'Create Folder',
           style: TextStyle(fontSize: 16),
         ),
         style: ElevatedButton.styleFrom(
