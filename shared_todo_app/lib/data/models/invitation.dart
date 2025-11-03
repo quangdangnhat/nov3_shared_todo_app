@@ -1,3 +1,4 @@
+/// Modello per rappresentare un invito.
 class Invitation {
   final String id;
   final String todoListId;
@@ -6,9 +7,10 @@ class Invitation {
   final String role;
   final String status;
   final DateTime createdAt;
-  // --- NUOVO CAMPO ---
-  final String? todoListTitle; // Titolo della lista a cui si è invitati
-  // --- FINE ---
+  
+  // --- NUOVI CAMPI PER INFO AGGIUNTIVE ---
+  final String? todoListTitle; // Titolo della lista
+  final String? invitedByUserEmail; // Email di chi ha invitato
 
   Invitation({
     required this.id,
@@ -19,26 +21,24 @@ class Invitation {
     required this.status,
     required this.createdAt,
     this.todoListTitle, // Aggiunto al costruttore
+    this.invitedByUserEmail, // Aggiunto al costruttore
   });
 
-  // Factory 'fromMap' robusto
+  // Factory 'fromMap' per convertire il JSON da Supabase
   factory Invitation.fromMap(Map<String, dynamic> map) {
-    // Helper per parsare la data
-    DateTime parseRequiredDate(dynamic value, String fieldName) {
-      if (value is String) {
-        try {
-          return DateTime.parse(value);
-        } catch (e) {
-          throw FormatException('Invalid date format for required field $fieldName: $value');
-        }
-      }
-      throw FormatException('Missing or invalid type for required field $fieldName: $value');
-    }
-
+    
     // Estrae il titolo della lista dal join
+    // Supabase inserisce i dati joinati in una mappa con il nome della tabella
     String? title;
     if (map['todo_lists'] != null && map['todo_lists'] is Map) {
       title = (map['todo_lists'] as Map<String, dynamic>)['title'] as String?;
+    }
+
+    // Estrae l'email di chi ha invitato dal join
+    // Abbiamo usato 'users:invited_by_user_id(email)'
+    String? email;
+    if (map['users'] != null && map['users'] is Map) {
+       email = (map['users'] as Map<String, dynamic>)['email'] as String?;
     }
 
     return Invitation(
@@ -48,8 +48,9 @@ class Invitation {
       invitedUserId: (map['invited_user_id'] ?? map['invitedUserId']) as String,
       role: map['role'] as String,
       status: map['status'] as String,
-      createdAt: parseRequiredDate(map['created_at'] ?? map['createdAt'], 'createdAt'),
-      todoListTitle: title, // Assegna il titolo
+      createdAt: DateTime.parse(map['created_at'] ?? map['createdAt']),
+      todoListTitle: title,
+      invitedByUserEmail: email,
     );
   }
 }

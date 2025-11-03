@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/router/app_router.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../../../../data/models/invitation.dart';
+import '../../../../data/models/invitation.dart'; // Importa il modello aggiornato
 import '../../../../data/repositories/invitation_repository.dart';
 
 /// Schermata che mostra gli inviti in sospeso per l'utente corrente.
@@ -16,10 +16,7 @@ class InvitationsScreen extends StatefulWidget {
 class _InvitationsScreenState extends State<InvitationsScreen> {
   final InvitationRepository _invitationRepo = InvitationRepository();
   
-  // --- CORREZIONE: Rimosso 'final' ---
-  // Questo permette alla variabile di essere riassegnata in setState
   late Stream<List<Invitation>> _invitationsStream;
-  // --- FINE CORREZIONE ---
   
   // Set per tenere traccia degli inviti in corso di elaborazione
   final Set<String> _loadingInvitations = {};
@@ -27,7 +24,6 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
   @override
   void initState() {
     super.initState();
-    // Inizializza lo stream
     _invitationsStream = _invitationRepo.getPendingInvitationsStream();
   }
 
@@ -52,8 +48,7 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
         );
       }
       
-      // Questa logica (che prima falliva) ora funzionerà,
-      // forzando il refresh dello stream.
+      // Forza il refresh dello stream per rimuovere l'invito dalla lista.
       if (mounted) {
         setState(() {
           _invitationsStream = _invitationRepo.getPendingInvitationsStream();
@@ -139,19 +134,37 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // --- MODIFICA 1: Mostra Nome Lista ---
                       Text(
                         'Invitation to join list:', 
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey),
                       ),
                       Text(
-                        // Mostra il titolo della lista (se c'è), altrimenti l'ID
-                        invitation.todoListTitle ?? invitation.todoListId, 
+                        // Usa il titolo recuperato, con un fallback
+                        invitation.todoListTitle ?? '[List Name Not Found]', 
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
+                      // --- FINE MODIFICA ---
+                      const SizedBox(height: 8),
+                      // --- MODIFICA 2: Mostra Email Invitante ---
+                       Text.rich(
+                        TextSpan(
+                          text: 'Invited by: ',
+                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          children: [
+                            TextSpan(
+                              // Usa l'email recuperata, con un fallback
+                              text: invitation.invitedByUserEmail ?? '[Unknown User]',
+                              style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium?.color),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // --- FINE MODIFICA ---
                       const SizedBox(height: 8),
                       Text.rich(
                         TextSpan(
-                          text: 'You have been invited as an ',
+                          text: 'As: ',
                           style: const TextStyle(fontSize: 14, color: Colors.grey),
                           children: [
                             TextSpan(
