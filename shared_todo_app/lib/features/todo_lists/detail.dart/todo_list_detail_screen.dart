@@ -7,8 +7,10 @@ import '../../../data/models/folder.dart';
 import '../../../data/models/task.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../../../data/repositories/task_repository.dart';
+// Importa il nuovo repository per gli inviti
+import '../../../data/repositories/invitation_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
-import '../../../core/widgets/app_drawer.dart'; // Corretto import Drawer
+import '../../../core/widgets/app_drawer.dart';
 import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
@@ -33,6 +35,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   // Repository
   final FolderRepository _folderRepo = FolderRepository();
   final TaskRepository _taskRepo = TaskRepository();
+  // Aggiungi il repository per gli inviti
+  final InvitationRepository _invitationRepo = InvitationRepository();
 
   // Streams per cartelle e task
   late Stream<List<Folder>> _foldersStream;
@@ -62,7 +66,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     });
   }
 
-  // Funzione per mostrare il FolderDialog
+  // --- Funzioni Dialog per Cartelle e Task (invariate) ---
   Future<void> _openFolderDialog({Folder? folderToEdit}) async {
      if (!mounted) return;
      try {
@@ -89,7 +93,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
      }
   }
 
-  // Dialog per eliminare Folder
   void _showDeleteFolderDialog(Folder folder) {
      if (!mounted) return;
      showDialog<void>(
@@ -134,8 +137,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     );
   }
 
-
-  // Funzione per mostrare il TaskDialog (per Creare o Modificare)
   Future<void> _openTaskDialog({Task? taskToEdit}) async {
     if (!mounted) return;
     try {
@@ -144,18 +145,16 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         builder: (BuildContext dialogContext) {
           return TaskDialog(
             folderId: widget.parentFolder.id,
-            taskToEdit: taskToEdit, // Passa il task se stiamo modificando
+            taskToEdit: taskToEdit,
           );
         },
       );
-      // Se il dialog ha avuto successo, mostra SnackBar e aggiorna
       if (result == true && mounted) {
         showSuccessSnackBar(context,
-            message: 'Task ${taskToEdit == null ? 'created' : 'updated'} successfully'); 
+            message: 'Task ${taskToEdit == null ? 'created' : 'updated'} successfully');
         _refreshStreams();
       }
     } catch (error) {
-       // Se showDialog propaga un errore, mostralo qui
        if (mounted) {
          showErrorSnackBar(context,
             message: 'Failed to ${taskToEdit == null ? 'create' : 'update'} task: $error');
@@ -163,7 +162,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     }
   }
 
-   // Dialog per eliminare Task
    void _showDeleteTaskDialog(Task task) {
      if (!mounted) return;
      showDialog<void>(
@@ -186,7 +184,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                     if (mounted) Navigator.of(dialogContext).pop();
                     if (mounted) {
                       showSuccessSnackBar(context, message: 'Task deleted successfully');
-                      _refreshStreams(); 
+                      _refreshStreams();
                     }
                   } catch (error) {
                     if (mounted) Navigator.of(dialogContext).pop();
@@ -206,10 +204,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
      );
    }
 
-   // Gestisce il cambio di stato dai Chip
    Future<void> _handleTaskStatusChange(Task task, String newStatus) async {
-      if (task.status == newStatus) return; 
-
+      if (task.status == newStatus) return;
       try {
          await _taskRepo.updateTask(taskId: task.id, status: newStatus);
       } catch (error) {
@@ -218,22 +214,143 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
          }
       }
    }
+   // --- FINE GESTIONE DIALOG ---
+
+
+  // --- NUOVO: Dialog per Invitare Membri ---
+  void _showInviteMemberDialog() {
+    final formKey = GlobalKey<FormState>();
+    final emailController = TextEditingController();
+    final roles = ['admin', 'collaborator']; // Ruoli disponibili
+    String selectedRole = roles[1]; // Default a 'collaborator'
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        // Usa StatefulBuilder per gestire lo stato interno del dialog
+        return StatefulBuilder(
+          builder: (stfContext, stfSetState) {
+            return AlertDialog(
+              title: const Text('Invite Member'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: emailController,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: 'User Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty || !value.contains('@')) {
+                          return 'Please enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedRole,
+                      decoration: const InputDecoration(labelText: 'Role'),
+                      items: roles.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value[0].toUpperCase() + value.substring(1)),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        stfSetState(() => selectedRole = newValue!);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.of(stfContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isLoading ? null : () async {
+                    if (formKey.currentState!.validate()) {
+                      stfSetState(() => isLoading = true);
+                      try {
+                        // Chiama il repository per invocare la Edge Function
+                        await _invitationRepo.inviteUserToList(
+                          todoListId: widget.todoList.id,
+                          email: emailController.text.trim(),
+                          role: selectedRole,
+                        );
+                        
+                        if (mounted) {
+                           Navigator.of(stfContext).pop();
+                           showSuccessSnackBar(context, message: 'Invitation sent successfully!');
+                        }
+
+                      } catch (error) {
+                         // Mostra l'errore nel dialog
+                         if (mounted) {
+                           showErrorSnackBar(stfContext, message: error.toString().replaceFirst("Exception: ", ""));
+                         }
+                      } finally {
+                         if (mounted) {
+                           stfSetState(() => isLoading = false);
+                         }
+                      }
+                    }
+                  },
+                  child: isLoading 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                      : const Text('Send Invite'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+  // --- FINE NUOVO DIALOG ---
 
 
   @override
   Widget build(BuildContext context) {
+    // Determina se siamo nella cartella root
+    final bool isRootFolder = widget.parentFolder.parentId == null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.parentFolder.title),
         automaticallyImplyLeading: false, 
-        leading: Builder(
+        // Hamburger (sinistra) o Freccia Indietro (sinistra)
+        leading: isRootFolder ? Builder( 
            builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () => Scaffold.of(context).openDrawer(),
             tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
           ),
-        ),
+        ) : BackButton(onPressed: (){ 
+              if(context.canPop()) {
+                 context.pop();
+              } else {
+                 context.goNamed(AppRouter.home);
+              }
+            }),
         actions: [ 
+           // --- NUOVO PULSANTE INVITA ---
+           // Mostra il pulsante "Invita" solo se sei nella cartella root
+           if (isRootFolder) 
+             IconButton(
+               icon: const Icon(Icons.person_add_outlined),
+               tooltip: 'Invite Member',
+               onPressed: _showInviteMemberDialog,
+             ),
+           // --- FINE ---
            IconButton(
             icon: const Icon(Icons.arrow_back),
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
@@ -272,14 +389,14 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             ),
             StreamBuilder<List<Folder>>(
               stream: _foldersStream,
-              builder: (context, snapshot) { 
+              builder: (context, snapshot) {
                  if (_isFoldersCollapsed) { return const SliverToBoxAdapter(child: SizedBox.shrink());}
                  if (snapshot.connectionState == ConnectionState.waiting) { return const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())));}
                  if (snapshot.hasError) { return SliverToBoxAdapter(child: Center(child: Text('Error loading folders: ${snapshot.error}'))); }
                  final folders = snapshot.data ?? [];
                  if (folders.isEmpty) { return const SliverToBoxAdapter(child: SizedBox.shrink()); }
                 return SliverList(
-                  delegate: SliverChildBuilderDelegate( (context, index) { 
+                  delegate: SliverChildBuilderDelegate( (context, index) {
                       final folder = folders[index];
                       return Padding(
                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -373,9 +490,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
           ],
         ),
       ),
-      // --- MODIFICA: Applica larghezza fissa ai label dei FAB ---
       floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min, // Per farli stare in basso
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           FloatingActionButton.extended(
@@ -383,28 +499,24 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             tooltip: 'New Folder',
             heroTag: 'fabFolder', 
             icon: const Icon(Icons.create_new_folder),
-            // Aggiungi un SizedBox per forzare la larghezza
             label: const SizedBox(
-              width: 110, // Imposta una larghezza fissa
+              width: 110,
               child: Text('New Folder', textAlign: TextAlign.center),
             ),
           ),
-          const SizedBox(height: 16), // Spazio tra i due bottoni
-          FloatingActionButton.extended( 
+          const SizedBox(height: 16),
+          FloatingActionButton.extended(
             onPressed: () => _openTaskDialog(),
             tooltip: 'New Task',
-            heroTag: 'fabTask', 
-            icon: const Icon(Icons.add_task), 
-            // Aggiungi un SizedBox per forzare la larghezza
+            heroTag: 'fabTask',
+            icon: const Icon(Icons.add_task),
             label: const SizedBox(
-              width: 110, // USA LA STESSA LARGHEZZA
+              width: 110,
               child: Text('New Task', textAlign: TextAlign.center),
             ),
           ),
         ],
       ),
-      // --- FINE MODIFICA ---
     );
   }
 }
-

@@ -9,14 +9,15 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/todo_lists/presentation/calendar/calendar_screen.dart';
 
-// --- MODIFICA IMPORT CON PREFISSI ---
-// Importa la schermata di dettaglio con un prefisso
+// Importa le schermate con prefissi per evitare conflitti
 import '../../features/todo_lists/detail.dart/todo_list_detail_screen.dart'
     as detail_screen;
-// Importa la schermata delle liste con un altro prefisso
 import '../../features/todo_lists/presentation/screens/todo_lists_screen.dart'
     as lists_screen;
-// --- FINE MODIFICA IMPORT ---
+// Importa la schermata Account dal suo file
+import '../../features/account/presentation/screens/account_screen.dart';
+// Importa la schermata Inviti dal suo file
+import '../../features/invitations/presentation/screens/invitation_screen.dart'; 
 
 import '../../main.dart'; // Importa 'supabase' helper
 
@@ -29,6 +30,7 @@ class _AuthNotifier extends ChangeNotifier {
   _AuthNotifier() {
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) {
       final bool newLoginState = data.session != null;
+      // Se lo stato cambia, notifica GoRouter per rieseguire il redirect
       if (newLoginState != _isLoggedIn) {
         _isLoggedIn = newLoginState;
         notifyListeners();
@@ -46,6 +48,7 @@ class _AuthNotifier extends ChangeNotifier {
 /// Contiene la configurazione delle rotte (pagine) dell'applicazione
 /// utilizzando il pacchetto GoRouter.
 class AppRouter {
+  // Nomi statici per le rotte per evitare errori di battitura
   static const String login = '/login';
   static const String signup = '/signup';
   static const String home = '/';
@@ -53,17 +56,18 @@ class AppRouter {
   static const String listDetail = '/list/:listId';
   static const String folderDetail = '/list/:listId/folder/:folderId';
   static const String account = '/account';
-
-  // aggiunta per la creazione della pagina ( CREATE )
-  static const String create =
-      '/create'; // non credo di avere bisogno di qualcosa da passare
+  static const String create = '/create';
+  static const String invitations = '/invitations';
 
   static final _authNotifier = _AuthNotifier();
 
+  /// L'istanza del router GoRouter configurata per l'app.
   static final GoRouter router = GoRouter(
-    initialLocation: home,
-    refreshListenable: _authNotifier,
+    initialLocation: home, // Parte dalla home
+    refreshListenable: _authNotifier, // Ascolta i cambiamenti di auth
+
     routes: <RouteBase>[
+      // Rotte di Autenticazione
       GoRoute(
         path: login,
         name: login,
@@ -78,6 +82,8 @@ class AppRouter {
           return const SignUpScreen();
         },
       ),
+      
+      // Rotte Principali (protette dal redirect)
       GoRoute(
         path: calendar,
         name: calendar,
@@ -85,26 +91,40 @@ class AppRouter {
           return const CalendarScreen();
         },
       ),
+       GoRoute(
+        path: invitations,
+        name: invitations,
+        builder: (BuildContext context, GoRouterState state) {
+          return const InvitationsScreen();
+        },
+      ),
+       GoRoute(
+        path: account, // Spostato al livello superiore
+        name: account,
+        builder: (context, state) => const AccountScreen(),
+      ),
+       GoRoute(
+        path: create, // Spostato al livello superiore
+        name: create, 
+        builder: (BuildContext context, GoRouterState state) {
+          return CreatePage();
+        },
+      ),
+
+      // Rotta Home e sue sotto-rotte
       GoRoute(
         path: home,
         name: home,
         builder: (BuildContext context, GoRouterState state) {
-          // --- USA IL PREFISSO ---
           return const lists_screen.TodoListsScreen();
-          // --- FINE ---
         },
         routes: <RouteBase>[
-          // ➕ Rotta figlia: /account
+          // Dettaglio Lista (mostra la root folder)
           GoRoute(
-            path: 'account',
-            name: account,
-            builder: (context, state) => const AccountScreen(),
-          ),
-          GoRoute(
-            path: 'list/:listId',
+            path: 'list/:listId', // Path relativo: /list/:listId
             name: listDetail,
             builder: (BuildContext context, GoRouterState state) {
-              final String listId = state.pathParameters['listId']!;
+              // Recupera i dati passati
               final Map<String, dynamic> extras =
                   state.extra as Map<String, dynamic>;
               final TodoList todoListExtra = extras['todoList'] as TodoList;
@@ -116,8 +136,9 @@ class AppRouter {
               );
             },
             routes: <RouteBase>[
+              // Dettaglio Sottocartella
               GoRoute(
-                path: 'folder/:folderId',
+                path: 'folder/:folderId', // Path relativo: /list/:listId/folder/:folderId
                 name: folderDetail,
                 builder: (BuildContext context, GoRouterState state) {
                   final Map<String, dynamic> extras =
@@ -134,114 +155,30 @@ class AppRouter {
               ),
             ],
           ),
-          GoRoute(
-            path: '/create',
-            name: create, // usa la costante definita
-            builder: (BuildContext context, GoRouterState state) {
-              return CreatePage();
-            },
-          ),
         ],
       ),
     ],
+
+    // Logica di Redirect per l'autenticazione
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = supabase.auth.currentUser != null;
-      // Usa state.matchedLocation o state.fullPath per controllare la rotta corrente
-      final bool loggingIn =
-          state.matchedLocation == login || state.matchedLocation == signup;
+      
+      // Controlla se l'utente sta cercando di accedere a una pagina di autenticazione
+      final bool onAuthRoute = state.matchedLocation == login || state.matchedLocation == signup;
 
-      if (!loggedIn && !loggingIn) {
-        return login; // Reindirizza al login se non loggato e non su pagine auth
+      // Se l'utente NON è loggato E NON sta andando a una pagina auth -> vai al login
+      if (!loggedIn && !onAuthRoute) {
+        return login;
       }
-      if (loggedIn && loggingIn) {
-        return home; // Reindirizza alla home se loggato e su pagine auth
+
+      // Se l'utente È loggato E STA andando a una pagina auth -> vai alla home
+      if (loggedIn && onAuthRoute) {
+        return home;
       }
-      return null; // Nessun redirect necessario
+      
+      // In tutti gli altri casi, non fare nulla
+      return null;
     },
   );
 }
-
-/// 🔻 Definizione inline di AccountScreen per risolvere l'errore.
-/// (Puoi spostarla in lib/features/todo_lists/presentation/screens/account_screen.dart)
-class AccountScreen extends StatelessWidget {
-  const AccountScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final username = (user?.userMetadata?['username'] as String?) ?? 'Sconosciuto';
-    final email = user?.email ?? '—';
-    final initial = username.isNotEmpty ? username[0].toUpperCase() : 'U';
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Account')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const SizedBox(height: 8),
-          Center(
-            child: CircleAvatar(
-              radius: 40,
-              child: Text(initial, style: const TextStyle(fontSize: 32)),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(child: Text(username, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600))),
-          const SizedBox(height: 24),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Username'),
-            subtitle: Text(username),
-          ),
-          ListTile(
-            leading: const Icon(Icons.email),
-            title: const Text('Email'),
-            subtitle: Text(email),
-          ),
-          const ListTile(
-            leading: Icon(Icons.lock),
-            title: Text('Password'),
-            subtitle: Text('••••••••'),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            icon: const Icon(Icons.delete_forever),
-            label: const Text('Elimina account'),
-            onPressed: () async {
-              final ok = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Eliminare l’account?'),
-                  content: const Text('Questa azione è definitiva. Confermi di voler eliminare il tuo account?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annulla')),
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      child: const Text('Elimina'),
-                    ),
-                  ],
-                ),
-              );
-              if (ok != true) return;
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Eliminazione account: da implementare lato backend'), backgroundColor: Colors.orange),
-                );
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 
