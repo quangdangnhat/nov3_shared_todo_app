@@ -31,9 +31,9 @@ class FolderSelector extends StatelessWidget {
             minWidth: (MediaQuery.of(context).size.width - 40) / 2,
             maxWidth: (MediaQuery.of(context).size.width - 40) / 2,
           ),
-          child: _buildSelectorButton(isEnabled, isLoading),
           itemBuilder: (context) => _buildMenuItems(subFolders),
           onSelected: onFolderSelected,
+          child: _buildSelectorButton(isEnabled, isLoading),
         );
       },
     );
@@ -161,7 +161,7 @@ class FolderSelector extends StatelessWidget {
             ],
           ),
         );
-      }).toList(),
+      }),
     ];
   }
 }

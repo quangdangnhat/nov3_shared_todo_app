@@ -38,12 +38,19 @@ class TaskCreateController extends BaseFolderSelectionController {
   bool get hasValidDates => _dateError == null;
 
   // Getters
+  @override
   Stream<List<TodoList>>? get listsStream => _listsStream;
+  @override
   Stream<List<Folder>>? get folderStream => _folderStream;
+  @override
   TodoList? get selectedTodoList => _selectedTodoList;
+  @override
   Folder? get selectedFolder => _selectedFolder;
+  @override
   Folder? get rootFolder => _rootFolder;
+  @override
   String get searchQuery => _searchQuery;
+  @override
   bool get isLoading => _isLoading;
   String get selectedPriority => _selectedPriority;
   DateTime get selectedDueDate => _selectedDueDate;
@@ -52,11 +59,13 @@ class TaskCreateController extends BaseFolderSelectionController {
   String? get dateError => _dateError;
 
   // Initialization
+  @override
   void initialize() {
     _listsStream = _todoListRepo.getTodoListsStream();
   }
 
   // Filter lists based on search query
+  @override
   List<TodoList> filterLists(List<TodoList> lists) {
     if (_searchQuery.isEmpty) return lists;
     return lists.where((list) {
@@ -65,12 +74,14 @@ class TaskCreateController extends BaseFolderSelectionController {
   }
 
   // Update search query
+  @override
   void updateSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
   }
 
   // Select TodoList and load its root folder
+  @override
   Future<void> selectTodoList(TodoList list) async {
     _selectedTodoList = list;
     _selectedFolder = null;
@@ -97,6 +108,7 @@ class TaskCreateController extends BaseFolderSelectionController {
   }
 
   // Select a folder and load its subfolders
+  @override
   Future<void> selectFolder(Folder folder) async {
     if (folder.id != _selectedFolder?.id && _selectedTodoList != null) {
       _selectedFolder = folder;
@@ -185,8 +197,4 @@ class TaskCreateController extends BaseFolderSelectionController {
     notifyListeners();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

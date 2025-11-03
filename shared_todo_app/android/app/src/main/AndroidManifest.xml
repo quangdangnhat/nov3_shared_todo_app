@@ -1,8 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />  <!--  Permesso per accedere a Internet -->
+    
     <application
         android:label="shared_todo_app"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"    
+        > <!-- Cleartext: collegamento al server http invece di https -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
