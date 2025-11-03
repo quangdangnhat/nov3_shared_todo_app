@@ -140,7 +140,7 @@ class _TaskDialogState extends State<TaskDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedPriority,
+                initialValue: _selectedPriority,
                 decoration: const InputDecoration(labelText: 'Priority'),
                 items: _priorities.map((String value) {
                   return DropdownMenuItem<String>(value: value, child: Text(value));
@@ -151,7 +151,7 @@ class _TaskDialogState extends State<TaskDialog> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedStatus,
+                initialValue: _selectedStatus,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: _statuses.map((String value) {
                   return DropdownMenuItem<String>(value: value, child: Text(value));
