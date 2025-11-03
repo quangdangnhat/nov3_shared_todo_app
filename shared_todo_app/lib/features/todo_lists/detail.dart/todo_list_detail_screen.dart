@@ -9,13 +9,10 @@ import '../../../data/repositories/folder_repository.dart';
 import '../../../data/repositories/task_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/widgets/app_drawer.dart'; // Corretto import Drawer
-import '../../../core/utils/task_sorter.dart'; //ADD: import TaskSorter
-import '../../../core/enums/task_filter_type.dart'; //ADD: import TaskFilterType
 import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
 import '../presentation/widgets/task_list_tile.dart';
-import '../presentation/widgets/task_filter_dropdown.dart'; //ADD: import TaskFilterDropdown
 
 
 class TodoListDetailScreen extends StatefulWidget {
@@ -44,9 +41,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   // Stato per il collapse
   bool _isFoldersCollapsed = false;
   bool _isTasksCollapsed = false;
-
-  // ADD: Filter state
-  TaskFilterType _currentFilter = TaskFilterType.createdAtNewest;
 
   @override
   void initState() {
@@ -278,7 +272,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             ),
             StreamBuilder<List<Folder>>(
               stream: _foldersStream,
-              // Il builder è obbligatorio
               builder: (context, snapshot) { 
                  if (_isFoldersCollapsed) { return const SliverToBoxAdapter(child: SizedBox.shrink());}
                  if (snapshot.connectionState == ConnectionState.waiting) { return const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())));}
@@ -286,7 +279,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                  final folders = snapshot.data ?? [];
                  if (folders.isEmpty) { return const SliverToBoxAdapter(child: SizedBox.shrink()); }
                 return SliverList(
-                  // Il delegate è obbligatorio
                   delegate: SliverChildBuilderDelegate( (context, index) { 
                       final folder = folders[index];
                       return Padding(
@@ -323,18 +315,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                    children: [
                      Text('Tasks', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
-                     Row( // ADD: Row per Dropdown e Icona Collapse
-                       mainAxisSize: MainAxisSize.min,
-                       children: [
-                         // ADD: Filter Dropdown
-                         TaskFilterDropdown(
-                           selectedFilter: _currentFilter,
-                           onFilterChanged: (TaskFilterType newFilter) {
-                             setState(() {
-                               _currentFilter = newFilter;
-                             });
-                           },
-                         ),
                      IconButton(
                        icon: Icon(_isTasksCollapsed ? Icons.expand_more : Icons.expand_less, color: Colors.grey),
                        onPressed: () => setState(() => _isTasksCollapsed = !_isTasksCollapsed),
@@ -342,13 +322,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                     ),
                    ],
                  ),
-                ]              
               ),
             ),
-          ),
              StreamBuilder<List<Task>>(
               stream: _tasksStream,
-               // Il builder è obbligatorio
               builder: (context, snapshot) {
                  if (_isTasksCollapsed) { return const SliverToBoxAdapter(child: SizedBox.shrink()); }
                  if (snapshot.connectionState == ConnectionState.waiting) { return const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))); }
@@ -356,15 +333,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    debugPrint('Errore StreamBuilder Tasks: ${snapshot.error}');
                    return SliverToBoxAdapter(child: Center(child: Text('Error loading tasks: ${snapshot.error}')));
                  }
-
-                //ADD: Apply the filter
-                 final rawTasks = snapshot.data ?? [];
-                 final filteredTasks = TaskSorter.sortTasks(rawTasks, _currentFilter); 
-
-                 if (filteredTasks.isEmpty) { 
+                 final tasks = snapshot.data ?? [];
+                 if (tasks.isEmpty) { 
                     return SliverToBoxAdapter(
                      child: Padding(
-                       // Il padding è obbligatorio
                        padding: const EdgeInsets.symmetric(vertical: 32.0), 
                        child: Center(
                          child: Text(
@@ -378,10 +350,9 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
 
                  // Lista Task
                  return SliverList(
-                   // Il delegate è obbligatorio
                    delegate: SliverChildBuilderDelegate( 
                      (context, index) {
-                       final task = filteredTasks[index]; // Usa filteredTasks qui
+                       final task = tasks[index];
                        return Padding(
                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
                          child: TaskListTile(
@@ -393,7 +364,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                          ),
                        );
                      },
-                     childCount: filteredTasks.length, // Usa filteredTasks.length qui
+                     childCount: tasks.length,
                    ),
                  );
                },
@@ -402,28 +373,37 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
           ],
         ),
       ),
-      // Sostituito Stack con Column per i FAB
+      // --- MODIFICA: Applica larghezza fissa ai label dei FAB ---
       floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min, // Per farli stare in basso
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          FloatingActionButton(
+          FloatingActionButton.extended(
             onPressed: () => _openFolderDialog(),
             tooltip: 'New Folder',
-            heroTag: 'fabFolder',
-            mini: true, 
-            child: const Icon(Icons.create_new_folder),
+            heroTag: 'fabFolder', 
+            icon: const Icon(Icons.create_new_folder),
+            // Aggiungi un SizedBox per forzare la larghezza
+            label: const SizedBox(
+              width: 110, // Imposta una larghezza fissa
+              child: Text('New Folder', textAlign: TextAlign.center),
+            ),
           ),
-          const SizedBox(height: 16), 
-          FloatingActionButton.extended(
+          const SizedBox(height: 16), // Spazio tra i due bottoni
+          FloatingActionButton.extended( 
             onPressed: () => _openTaskDialog(),
             tooltip: 'New Task',
-            heroTag: 'fabTask',
-            icon: const Icon(Icons.add_task),
-            label: const Text('New Task'),
+            heroTag: 'fabTask', 
+            icon: const Icon(Icons.add_task), 
+            // Aggiungi un SizedBox per forzare la larghezza
+            label: const SizedBox(
+              width: 110, // USA LA STESSA LARGHEZZA
+              child: Text('New Task', textAlign: TextAlign.center),
+            ),
           ),
         ],
       ),
+      // --- FINE MODIFICA ---
     );
   }
 }
