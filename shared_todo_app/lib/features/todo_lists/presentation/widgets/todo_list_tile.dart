@@ -16,6 +16,7 @@ class TodoListTile extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    // --- Rimosso onViewParticipants ---
   });
 
   @override
@@ -96,23 +97,22 @@ class TodoListTile extends StatelessWidget {
         ),
         
         // --- MODIFICA TRAILING ---
-        // Il PopupMenuButton è sempre visibile.
-        // Il contenuto del menu cambia in base al ruolo.
+        // Opzione "View Participants" rimossa
         trailing: PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             tooltip: 'List Options',
             onSelected: (value) {
               if (value == 'edit') {
-                onEdit(); // Chiama la callback di modifica
+                onEdit();
               } else if (value == 'delete') {
-                onDelete(); // Chiama la callback di abbandono
+                onDelete();
               }
+              // Rimossa logica per 'participants'
             },
             itemBuilder: (BuildContext context) {
-              // Costruisci la lista di voci di menu
               final List<PopupMenuEntry<String>> items = [];
 
-              // L'opzione 'Edit' è visibile SOLO per gli admin
+              // Voce "Edit" (Visibile SOLO agli admin)
               if (isAdmin) {
                 items.add(
                   const PopupMenuItem<String>(
@@ -122,7 +122,7 @@ class TodoListTile extends StatelessWidget {
                 );
               }
 
-              // L'opzione 'Leave List' è visibile per TUTTI
+              // Voce "Leave List" (Visibile a tutti)
               items.add(
                 const PopupMenuItem<String>(
                   value: 'delete', // 'delete' è la chiave per l'azione 'Leave'

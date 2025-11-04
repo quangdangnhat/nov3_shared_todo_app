@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart'; // Importato per DateFormat (usato da TaskListTile)
+import 'package:intl/intl.dart';
 import '../../../config/router/app_router.dart';
 import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
 import '../../../data/models/task.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../../../data/repositories/task_repository.dart';
-// Importa il repository per gli inviti
 import '../../../data/repositories/invitation_repository.dart';
+// --- IMPORT PER PARTECIPANTI ---
+import '../../../data/models/participant.dart';
+import '../../../data/repositories/participant_repository.dart';
+// --- FINE IMPORT ---
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
 import '../presentation/widgets/task_list_tile.dart';
-
-// --- IMPORT AGGIUNTI PER IL FILTRO ---
 import '../../../core/enums/task_filter_type.dart';
 import '../../../core/utils/task_sorter.dart';
 import '../presentation/widgets/task_filter_dropdown.dart';
-// --- FINE IMPORT ---
 
 
 class TodoListDetailScreen extends StatefulWidget {
@@ -42,26 +42,28 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   final FolderRepository _folderRepo = FolderRepository();
   final TaskRepository _taskRepo = TaskRepository();
   final InvitationRepository _invitationRepo = InvitationRepository();
+  // --- AGGIUNTO REPO PARTECIPANTI ---
+  final ParticipantRepository _participantRepo = ParticipantRepository();
+  // --- FINE ---
 
-  // Streams per cartelle e task
+  // Streams
   late Stream<List<Folder>> _foldersStream;
   late Stream<List<Task>> _tasksStream;
 
-  // Stato per il collapse
+  // Stato Collapse
   bool _isFoldersCollapsed = false;
   bool _isTasksCollapsed = false;
 
-  // --- STATO PER IL FILTRO TASK ---
+  // Stato Filtro
   TaskFilterType _selectedTaskFilter = TaskFilterType.createdAtNewest;
-  // --- FINE STATO ---
 
   @override
   void initState() {
     super.initState();
-    _refreshStreams(); // Carica entrambi gli stream
+    _refreshStreams(); 
   }
 
-  // Ricarica entrambi gli stream (figli della cartella corrente)
+  // Ricarica entrambi gli stream
   void _refreshStreams() {
     if (!mounted) return;
     setState(() {
@@ -69,9 +71,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         widget.todoList.id,
         parentId: widget.parentFolder.id,
       );
-      // Non ordiniamo qui, così lo stream è grezzo
       _tasksStream = _taskRepo.getTasksStream(
-        widget.parentFolder.id, 
+        widget.parentFolder.id,
       );
     });
   }
@@ -225,7 +226,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       }
    }
    
-   void _showInviteMemberDialog() {
+  // --- Dialog per INVITARE Membri (ORA CHIAMATO DAL DIALOG PARTECIPANTI) ---
+  void _showInviteMemberDialog() {
     final formKey = GlobalKey<FormState>();
     final emailController = TextEditingController();
     final roles = ['admin', 'collaborator']; 
@@ -319,7 +321,106 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       },
     );
   }
-  // --- FINE GESTIONE DIALOG ---
+
+  // --- NUOVO: Dialog per VEDERE i partecipanti ---
+  Future<void> _showParticipantsDialog() async {
+    // Mostra un dialog che gestisce il proprio stato di caricamento
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return FutureBuilder<List<Participant>>(
+          // Chiama il repository per recuperare i partecipanti
+          future: _participantRepo.getParticipants(widget.todoList.id),
+          builder: (context, snapshot) {
+            // Stato di Caricamento
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const AlertDialog(
+                content: SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+
+            // Stato di Errore
+            if (snapshot.hasError) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: Text(snapshot.error.toString().replaceFirst("Exception: ", "")),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              );
+            }
+
+            // Stato di Successo
+            final participants = snapshot.data ?? [];
+
+            return AlertDialog(
+              title: Text('Participants (${participants.length})'),
+              // Usa un ListView.builder se la lista può essere lunga
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: participants.length,
+                  itemBuilder: (context, index) {
+                    final participant = participants[index];
+                    final bool isAdmin = participant.role == 'admin';
+                    return ListTile(
+                      leading: CircleAvatar(
+                        child: Text(participant.username.isNotEmpty 
+                            ? participant.username[0].toUpperCase() 
+                            : '?'),
+                      ),
+                      title: Text(participant.username),
+                      subtitle: Text(participant.email),
+                      // Mostra un "chip" per il ruolo
+                      trailing: Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                         decoration: BoxDecoration(
+                           color: (isAdmin ? Colors.blue : Colors.grey).withOpacity(0.1),
+                           borderRadius: BorderRadius.circular(8),
+                         ),
+                         child: Text(
+                           participant.role,
+                           style: TextStyle(
+                             color: (isAdmin ? Colors.blue : Colors.grey).shade700,
+                             fontWeight: FontWeight.bold,
+                             fontSize: 12,
+                           ),
+                         ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                // Pulsante per invitare NUOVI membri
+                TextButton.icon(
+                  icon: const Icon(Icons.person_add_outlined),
+                  label: const Text('Invite'),
+                  onPressed: () {
+                    // Chiudi questo dialog e apri quello di invito
+                    Navigator.of(dialogContext).pop();
+                    _showInviteMemberDialog(); 
+                  },
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+  // --- FINE NUOVO DIALOG ---
 
 
   @override
@@ -345,12 +446,15 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
               }
             }),
         actions: [ 
+           // --- MODIFICA PULSANTE APPBAR ---
+           // Mostra il pulsante "Partecipanti" solo se sei nella cartella root
            if (isRootFolder) 
              IconButton(
-               icon: const Icon(Icons.person_add_outlined),
-               tooltip: 'Invite Member',
-               onPressed: _showInviteMemberDialog,
+               icon: const Icon(Icons.people_outline), // Icona cambiata
+               tooltip: 'View Participants', // Tooltip aggiornato
+               onPressed: _showParticipantsDialog, // Chiama il nuovo dialog
              ),
+           // --- FINE MODIFICA ---
            IconButton(
             icon: const Icon(Icons.arrow_back),
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
@@ -369,7 +473,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         onRefresh: () async => _refreshStreams(),
         child: CustomScrollView(
           slivers: [
-            // Sezione Cartelle (con collapse)
+            // --- Sezione Cartelle (con collapse) ---
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
@@ -424,7 +528,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
               },
             ),
 
-            // --- Sezione Task (con collapse E FILTRO) ---
+            // --- Sezione Task (con collapse e filtro) ---
             SliverToBoxAdapter(
               child: Padding(
                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0).copyWith(top: 24),
@@ -432,20 +536,16 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                    children: [
                      Text('Tasks', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
-                     // Contenitore per i due bottoni (filtro e collapse)
                      Row(
                        children: [
-                         // --- AGGIUNTO TaskFilterDropdown ---
                          TaskFilterDropdown(
                            selectedFilter: _selectedTaskFilter,
                            onFilterChanged: (newFilter) {
-                             // Aggiorna lo stato per applicare il nuovo filtro
                              setState(() {
                                _selectedTaskFilter = newFilter;
                              });
                            },
                          ),
-                         // --- FINE ---
                          IconButton(
                            icon: Icon(_isTasksCollapsed ? Icons.expand_more : Icons.expand_less, color: Colors.grey),
                            onPressed: () => setState(() => _isTasksCollapsed = !_isTasksCollapsed),
@@ -468,10 +568,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                  }
                  
                  final tasks = snapshot.data ?? [];
-
-                 // --- APPLICA ORDINAMENTO CLIENT-SIDE ---
                  final sortedTasks = TaskSorter.sortTasks(tasks, _selectedTaskFilter);
-                 // --- FINE ---
 
                  if (sortedTasks.isEmpty) { 
                     return SliverToBoxAdapter(
@@ -487,11 +584,11 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    );
                   }
 
-                 // Lista Task (usa sortedTasks)
+                 // Lista Task
                  return SliverList(
                    delegate: SliverChildBuilderDelegate( 
                      (context, index) {
-                       final task = sortedTasks[index]; // Usa la lista ordinata
+                       final task = sortedTasks[index];
                        return Padding(
                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
                          child: TaskListTile(
@@ -503,7 +600,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                          ),
                        );
                      },
-                     childCount: sortedTasks.length, // Usa la lista ordinata
+                     childCount: sortedTasks.length,
                    ),
                  );
                },
