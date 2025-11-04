@@ -7,11 +7,7 @@ import '../../../data/models/folder.dart';
 import '../../../data/models/task.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../../../data/repositories/task_repository.dart';
-import '../../../data/repositories/invitation_repository.dart';
-// --- IMPORT PER PARTECIPANTI ---
-import '../../../data/models/participant.dart';
-import '../../../data/repositories/participant_repository.dart';
-// --- FINE IMPORT ---
+// Rimossi: InvitationRepository e ParticipantRepository (ora gestiti dai dialog)
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
@@ -22,10 +18,16 @@ import '../../../core/enums/task_filter_type.dart';
 import '../../../core/utils/task_sorter.dart';
 import '../presentation/widgets/task_filter_dropdown.dart';
 
+// --- IMPORT DEI DIALOG ESTRATTI ---
+import '../presentation/widgets/participants_dialog.dart';
+import '../../../core/widgets/confirmation_dialog.dart';
+// Non serve importare InviteMemberDialog qui, perché è chiamato da ParticipantsDialog
+// --- FINE IMPORT ---
+
 
 class TodoListDetailScreen extends StatefulWidget {
   final TodoList todoList;
-  final Folder parentFolder; // Riceve sempre la cartella corrente (root o sub)
+  final Folder parentFolder; 
 
   const TodoListDetailScreen({
     super.key,
@@ -38,23 +40,17 @@ class TodoListDetailScreen extends StatefulWidget {
 }
 
 class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
-  // Repository
+  // Repository (ora solo 2)
   final FolderRepository _folderRepo = FolderRepository();
   final TaskRepository _taskRepo = TaskRepository();
-  final InvitationRepository _invitationRepo = InvitationRepository();
-  // --- AGGIUNTO REPO PARTECIPANTI ---
-  final ParticipantRepository _participantRepo = ParticipantRepository();
-  // --- FINE ---
 
   // Streams
   late Stream<List<Folder>> _foldersStream;
   late Stream<List<Task>> _tasksStream;
 
-  // Stato Collapse
+  // Stato UI
   bool _isFoldersCollapsed = false;
   bool _isTasksCollapsed = false;
-
-  // Stato Filtro
   TaskFilterType _selectedTaskFilter = TaskFilterType.createdAtNewest;
 
   @override
@@ -77,24 +73,24 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     });
   }
 
-  // --- Funzioni Dialog (invariate) ---
+  // --- LOGICA DIALOG SNELLITA ---
+
+  // Funzione per mostrare il FolderDialog (già estratto)
   Future<void> _openFolderDialog({Folder? folderToEdit}) async {
      if (!mounted) return;
      try {
        final bool? result = await showDialog<bool>(
          context: context,
-         builder: (BuildContext dialogContext) {
-           return FolderDialog(
+         builder: (BuildContext dialogContext) => FolderDialog(
              todoListId: widget.todoList.id,
              parentId: widget.parentFolder.id,
              folderToEdit: folderToEdit,
-           );
-         },
+           ),
        );
        if (result == true && mounted) {
          showSuccessSnackBar(context,
              message: 'Folder ${folderToEdit == null ? 'created' : 'updated'} successfully');
-         _refreshStreams();
+         _refreshStreams(); // Aggiorna stream
        }
      } catch (error) {
         if (mounted) {
@@ -104,66 +100,53 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
      }
   }
 
+  // Dialog per eliminare Folder (ora usa ConfirmationDialog)
   void _showDeleteFolderDialog(Folder folder) {
      if (!mounted) return;
-     showDialog<void>(
+     showDialog(
        context: context,
        builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Delete Folder'),
-          content: Text('Are you sure you want to delete "${folder.title}"?'),
-          actions: <Widget>[
-            TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () async {
-                 bool deleting = false;
-                 if (deleting) return;
-                 deleting = true;
-                 try {
-                   await _folderRepo.deleteFolder(folder.id);
-                   if (mounted) Navigator.of(dialogContext).pop();
-                   if (mounted) {
-                     showSuccessSnackBar(context,
-                         message: 'Folder deleted successfully');
-                     _refreshStreams();
-                   }
-                 } catch (error) {
-                   if (mounted) Navigator.of(dialogContext).pop();
-                   if (mounted) {
-                     showErrorSnackBar(context,
-                         message: 'Failed to delete folder: $error');
-                   }
-                 } finally {
-                    deleting = false;
-                 }
-               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
+        // Usa il widget ConfirmationDialog riutilizzabile
+        return ConfirmationDialog(
+          title: 'Delete Folder',
+          content: 'Are you sure you want to delete "${folder.title}"?',
+          confirmText: 'Delete',
+          onConfirm: () async {
+             try {
+               await _folderRepo.deleteFolder(folder.id);
+               if (mounted) {
+                 showSuccessSnackBar(context,
+                     message: 'Folder deleted successfully');
+                 _refreshStreams(); // Aggiorna stream
+               }
+             } catch (error) {
+               if (mounted) {
+                 showErrorSnackBar(context,
+                     message: 'Failed to delete folder: $error');
+               }
+             }
+           },
+         );
       },
     );
   }
 
+
+  // Funzione per mostrare il TaskDialog (già estratto)
   Future<void> _openTaskDialog({Task? taskToEdit}) async {
     if (!mounted) return;
     try {
       final bool? result = await showDialog<bool>(
         context: context,
-        builder: (BuildContext dialogContext) {
-          return TaskDialog(
+        builder: (BuildContext dialogContext) => TaskDialog(
             folderId: widget.parentFolder.id,
             taskToEdit: taskToEdit,
-          );
-        },
+          ),
       );
       if (result == true && mounted) {
         showSuccessSnackBar(context,
-            message: 'Task ${taskToEdit == null ? 'created' : 'updated'} successfully');
-        _refreshStreams();
+            message: 'Task ${taskToEdit == null ? 'created' : 'updated'} successfully'); 
+        _refreshStreams(); // Aggiorna stream
       }
     } catch (error) {
        if (mounted) {
@@ -173,48 +156,36 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     }
   }
 
+   // Dialog per eliminare Task (ora usa ConfirmationDialog)
    void _showDeleteTaskDialog(Task task) {
      if (!mounted) return;
-     showDialog<void>(
+     showDialog(
        context: context,
        builder: (BuildContext dialogContext) {
-         return AlertDialog(
-           title: const Text('Delete Task'),
-           content: Text('Are you sure you want to delete "${task.title}"?'),
-           actions: <Widget>[
-             TextButton(
-                 onPressed: () => Navigator.of(dialogContext).pop(),
-                 child: const Text('Cancel')),
-             ElevatedButton(
-               onPressed: () async {
-                  bool deleting = false;
-                  if(deleting) return;
-                  deleting = true;
-                  try {
-                    await _taskRepo.deleteTask(task.id);
-                    if (mounted) Navigator.of(dialogContext).pop();
-                    if (mounted) {
-                      showSuccessSnackBar(context, message: 'Task deleted successfully');
-                      _refreshStreams();
-                    }
-                  } catch (error) {
-                    if (mounted) Navigator.of(dialogContext).pop();
-                    if (mounted) {
-                      showErrorSnackBar(context, message: 'Failed to delete task: $error');
-                    }
-                  } finally {
-                    deleting = false;
-                  }
-               },
-               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-               child: const Text('Delete'),
-             ),
-           ],
+         // Usa il widget ConfirmationDialog riutilizzabile
+         return ConfirmationDialog(
+           title: 'Delete Task',
+           content: 'Are you sure you want to delete "${task.title}"?',
+           confirmText: 'Delete',
+           onConfirm: () async {
+              try {
+                await _taskRepo.deleteTask(task.id);
+                if (mounted) {
+                  showSuccessSnackBar(context, message: 'Task deleted successfully');
+                  _refreshStreams(); // Aggiorna stream
+                }
+              } catch (error) {
+                if (mounted) {
+                  showErrorSnackBar(context, message: 'Failed to delete task: $error');
+                }
+              }
+           },
          );
        },
      );
    }
 
+   // Gestisce il cambio di stato dai Chip
    Future<void> _handleTaskStatusChange(Task task, String newStatus) async {
       if (task.status == newStatus) return;
       try {
@@ -226,201 +197,30 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       }
    }
    
-  // --- Dialog per INVITARE Membri (ORA CHIAMATO DAL DIALOG PARTECIPANTI) ---
-  void _showInviteMemberDialog() {
-    final formKey = GlobalKey<FormState>();
-    final emailController = TextEditingController();
-    final roles = ['admin', 'collaborator']; 
-    String selectedRole = roles[1]; 
-    bool isLoading = false;
+  // --- RIMOSSO: _showInviteMemberDialog ---
+  // (Spostato in ParticipantsDialog)
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (stfContext, stfSetState) {
-            return AlertDialog(
-              title: const Text('Invite Member'),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: emailController,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: 'User Email',
-                        prefixIcon: Icon(Icons.email_outlined),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty || !value.contains('@')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: selectedRole,
-                      decoration: const InputDecoration(labelText: 'Role'),
-                      items: roles.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value[0].toUpperCase() + value.substring(1)),
-                        );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        stfSetState(() => selectedRole = newValue!);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isLoading ? null : () => Navigator.of(stfContext).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: isLoading ? null : () async {
-                    if (formKey.currentState!.validate()) {
-                      stfSetState(() => isLoading = true);
-                      try {
-                        await _invitationRepo.inviteUserToList(
-                          todoListId: widget.todoList.id,
-                          email: emailController.text.trim(),
-                          role: selectedRole,
-                        );
-                        
-                        if (mounted) {
-                           Navigator.of(stfContext).pop();
-                           showSuccessSnackBar(context, message: 'Invitation sent successfully!');
-                        }
-
-                      } catch (error) {
-                         if (mounted) {
-                           showErrorSnackBar(stfContext, message: error.toString().replaceFirst("Exception: ", ""));
-                         }
-                      } finally {
-                         if (mounted) {
-                           stfSetState(() => isLoading = false);
-                         }
-                      }
-                    }
-                  },
-                  child: isLoading 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
-                      : const Text('Send Invite'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // --- NUOVO: Dialog per VEDERE i partecipanti ---
+  // --- ESTRATTO: Dialog per VEDERE i partecipanti ---
   Future<void> _showParticipantsDialog() async {
-    // Mostra un dialog che gestisce il proprio stato di caricamento
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return FutureBuilder<List<Participant>>(
-          // Chiama il repository per recuperare i partecipanti
-          future: _participantRepo.getParticipants(widget.todoList.id),
-          builder: (context, snapshot) {
-            // Stato di Caricamento
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const AlertDialog(
-                content: SizedBox(
-                  height: 100,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              );
+        // Chiama il widget ParticipantsDialog estratto
+        return ParticipantsDialog(
+          todoListId: widget.todoList.id,
+          todoListTitle: widget.todoList.title,
+          // Se l'invito ha successo (callback dal ParticipantsDialog),
+          // mostra una SnackBar qui
+          onInvitationSent: () {
+            if (mounted) {
+              showSuccessSnackBar(context, message: 'Invitation sent successfully!');
             }
-
-            // Stato di Errore
-            if (snapshot.hasError) {
-              return AlertDialog(
-                title: const Text('Error'),
-                content: Text(snapshot.error.toString().replaceFirst("Exception: ", "")),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Close'),
-                  ),
-                ],
-              );
-            }
-
-            // Stato di Successo
-            final participants = snapshot.data ?? [];
-
-            return AlertDialog(
-              title: Text('Participants (${participants.length})'),
-              // Usa un ListView.builder se la lista può essere lunga
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: participants.length,
-                  itemBuilder: (context, index) {
-                    final participant = participants[index];
-                    final bool isAdmin = participant.role == 'admin';
-                    return ListTile(
-                      leading: CircleAvatar(
-                        child: Text(participant.username.isNotEmpty 
-                            ? participant.username[0].toUpperCase() 
-                            : '?'),
-                      ),
-                      title: Text(participant.username),
-                      subtitle: Text(participant.email),
-                      // Mostra un "chip" per il ruolo
-                      trailing: Container(
-                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                         decoration: BoxDecoration(
-                           color: (isAdmin ? Colors.blue : Colors.grey).withOpacity(0.1),
-                           borderRadius: BorderRadius.circular(8),
-                         ),
-                         child: Text(
-                           participant.role,
-                           style: TextStyle(
-                             color: (isAdmin ? Colors.blue : Colors.grey).shade700,
-                             fontWeight: FontWeight.bold,
-                             fontSize: 12,
-                           ),
-                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              actions: [
-                // Pulsante per invitare NUOVI membri
-                TextButton.icon(
-                  icon: const Icon(Icons.person_add_outlined),
-                  label: const Text('Invite'),
-                  onPressed: () {
-                    // Chiudi questo dialog e apri quello di invito
-                    Navigator.of(dialogContext).pop();
-                    _showInviteMemberDialog(); 
-                  },
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Close'),
-                ),
-              ],
-            );
           },
         );
       },
     );
   }
-  // --- FINE NUOVO DIALOG ---
+  // --- FINE ESTRAZIONE ---
 
 
   @override
@@ -446,15 +246,12 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
               }
             }),
         actions: [ 
-           // --- MODIFICA PULSANTE APPBAR ---
-           // Mostra il pulsante "Partecipanti" solo se sei nella cartella root
            if (isRootFolder) 
              IconButton(
-               icon: const Icon(Icons.people_outline), // Icona cambiata
-               tooltip: 'View Participants', // Tooltip aggiornato
-               onPressed: _showParticipantsDialog, // Chiama il nuovo dialog
+               icon: const Icon(Icons.people_outline), // Icona Partecipanti
+               tooltip: 'View Participants',
+               onPressed: _showParticipantsDialog, // Chiama dialog partecipanti
              ),
-           // --- FINE MODIFICA ---
            IconButton(
             icon: const Icon(Icons.arrow_back),
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
@@ -473,7 +270,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         onRefresh: () async => _refreshStreams(),
         child: CustomScrollView(
           slivers: [
-            // --- Sezione Cartelle (con collapse) ---
+            // Sezione Cartelle (con collapse)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
@@ -528,7 +325,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
               },
             ),
 
-            // --- Sezione Task (con collapse e filtro) ---
+            // Sezione Task (con collapse e filtro)
             SliverToBoxAdapter(
               child: Padding(
                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0).copyWith(top: 24),
@@ -593,7 +390,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
                          child: TaskListTile(
                            task: task,
-                           onTap: () { /* ... */ },
+                           onTap: () { /* TODO: Navigare al dettaglio task */ },
                            onEdit: () { _openTaskDialog(taskToEdit: task); },
                            onDelete: () { _showDeleteTaskDialog(task); },
                            onStatusChanged: (newStatus) { _handleTaskStatusChange(task, newStatus); },
