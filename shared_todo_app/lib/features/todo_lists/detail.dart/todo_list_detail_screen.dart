@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart'; // Importato per DateFormat (usato da TaskListTile)
 import '../../../config/router/app_router.dart';
 import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
 import '../../../data/models/task.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../../../data/repositories/task_repository.dart';
-// Importa il nuovo repository per gli inviti
+// Importa il repository per gli inviti
 import '../../../data/repositories/invitation_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/widgets/app_drawer.dart';
@@ -14,6 +15,12 @@ import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
 import '../presentation/widgets/task_list_tile.dart';
+
+// --- IMPORT AGGIUNTI PER IL FILTRO ---
+import '../../../core/enums/task_filter_type.dart';
+import '../../../core/utils/task_sorter.dart';
+import '../presentation/widgets/task_filter_dropdown.dart';
+// --- FINE IMPORT ---
 
 
 class TodoListDetailScreen extends StatefulWidget {
@@ -34,7 +41,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   // Repository
   final FolderRepository _folderRepo = FolderRepository();
   final TaskRepository _taskRepo = TaskRepository();
-  // Aggiungi il repository per gli inviti
   final InvitationRepository _invitationRepo = InvitationRepository();
 
   // Streams per cartelle e task
@@ -44,6 +50,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   // Stato per il collapse
   bool _isFoldersCollapsed = false;
   bool _isTasksCollapsed = false;
+
+  // --- STATO PER IL FILTRO TASK ---
+  TaskFilterType _selectedTaskFilter = TaskFilterType.createdAtNewest;
+  // --- FINE STATO ---
 
   @override
   void initState() {
@@ -59,13 +69,14 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         widget.todoList.id,
         parentId: widget.parentFolder.id,
       );
+      // Non ordiniamo qui, così lo stream è grezzo
       _tasksStream = _taskRepo.getTasksStream(
-        widget.parentFolder.id, // Carica i task della cartella corrente
+        widget.parentFolder.id, 
       );
     });
   }
 
-  // --- Funzioni Dialog per Cartelle e Task (invariate) ---
+  // --- Funzioni Dialog (invariate) ---
   Future<void> _openFolderDialog({Folder? folderToEdit}) async {
      if (!mounted) return;
      try {
@@ -213,21 +224,17 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
          }
       }
    }
-   // --- FINE GESTIONE DIALOG ---
-
-
-  // --- NUOVO: Dialog per Invitare Membri ---
-  void _showInviteMemberDialog() {
+   
+   void _showInviteMemberDialog() {
     final formKey = GlobalKey<FormState>();
     final emailController = TextEditingController();
-    final roles = ['admin', 'collaborator']; // Ruoli disponibili
-    String selectedRole = roles[1]; // Default a 'collaborator'
+    final roles = ['admin', 'collaborator']; 
+    String selectedRole = roles[1]; 
     bool isLoading = false;
 
     showDialog(
       context: context,
       builder: (dialogContext) {
-        // Usa StatefulBuilder per gestire lo stato interno del dialog
         return StatefulBuilder(
           builder: (stfContext, stfSetState) {
             return AlertDialog(
@@ -279,7 +286,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                     if (formKey.currentState!.validate()) {
                       stfSetState(() => isLoading = true);
                       try {
-                        // Chiama il repository per invocare la Edge Function
                         await _invitationRepo.inviteUserToList(
                           todoListId: widget.todoList.id,
                           email: emailController.text.trim(),
@@ -292,7 +298,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         }
 
                       } catch (error) {
-                         // Mostra l'errore nel dialog
                          if (mounted) {
                            showErrorSnackBar(stfContext, message: error.toString().replaceFirst("Exception: ", ""));
                          }
@@ -314,7 +319,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       },
     );
   }
-  // --- FINE NUOVO DIALOG ---
+  // --- FINE GESTIONE DIALOG ---
 
 
   @override
@@ -326,7 +331,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       appBar: AppBar(
         title: Text(widget.parentFolder.title),
         automaticallyImplyLeading: false, 
-        // Hamburger (sinistra) o Freccia Indietro (sinistra)
         leading: isRootFolder ? Builder( 
            builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
@@ -341,15 +345,12 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
               }
             }),
         actions: [ 
-           // --- NUOVO PULSANTE INVITA ---
-           // Mostra il pulsante "Invita" solo se sei nella cartella root
            if (isRootFolder) 
              IconButton(
                icon: const Icon(Icons.person_add_outlined),
                tooltip: 'Invite Member',
                onPressed: _showInviteMemberDialog,
              ),
-           // --- FINE ---
            IconButton(
             icon: const Icon(Icons.arrow_back),
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
@@ -423,7 +424,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
               },
             ),
 
-            // Sezione Task (con collapse)
+            // --- Sezione Task (con collapse E FILTRO) ---
             SliverToBoxAdapter(
               child: Padding(
                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0).copyWith(top: 24),
@@ -431,11 +432,27 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                    children: [
                      Text('Tasks', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
-                     IconButton(
-                       icon: Icon(_isTasksCollapsed ? Icons.expand_more : Icons.expand_less, color: Colors.grey),
-                       onPressed: () => setState(() => _isTasksCollapsed = !_isTasksCollapsed),
-                       tooltip: _isTasksCollapsed ? 'Expand Tasks' : 'Collapse Tasks',
-                    ),
+                     // Contenitore per i due bottoni (filtro e collapse)
+                     Row(
+                       children: [
+                         // --- AGGIUNTO TaskFilterDropdown ---
+                         TaskFilterDropdown(
+                           selectedFilter: _selectedTaskFilter,
+                           onFilterChanged: (newFilter) {
+                             // Aggiorna lo stato per applicare il nuovo filtro
+                             setState(() {
+                               _selectedTaskFilter = newFilter;
+                             });
+                           },
+                         ),
+                         // --- FINE ---
+                         IconButton(
+                           icon: Icon(_isTasksCollapsed ? Icons.expand_more : Icons.expand_less, color: Colors.grey),
+                           onPressed: () => setState(() => _isTasksCollapsed = !_isTasksCollapsed),
+                           tooltip: _isTasksCollapsed ? 'Expand Tasks' : 'Collapse Tasks',
+                         ),
+                       ],
+                     )
                    ],
                  ),
               ),
@@ -449,8 +466,14 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    debugPrint('Errore StreamBuilder Tasks: ${snapshot.error}');
                    return SliverToBoxAdapter(child: Center(child: Text('Error loading tasks: ${snapshot.error}')));
                  }
+                 
                  final tasks = snapshot.data ?? [];
-                 if (tasks.isEmpty) { 
+
+                 // --- APPLICA ORDINAMENTO CLIENT-SIDE ---
+                 final sortedTasks = TaskSorter.sortTasks(tasks, _selectedTaskFilter);
+                 // --- FINE ---
+
+                 if (sortedTasks.isEmpty) { 
                     return SliverToBoxAdapter(
                      child: Padding(
                        padding: const EdgeInsets.symmetric(vertical: 32.0), 
@@ -464,11 +487,11 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                    );
                   }
 
-                 // Lista Task
+                 // Lista Task (usa sortedTasks)
                  return SliverList(
                    delegate: SliverChildBuilderDelegate( 
                      (context, index) {
-                       final task = tasks[index];
+                       final task = sortedTasks[index]; // Usa la lista ordinata
                        return Padding(
                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
                          child: TaskListTile(
@@ -480,7 +503,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                          ),
                        );
                      },
-                     childCount: tasks.length,
+                     childCount: sortedTasks.length, // Usa la lista ordinata
                    ),
                  );
                },
@@ -519,3 +542,4 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     );
   }
 }
+
