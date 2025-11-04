@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../../../../data/models/todo_list.dart';
+import 'package:intl/intl.dart';
+import '../../../../data/models/todo_list.dart';
+import '../../../../core/utils/date_format_util.dart'; // Assicurati che questo percorso sia corretto
 
+/// Widget per visualizzare una singola riga di TodoList.
 class TodoListTile extends StatelessWidget {
   final TodoList list;
   final VoidCallback onTap;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback onDelete; // Questa callback ora è per "Leave"
 
   const TodoListTile({
     super.key,
@@ -13,25 +16,15 @@ class TodoListTile extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    // --- Rimosso onViewParticipants ---
   });
-
-  // Helper per formattare la data
-  String formatDate(DateTime date) {
-    final localDate = date.toLocal();
-    return '${localDate.day.toString().padLeft(2, '0')}/${localDate.month.toString().padLeft(2, '0')}/${localDate.year}';
-  }
-
-  // Helper per formattare il ruolo
-  String formatRole(String role) {
-    if (role == 'admin') return 'Admin';
-    if (role == 'collaborator') return 'Collaborator';
-    return role; // Gestisce 'Unknown' o altri futuri ruoli
-  }
 
   @override
   Widget build(BuildContext context) {
-    // Colore del "chip" del ruolo
-    final roleColor = list.role == 'admin' ? Colors.blue : Colors.grey;
+    // Determina se l'utente è admin per questa lista
+    final bool isAdmin = list.role == 'admin';
+
+    final roleColor = isAdmin ? Colors.blue : Colors.grey;
 
     return Card(
       elevation: 3.0,
@@ -51,7 +44,7 @@ class TodoListTile extends StatelessWidget {
             fontSize: 17,
           ),
         ),
-        // --- SOTTOTITOLO MODIFICATO ---
+        // Sottotitolo con descrizione, ruolo e data
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -64,20 +57,20 @@ class TodoListTile extends StatelessWidget {
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 10), // Spaziatore
-
-            // --- NUOVA RIGA PER I METADATI ---
+            
+            // Riga per i metadati (Ruolo e Data)
             Row(
               children: [
                 // CHIP PER IL RUOLO
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: roleColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    formatRole(list.role),
+                    list.role, // Mostra il ruolo
                     style: TextStyle(
                       color: roleColor.shade700,
                       fontWeight: FontWeight.w600,
@@ -91,7 +84,8 @@ class TodoListTile extends StatelessWidget {
                     size: 12, color: Colors.grey.shade600),
                 const SizedBox(width: 4),
                 Text(
-                  formatDate(list.createdAt),
+                  // Usa l'utility di formattazione
+                  formatDate(list.createdAt), 
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -101,27 +95,46 @@ class TodoListTile extends StatelessWidget {
             ),
           ],
         ),
-        // Il menu a 3 puntini va qui
+        
+        // --- MODIFICA TRAILING ---
+        // Opzione "View Participants" rimossa
         trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) {
-            if (value == 'edit') {
-              onEdit();
-            } else if (value == 'delete') {
-              onDelete();
-            }
-          },
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            const PopupMenuItem<String>(
-              value: 'edit',
-              child: Text('Edit'),
-            ),
-            const PopupMenuItem<String>(
-              value: 'delete',
-              child: Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'List Options',
+            onSelected: (value) {
+              if (value == 'edit') {
+                onEdit();
+              } else if (value == 'delete') {
+                onDelete();
+              }
+              // Rimossa logica per 'participants'
+            },
+            itemBuilder: (BuildContext context) {
+              final List<PopupMenuEntry<String>> items = [];
+
+              // Voce "Edit" (Visibile SOLO agli admin)
+              if (isAdmin) {
+                items.add(
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: Text('Edit List'),
+                  ),
+                );
+              }
+
+              // Voce "Leave List" (Visibile a tutti)
+              items.add(
+                const PopupMenuItem<String>(
+                  value: 'delete', // 'delete' è la chiave per l'azione 'Leave'
+                  child: Text('Leave List', style: TextStyle(color: Colors.red)),
+                ),
+              );
+
+              return items;
+            },
+          ),
+        // --- FINE MODIFICA ---
+            
         onTap: onTap,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
@@ -130,3 +143,4 @@ class TodoListTile extends StatelessWidget {
     );
   }
 }
+
