@@ -114,31 +114,93 @@ class TaskRepository {
 
   // Nel tuo TaskRepository:
 
-  /// Ottiene i task per il calendario una singola volta (NON in tempo reale)
-  Future<List<Task>> getTasksForCalendar_Future(
-      DateTime rangeStart,
-      DateTime rangeEnd,
-      ) async {
-    // Normalizza alle date “secche” per robustezza (se vuoi inclusivo-esclusivo lascia pure così)
-    final rangeStartIso = rangeStart.toIso8601String();
-    final rangeEndIso   = rangeEnd.toIso8601String();
+  // --- Task per periodo (griglia mensile del calendario) ---
+  // Calendar: task che "cadono" (anche solo in parte) dentro [from, to)
+  // Nel tuo TaskRepository:
 
+// --- Task per periodo (griglia mensile del calendario) ---
+// Recupera i task che si sovrappongono all'intervallo di date [from, to).
+  Future<List<Task>> getTasksForCalendar_Future(DateTime from, DateTime to) async {
     try {
-      final data = await _supabase
+      final fromIso = from.toUtc().toIso8601String();
+      final toIso = to.toUtc().toIso8601String();
+
+      // La query al database recupera tutti i task che hanno un intervallo
+      // di esistenza (da start_date a due_date) che si sovrappone
+      // con l'intervallo del calendario [from, to).
+      // (start_date < to) AND (due_date >= from)
+      final response = await _supabase
           .from('tasks')
           .select()
-      // Overlap: in calendario vogliamo i task che toccano il range visibile
-          .lte('start_date', rangeEndIso)   // inizia PRIMA o entro la fine del range
-          .gte('due_date', rangeStartIso)   // finisce DOPO o entro l’inizio del range
+          .lt('start_date', toIso)
+          .gte('due_date', fromIso)
+      // Ordiniamo primariamente per data di scadenza direttamente in query,
+      // che è più efficiente.
           .order('due_date', ascending: true);
 
-      return (data as List<dynamic>)
-          .cast<Map<String, dynamic>>()
-          .map((json) => Task.fromMap(json))
+      // Trasforma i dati grezzi in una lista di oggetti Task.
+      final tasks = (response as List)
+          .map((json) => Task.fromMap(json as Map<String, dynamic>))
           .toList();
+
+      // Applica un ordinamento secondario avanzato in Dart.
+      // Questa è la logica che dà priorità alla scadenza, poi alla priorità del task,
+      // e infine al titolo.
+      tasks.sort((taskA, taskB) {
+        // 1. Ordina per data di scadenza (crescente)
+        int comparison = taskA.dueDate.compareTo(taskB.dueDate);
+        if (comparison != 0) {
+          return comparison;
+        }
+
+        // 2. Se la scadenza è la stessa, ordina per priorità (da Alta a Bassa)
+        comparison = _rankPriority(taskA.priority).compareTo(_rankPriority(taskB.priority));
+        if (comparison != 0) {
+          return comparison;
+        }
+
+        // 3. Se anche la priorità è la stessa, ordina per titolo (alfabetico)
+        return taskA.title.toLowerCase().compareTo(taskB.title.toLowerCase());
+      });
+
+      return tasks;
     } catch (e) {
-      debugPrint('Errore nel fetch (Future) dei task: $e');
-      throw Exception('Failed to fetch tasks: $e');
+      debugPrint('Errore durante il recupero dei task per il calendario: $e');
+      // Rilancia l'eccezione per permettere al chiamante (UI) di gestirla.
+      rethrow;
+    }
+  }
+
+  /// Funzione helper per assegnare un peso numerico alla priorità.
+  /// Un valore più basso significa una priorità più alta.
+  int _rankPriority(String priority) {
+    final p = priority.toLowerCase();
+    if (p.contains('alta') || p.contains('high')) return 0;
+    if (p.contains('media') || p.contains('medium')) return 1;
+    return 2; // Bassa, low, o qualsiasi altro valore
+  }
+
+// --- Task per il giorno selezionato ---
+
+// --- Task per il giorno selezionato ---
+  Future<List<Task>> getTasksForDay_Future(DateTime dayStartInclusive, DateTime dayEndExclusive) async {
+    try {
+      final res = await _supabase
+          .from('tasks')
+          .select('*')
+          .gte('due_date', dayStartInclusive.toUtc().toIso8601String())
+          .lt('due_date', dayEndExclusive.toUtc().toIso8601String())
+          .order('due_date', ascending: true);
+
+      final list = (res as List)
+          .cast<Map<String, dynamic>>()
+          .map((m) => Task.fromMap(m))
+          .toList();
+
+      return list;
+    } catch (e) {
+      debugPrint('Errore getTasksForDay_Future: $e');
+      rethrow;
     }
   }
 

@@ -69,14 +69,14 @@ class _AppDrawerState extends State<AppDrawer> {
             ),
             margin: EdgeInsets.zero, // Rimuove il margine inferiore
           ),
-          
+
           // Link alla Schermata Inviti
           ListTile(
             leading: const Icon(Icons.mail_outline), // Icona per gli inviti
             title: const Text('My Invitations'), // Testo aggiornato
             onTap: () {
-              Navigator.of(context).pop(); 
-              context.goNamed(AppRouter.invitations); 
+              Navigator.of(context).pop();
+              context.goNamed(AppRouter.invitations);
             },
           ),
 
@@ -96,10 +96,10 @@ class _AppDrawerState extends State<AppDrawer> {
             title: const Text('Calendar View'),
             onTap: () {
               Navigator.pop(context); // Chiude il drawer
-              context.goNamed(AppRouter.calendar); // Naviga al calendario
+              context.pushNamed(AppRouter.calendar); // Naviga al calendario
             },
           ),
-          
+
           const Divider(),
 
           // Voce: Logout
@@ -107,55 +107,11 @@ class _AppDrawerState extends State<AppDrawer> {
             leading: Icon(Icons.logout, color: Colors.red[300]),
             title: Text('Log Out', style: TextStyle(color: Colors.red[300])),
             onTap: () {
-              Navigator.of(context).pop(); 
+              Navigator.of(context).pop();
               _handleLogout(); // Avvia la procedura di logout
             },
           ),
 
-          // --- MODIFICA: Rimosso Spacer ---
-          // const Spacer(), // Non serve più dentro un ListView
-
-          // Calendario (ora scorrerà se necessario)
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TableCalendar(
-              firstDay: DateTime.utc(2010, 10, 16),
-              lastDay: DateTime.utc(2030, 3, 14),
-              focusedDay: _focusedDay,
-              calendarFormat: CalendarFormat.month,
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-                titleTextStyle: TextStyle(fontSize: 16), 
-              ),
-              calendarStyle: CalendarStyle(
-                todayDecoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                selectedDecoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                defaultTextStyle: const TextStyle(fontSize: 14),
-                weekendTextStyle: TextStyle(fontSize: 14, color: Colors.red[300]),
-                outsideTextStyle: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-              daysOfWeekStyle: const DaysOfWeekStyle(
-                // weekendStyle: TextStyle(color: Colors.red[300]), 
-              ),
-              selectedDayPredicate: (day) {
-                return isSameDay(_selectedDay, day);
-              },
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay; 
-                });
-                // TODO: Filtra le liste/task in base alla data selezionata?
-              },
-            ),
-          ),
           const SizedBox(height: 20), // Spazio in fondo
         ],
       ),
