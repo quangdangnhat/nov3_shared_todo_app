@@ -36,9 +36,7 @@ class _TaskDialogState extends State<TaskDialog> {
   DateTime? _selectedStartDate;
   DateTime? _selectedDueDate;
 
-  // --- MODIFICA: Aggiunto getter per modalità modifica ---
   bool get _isEditing => widget.taskToEdit != null;
-  // --- FINE MODIFICA ---
 
   @override
   void initState() {
