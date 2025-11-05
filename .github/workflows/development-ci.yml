@@ -23,18 +23,26 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Print working directory (debug)
+        run: pwd && ls -la
+
       - name: Get dependencies
         run: flutter pub get
+        working-directory: ./
 
       - name: Check formatting
         run: flutter format --set-exit-if-changed .
+        working-directory: ./
 
       - name: Analyze code
         run: flutter analyze
+        working-directory: ./
 
       - name: Run tests
         # Questo comando esegue i test
         run: flutter test
+        working-directory: ./
 
       - name: Build APK (Debug)
         run: flutter build apk --debug
+        working-directory: ./
