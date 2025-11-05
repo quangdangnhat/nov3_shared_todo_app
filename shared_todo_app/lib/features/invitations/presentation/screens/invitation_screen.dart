@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../config/router/app_router.dart';
+import '../../../../config/responsive.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../../../../data/models/invitation.dart'; // Importa il modello aggiornato
+import '../../../../data/models/invitation.dart';
 import '../../../../data/repositories/invitation_repository.dart';
 
 /// Schermata che mostra gli inviti in sospeso per l'utente corrente.
@@ -39,7 +38,6 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
     }
 
     try {
-      // Chiama il repository per rispondere all'invito
       await _invitationRepo.respondToInvitation(invitation.id, accept);
       
       if (mounted) {
@@ -48,7 +46,7 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
         );
       }
       
-      // Forza il refresh dello stream per rimuovere l'invito dalla lista.
+      // Forza il refresh dello stream
       if (mounted) {
         setState(() {
           _invitationsStream = _invitationRepo.getPendingInvitationsStream();
@@ -62,7 +60,6 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
         );
       }
     } finally {
-      // Assicurati di rimuovere l'ID dal set di caricamento
       if (mounted) {
         setState(() {
           _loadingInvitations.remove(invitation.id);
@@ -73,136 +70,166 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Invitations'),
-        // Aggiunge un back button per tornare alla pagina precedente (es. Home)
-        leading: BackButton(
-          onPressed: () {
-            // Usa GoRouter per tornare alla home
-            context.goNamed(AppRouter.home);
-          },
+    final isMobile = ResponsiveLayout.isMobile(context);
+
+    return Column(
+      children: [
+        // Header personalizzato che sostituisce l'AppBar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(
+              bottom: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Hamburger menu SOLO su mobile
+              if (isMobile) ...[
+                IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  tooltip: 'Menu',
+                ),
+                const SizedBox(width: 8),
+              ],
+              // Titolo
+              Text(
+                'My Invitations',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      body: StreamBuilder<List<Invitation>>(
-        stream: _invitationsStream, // Ascolta lo stream
-        builder: (context, snapshot) {
-          // Stato di caricamento
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
 
-          // Stato di errore
-          if (snapshot.hasError) {
-            debugPrint('Error loading invitations: ${snapshot.error}');
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text('Error loading invitations: ${snapshot.error}'),
-              ),
-            );
-          }
+        // Contenuto principale
+        Expanded(
+          child: StreamBuilder<List<Invitation>>(
+            stream: _invitationsStream,
+            builder: (context, snapshot) {
+              // Stato di caricamento
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          final invitations = snapshot.data;
-
-          // Stato vuoto (nessun invito)
-          if (invitations == null || invitations.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.0),
-                child: Text(
-                  "You have no pending invitations.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
-                ),
-              ),
-            );
-          }
-
-          // Mostra la lista degli inviti
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: invitations.length,
-            itemBuilder: (context, index) {
-              final invitation = invitations[index];
-              final bool isLoading = _loadingInvitations.contains(invitation.id);
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // --- MODIFICA 1: Mostra Nome Lista ---
-                      Text(
-                        'Invitation to join list:', 
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey),
-                      ),
-                      Text(
-                        // Usa il titolo recuperato, con un fallback
-                        invitation.todoListTitle ?? '[List Name Not Found]', 
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      // --- FINE MODIFICA ---
-                      const SizedBox(height: 8),
-                      // --- MODIFICA 2: Mostra Email Invitante ---
-                       Text.rich(
-                        TextSpan(
-                          text: 'Invited by: ',
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
-                          children: [
-                            TextSpan(
-                              // Usa l'email recuperata, con un fallback
-                              text: invitation.invitedByUserEmail ?? '[Unknown User]',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium?.color),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // --- FINE MODIFICA ---
-                      const SizedBox(height: 8),
-                      Text.rich(
-                        TextSpan(
-                          text: 'As: ',
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
-                          children: [
-                            TextSpan(
-                              text: invitation.role, // Mostra il ruolo
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium?.color),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Pulsanti di Azione
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Mostra un loader o i pulsanti
-                          if (isLoading)
-                            const CircularProgressIndicator()
-                          else ...[
-                            TextButton(
-                              onPressed: () => _handleResponse(invitation, false), // Rifiuta
-                              child: const Text('Decline'),
-                            ),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: () => _handleResponse(invitation, true), // Accetta
-                              child: const Text('Accept'),
-                            ),
-                          ],
-                        ],
-                      )
-                    ],
+              // Stato di errore
+              if (snapshot.hasError) {
+                debugPrint('Error loading invitations: ${snapshot.error}');
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text('Error loading invitations: ${snapshot.error}'),
                   ),
-                ),
+                );
+              }
+
+              final invitations = snapshot.data;
+
+              // Stato vuoto
+              if (invitations == null || invitations.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.0),
+                    child: Text(
+                      "You have no pending invitations.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                  ),
+                );
+              }
+
+              // Lista degli inviti
+              return ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: invitations.length,
+                itemBuilder: (context, index) {
+                  final invitation = invitations[index];
+                  final bool isLoading = _loadingInvitations.contains(invitation.id);
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Invitation to join list:', 
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey),
+                          ),
+                          Text(
+                            invitation.todoListTitle ?? '[List Name Not Found]', 
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          Text.rich(
+                            TextSpan(
+                              text: 'Invited by: ',
+                              style: const TextStyle(fontSize: 14, color: Colors.grey),
+                              children: [
+                                TextSpan(
+                                  text: invitation.invitedByUserEmail ?? '[Unknown User]',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold, 
+                                    color: Theme.of(context).textTheme.bodyMedium?.color
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text.rich(
+                            TextSpan(
+                              text: 'As: ',
+                              style: const TextStyle(fontSize: 14, color: Colors.grey),
+                              children: [
+                                TextSpan(
+                                  text: invitation.role,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold, 
+                                    color: Theme.of(context).textTheme.bodyMedium?.color
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Pulsanti di Azione
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              if (isLoading)
+                                const CircularProgressIndicator()
+                              else ...[
+                                TextButton(
+                                  onPressed: () => _handleResponse(invitation, false),
+                                  child: const Text('Decline'),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () => _handleResponse(invitation, true),
+                                  child: const Text('Accept'),
+                                ),
+                              ],
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                  );
+                },
               );
             },
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 }

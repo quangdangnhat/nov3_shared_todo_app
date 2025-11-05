@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // Importa GoRouter
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:table_calendar/table_calendar.dart';
-import '../../config/router/app_router.dart'; // Importa i nomi delle rotte
+import '../../config/router/app_router.dart';
 
 /// Il Drawer (menu laterale) riutilizzabile per l'applicazione.
 class AppDrawer extends StatefulWidget {
@@ -13,24 +12,11 @@ class AppDrawer extends StatefulWidget {
 }
 
 class _AppDrawerState extends State<AppDrawer> {
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedDay = _focusedDay;
-  }
-
   /// Gestisce il logout dell'utente.
   Future<void> _handleLogout() async {
     try {
-      // Chiama il metodo signOut
       await Supabase.instance.client.auth.signOut();
-      // GoRouter (tramite il refreshListenable) gestirà automaticamente
-      // il reindirizzamento alla schermata di login.
     } catch (error) {
-      // Mostra un errore se il logout fallisce
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -42,124 +28,337 @@ class _AppDrawerState extends State<AppDrawer> {
     }
   }
 
+  /// Ottiene la rotta corrente per evidenziare la voce di menu attiva
+  String _getCurrentRoute(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    return location;
+  }
+
+  /// Verifica se la rotta è attiva
+  bool _isRouteActive(BuildContext context, String route) {
+    final currentRoute = _getCurrentRoute(context);
+    if (route == '/') {
+      return currentRoute == '/' || currentRoute.startsWith('/list/');
+    }
+    return currentRoute == route;
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Recupera l'utente corrente per mostrare i dati
     final user = Supabase.instance.client.auth.currentUser;
     final username = (user?.userMetadata?['username'] as String?) ?? 'No Username';
     final email = user?.email ?? 'No Email';
     final initial = username.isNotEmpty ? username[0].toUpperCase() : '?';
 
-    return Drawer(
-      // --- MODIFICA: Sostituito Column con ListView ---
-      // ListView rende il contenuto scrollabile se supera l'altezza
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    
+    final drawerWidth = screenWidth * 0.85;
+
+    return Container(
+      width: drawerWidth,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+            Theme.of(context).colorScheme.surface,
+          ],
+        ),
+      ),
       child: ListView(
-        padding: EdgeInsets.zero, // Rimuovi il padding di default del ListView
+        padding: EdgeInsets.zero,
         children: [
-          // Header del Drawer con le info utente
-          UserAccountsDrawerHeader(
-            accountName: Text(username),
-            accountEmail: Text(email),
-            currentAccountPicture: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              child: Text(
-                initial,
-                style: const TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold),
+          // Header personalizzato moderno
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.primaryContainer,
+                ],
               ),
             ),
-            margin: EdgeInsets.zero, // Rimuove il margine inferiore
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Avatar con ombra ed effetto
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: Colors.white,
+                    child: Text(
+                      initial,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Username con stile moderno
+                Text(
+                  username,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                // Email con container arrotondato
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    email,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
-          
-          // Link alla Schermata Inviti
-          ListTile(
-            leading: const Icon(Icons.mail_outline), // Icona per gli inviti
-            title: const Text('My Invitations'), // Testo aggiornato
+
+          const SizedBox(height: 8),
+
+          // Main Page (Tasks of the day)
+          _buildMenuTile(
+            context: context,
+            icon: Icons.today_rounded,
+            title: 'Main Page',
+            subtitle: 'Tasks of the day',
+            route: '/', // TODO: cambia con la rotta corretta quando implementata
             onTap: () {
-              Navigator.of(context).pop(); 
-              context.goNamed(AppRouter.invitations); 
+              // Chiudi il drawer solo su mobile
+              if (Scaffold.of(context).isDrawerOpen) {
+                Navigator.of(context).pop();
+              }
+              context.go('/');
             },
           ),
 
-          // Link alla Pagina Account
-          ListTile(
-            leading: const Icon(Icons.account_circle_outlined),
-            title: const Text('Account'),
+          _buildDivider(),
+
+          // Todo Lists
+          _buildMenuTile(
+            context: context,
+            icon: Icons.checklist_rounded,
+            title: 'Todo Lists',
+            route: '/',
             onTap: () {
-              Navigator.pop(context);
-              context.goNamed(AppRouter.account);
+              // Chiudi il drawer solo su mobile
+              if (Scaffold.of(context).isDrawerOpen) {
+                Navigator.of(context).pop();
+              }
+              context.go('/');
             },
           ),
 
-          // Link al Calendario
-           ListTile(
-            leading: const Icon(Icons.calendar_today_outlined),
-            title: const Text('Calendar View'),
+          // Calendar View
+          _buildMenuTile(
+            context: context,
+            icon: Icons.calendar_month_rounded,
+            title: 'Calendar View',
+            route: AppRouter.calendar,
             onTap: () {
-              Navigator.pop(context); // Chiude il drawer
-              context.goNamed(AppRouter.calendar); // Naviga al calendario
-            },
-          ),
-          
-          const Divider(),
-
-          // Voce: Logout
-          ListTile(
-            leading: Icon(Icons.logout, color: Colors.red[300]),
-            title: Text('Log Out', style: TextStyle(color: Colors.red[300])),
-            onTap: () {
-              Navigator.of(context).pop(); 
-              _handleLogout(); // Avvia la procedura di logout
+              // Chiudi il drawer solo su mobile
+              if (Scaffold.of(context).isDrawerOpen) {
+                Navigator.of(context).pop();
+              }
+              context.go(AppRouter.calendar);
             },
           ),
 
-          // --- MODIFICA: Rimosso Spacer ---
-          // const Spacer(), // Non serve più dentro un ListView
+          // My Invitations
+          _buildMenuTile(
+            context: context,
+            icon: Icons.mail_rounded,
+            title: 'My Invitations',
+            route: AppRouter.invitations,
+            onTap: () {
+              // Chiudi il drawer solo su mobile
+              if (Scaffold.of(context).isDrawerOpen) {
+                Navigator.of(context).pop();
+              }
+              context.go(AppRouter.invitations);
+            },
+          ),
 
-          // Calendario (ora scorrerà se necessario)
+          _buildDivider(),
+
+          // Profile
+          _buildMenuTile(
+            context: context,
+            icon: Icons.person_rounded,
+            title: 'Profile',
+            route: AppRouter.account,
+            onTap: () {
+              // Chiudi il drawer solo su mobile
+              if (Scaffold.of(context).isDrawerOpen) {
+                Navigator.of(context).pop();
+              }
+              context.go(AppRouter.account);
+            },
+          ),
+
+          const SizedBox(height: 8),
+
+          // Log Out con stile evidenziato
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TableCalendar(
-              firstDay: DateTime.utc(2010, 10, 16),
-              lastDay: DateTime.utc(2030, 3, 14),
-              focusedDay: _focusedDay,
-              calendarFormat: CalendarFormat.month,
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-                titleTextStyle: TextStyle(fontSize: 16), 
-              ),
-              calendarStyle: CalendarStyle(
-                todayDecoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                  shape: BoxShape.circle,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Material(
+              color: Colors.red.shade50,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  // Chiudi il drawer solo su mobile
+                  if (Scaffold.of(context).isDrawerOpen) {
+                    Navigator.of(context).pop();
+                  }
+                  _handleLogout();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout_rounded, color: Colors.red.shade700),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Log Out',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                selectedDecoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                defaultTextStyle: const TextStyle(fontSize: 14),
-                weekendTextStyle: TextStyle(fontSize: 14, color: Colors.red[300]),
-                outsideTextStyle: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
-              daysOfWeekStyle: const DaysOfWeekStyle(
-                // weekendStyle: TextStyle(color: Colors.red[300]), 
-              ),
-              selectedDayPredicate: (day) {
-                return isSameDay(_selectedDay, day);
-              },
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay; 
-                });
-                // TODO: Filtra le liste/task in base alla data selezionata?
-              },
             ),
           ),
-          const SizedBox(height: 20), // Spazio in fondo
+
+          const SizedBox(height: 20),
         ],
       ),
-      // --- FINE MODIFICA ---
+    );
+  }
+
+  // Widget helper per creare voci di menu uniformi
+  Widget _buildMenuTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required String route,
+    required VoidCallback onTap,
+  }) {
+    final isActive = _isRouteActive(context, route);
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Material(
+        color: isActive 
+            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isActive
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                          color: isActive
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Widget helper per i divisori
+  Widget _buildDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Divider(
+        thickness: 1,
+        color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+      ),
     );
   }
 }

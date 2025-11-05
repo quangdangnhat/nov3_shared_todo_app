@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../config/responsive.dart';
 import '../../../config/router/app_router.dart';
 import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
 import '../../../data/models/task.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../../../data/repositories/task_repository.dart';
-// Importa il nuovo repository per gli inviti
 import '../../../data/repositories/invitation_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
-import '../../../core/widgets/app_drawer.dart';
 import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
 import '../presentation/widgets/task_list_tile.dart';
 
-
+/// Schermata di dettaglio di una TodoList con le sue cartelle e task.
+/// NOTA: La sidebar è gestita da MainLayout tramite ShellRoute
 class TodoListDetailScreen extends StatefulWidget {
   final TodoList todoList;
-  final Folder parentFolder; // Riceve sempre la cartella corrente (root o sub)
+  final Folder parentFolder;
 
   const TodoListDetailScreen({
     super.key,
@@ -31,27 +31,22 @@ class TodoListDetailScreen extends StatefulWidget {
 }
 
 class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
-  // Repository
   final FolderRepository _folderRepo = FolderRepository();
   final TaskRepository _taskRepo = TaskRepository();
-  // Aggiungi il repository per gli inviti
   final InvitationRepository _invitationRepo = InvitationRepository();
 
-  // Streams per cartelle e task
   late Stream<List<Folder>> _foldersStream;
   late Stream<List<Task>> _tasksStream;
 
-  // Stato per il collapse
   bool _isFoldersCollapsed = false;
   bool _isTasksCollapsed = false;
 
   @override
   void initState() {
     super.initState();
-    _refreshStreams(); // Carica entrambi gli stream
+    _refreshStreams();
   }
 
-  // Ricarica entrambi gli stream (figli della cartella corrente)
   void _refreshStreams() {
     if (!mounted) return;
     setState(() {
@@ -59,44 +54,43 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         widget.todoList.id,
         parentId: widget.parentFolder.id,
       );
-      _tasksStream = _taskRepo.getTasksStream(
-        widget.parentFolder.id, // Carica i task della cartella corrente
-      );
+      _tasksStream = _taskRepo.getTasksStream(widget.parentFolder.id);
     });
   }
 
-  // --- Funzioni Dialog per Cartelle e Task (invariate) ---
   Future<void> _openFolderDialog({Folder? folderToEdit}) async {
-     if (!mounted) return;
-     try {
-       final bool? result = await showDialog<bool>(
-         context: context,
-         builder: (BuildContext dialogContext) {
-           return FolderDialog(
-             todoListId: widget.todoList.id,
-             parentId: widget.parentFolder.id,
-             folderToEdit: folderToEdit,
-           );
-         },
-       );
-       if (result == true && mounted) {
-         showSuccessSnackBar(context,
-             message: 'Folder ${folderToEdit == null ? 'created' : 'updated'} successfully');
-         _refreshStreams();
-       }
-     } catch (error) {
-        if (mounted) {
-          showErrorSnackBar(context,
-             message: 'Failed to ${folderToEdit == null ? 'create' : 'update'} folder: $error');
-        }
-     }
+    if (!mounted) return;
+    try {
+      final bool? result = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return FolderDialog(
+            todoListId: widget.todoList.id,
+            parentId: widget.parentFolder.id,
+            folderToEdit: folderToEdit,
+          );
+        },
+      );
+      if (result == true && mounted) {
+        showSuccessSnackBar(context,
+            message:
+                'Folder ${folderToEdit == null ? 'created' : 'updated'} successfully');
+        _refreshStreams();
+      }
+    } catch (error) {
+      if (mounted) {
+        showErrorSnackBar(context,
+            message:
+                'Failed to ${folderToEdit == null ? 'create' : 'update'} folder: $error');
+      }
+    }
   }
 
   void _showDeleteFolderDialog(Folder folder) {
-     if (!mounted) return;
-     showDialog<void>(
-       context: context,
-       builder: (BuildContext dialogContext) {
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Folder'),
           content: Text('Are you sure you want to delete "${folder.title}"?'),
@@ -106,27 +100,27 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                 child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () async {
-                 bool deleting = false;
-                 if (deleting) return;
-                 deleting = true;
-                 try {
-                   await _folderRepo.deleteFolder(folder.id);
-                   if (mounted) Navigator.of(dialogContext).pop();
-                   if (mounted) {
-                     showSuccessSnackBar(context,
-                         message: 'Folder deleted successfully');
-                     _refreshStreams();
-                   }
-                 } catch (error) {
-                   if (mounted) Navigator.of(dialogContext).pop();
-                   if (mounted) {
-                     showErrorSnackBar(context,
-                         message: 'Failed to delete folder: $error');
-                   }
-                 } finally {
-                    deleting = false;
-                 }
-               },
+                bool deleting = false;
+                if (deleting) return;
+                deleting = true;
+                try {
+                  await _folderRepo.deleteFolder(folder.id);
+                  if (mounted) Navigator.of(dialogContext).pop();
+                  if (mounted) {
+                    showSuccessSnackBar(context,
+                        message: 'Folder deleted successfully');
+                    _refreshStreams();
+                  }
+                } catch (error) {
+                  if (mounted) Navigator.of(dialogContext).pop();
+                  if (mounted) {
+                    showErrorSnackBar(context,
+                        message: 'Failed to delete folder: $error');
+                  }
+                } finally {
+                  deleting = false;
+                }
+              },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text('Delete'),
             ),
@@ -150,84 +144,85 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       );
       if (result == true && mounted) {
         showSuccessSnackBar(context,
-            message: 'Task ${taskToEdit == null ? 'created' : 'updated'} successfully');
+            message:
+                'Task ${taskToEdit == null ? 'created' : 'updated'} successfully');
         _refreshStreams();
       }
     } catch (error) {
-       if (mounted) {
-         showErrorSnackBar(context,
-            message: 'Failed to ${taskToEdit == null ? 'create' : 'update'} task: $error');
-       }
+      if (mounted) {
+        showErrorSnackBar(context,
+            message:
+                'Failed to ${taskToEdit == null ? 'create' : 'update'} task: $error');
+      }
     }
   }
 
-   void _showDeleteTaskDialog(Task task) {
-     if (!mounted) return;
-     showDialog<void>(
-       context: context,
-       builder: (BuildContext dialogContext) {
-         return AlertDialog(
-           title: const Text('Delete Task'),
-           content: Text('Are you sure you want to delete "${task.title}"?'),
-           actions: <Widget>[
-             TextButton(
-                 onPressed: () => Navigator.of(dialogContext).pop(),
-                 child: const Text('Cancel')),
-             ElevatedButton(
-               onPressed: () async {
-                  bool deleting = false;
-                  if(deleting) return;
-                  deleting = true;
-                  try {
-                    await _taskRepo.deleteTask(task.id);
-                    if (mounted) Navigator.of(dialogContext).pop();
-                    if (mounted) {
-                      showSuccessSnackBar(context, message: 'Task deleted successfully');
-                      _refreshStreams();
-                    }
-                  } catch (error) {
-                    if (mounted) Navigator.of(dialogContext).pop();
-                    if (mounted) {
-                      showErrorSnackBar(context, message: 'Failed to delete task: $error');
-                    }
-                  } finally {
-                    deleting = false;
+  void _showDeleteTaskDialog(Task task) {
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete Task'),
+          content: Text('Are you sure you want to delete "${task.title}"?'),
+          actions: <Widget>[
+            TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                bool deleting = false;
+                if (deleting) return;
+                deleting = true;
+                try {
+                  await _taskRepo.deleteTask(task.id);
+                  if (mounted) Navigator.of(dialogContext).pop();
+                  if (mounted) {
+                    showSuccessSnackBar(context,
+                        message: 'Task deleted successfully');
+                    _refreshStreams();
                   }
-               },
-               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-               child: const Text('Delete'),
-             ),
-           ],
-         );
-       },
-     );
-   }
+                } catch (error) {
+                  if (mounted) Navigator.of(dialogContext).pop();
+                  if (mounted) {
+                    showErrorSnackBar(context,
+                        message: 'Failed to delete task: $error');
+                  }
+                } finally {
+                  deleting = false;
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-   Future<void> _handleTaskStatusChange(Task task, String newStatus) async {
-      if (task.status == newStatus) return;
-      try {
-         await _taskRepo.updateTask(taskId: task.id, status: newStatus);
-      } catch (error) {
-         if (mounted) {
-           showErrorSnackBar(context, message: 'Failed to update task status: $error');
-         }
+  Future<void> _handleTaskStatusChange(Task task, String newStatus) async {
+    if (task.status == newStatus) return;
+    try {
+      await _taskRepo.updateTask(taskId: task.id, status: newStatus);
+    } catch (error) {
+      if (mounted) {
+        showErrorSnackBar(context,
+            message: 'Failed to update task status: $error');
       }
-   }
-   // --- FINE GESTIONE DIALOG ---
+    }
+  }
 
-
-  // --- NUOVO: Dialog per Invitare Membri ---
   void _showInviteMemberDialog() {
     final formKey = GlobalKey<FormState>();
     final emailController = TextEditingController();
-    final roles = ['admin', 'collaborator']; // Ruoli disponibili
-    String selectedRole = roles[1]; // Default a 'collaborator'
+    final roles = ['admin', 'collaborator'];
+    String selectedRole = roles[1];
     bool isLoading = false;
 
     showDialog(
       context: context,
       builder: (dialogContext) {
-        // Usa StatefulBuilder per gestire lo stato interno del dialog
         return StatefulBuilder(
           builder: (stfContext, stfSetState) {
             return AlertDialog(
@@ -246,7 +241,9 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty || !value.contains('@')) {
+                        if (value == null ||
+                            value.trim().isEmpty ||
+                            !value.contains('@')) {
                           return 'Please enter a valid email';
                         }
                         return null;
@@ -259,7 +256,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                       items: roles.map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Text(value[0].toUpperCase() + value.substring(1)),
+                          child:
+                              Text(value[0].toUpperCase() + value.substring(1)),
                         );
                       }).toList(),
                       onChanged: (newValue) {
@@ -271,40 +269,47 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: isLoading ? null : () => Navigator.of(stfContext).pop(),
+                  onPressed:
+                      isLoading ? null : () => Navigator.of(stfContext).pop(),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
-                  onPressed: isLoading ? null : () async {
-                    if (formKey.currentState!.validate()) {
-                      stfSetState(() => isLoading = true);
-                      try {
-                        // Chiama il repository per invocare la Edge Function
-                        await _invitationRepo.inviteUserToList(
-                          todoListId: widget.todoList.id,
-                          email: emailController.text.trim(),
-                          role: selectedRole,
-                        );
-                        
-                        if (mounted) {
-                           Navigator.of(stfContext).pop();
-                           showSuccessSnackBar(context, message: 'Invitation sent successfully!');
-                        }
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (formKey.currentState!.validate()) {
+                            stfSetState(() => isLoading = true);
+                            try {
+                              await _invitationRepo.inviteUserToList(
+                                todoListId: widget.todoList.id,
+                                email: emailController.text.trim(),
+                                role: selectedRole,
+                              );
 
-                      } catch (error) {
-                         // Mostra l'errore nel dialog
-                         if (mounted) {
-                           showErrorSnackBar(stfContext, message: error.toString().replaceFirst("Exception: ", ""));
-                         }
-                      } finally {
-                         if (mounted) {
-                           stfSetState(() => isLoading = false);
-                         }
-                      }
-                    }
-                  },
-                  child: isLoading 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                              if (mounted) {
+                                Navigator.of(stfContext).pop();
+                                showSuccessSnackBar(context,
+                                    message: 'Invitation sent successfully!');
+                              }
+                            } catch (error) {
+                              if (mounted) {
+                                showErrorSnackBar(stfContext,
+                                    message: error
+                                        .toString()
+                                        .replaceFirst("Exception: ", ""));
+                              }
+                            } finally {
+                              if (mounted) {
+                                stfSetState(() => isLoading = false);
+                              }
+                            }
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2))
                       : const Text('Send Invite'),
                 ),
               ],
@@ -314,208 +319,325 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       },
     );
   }
-  // --- FINE NUOVO DIALOG ---
 
+@override
+Widget build(BuildContext context) {
+  final bool isRootFolder = widget.parentFolder.parentId == null;
+  final bool isMobile = ResponsiveLayout.isMobile(context);
 
-  @override
-  Widget build(BuildContext context) {
-    // Determina se siamo nella cartella root
-    final bool isRootFolder = widget.parentFolder.parentId == null;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.parentFolder.title),
-        automaticallyImplyLeading: false, 
-        // Hamburger (sinistra) o Freccia Indietro (sinistra)
-        leading: isRootFolder ? Builder( 
-           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+  // --- MODIFICA INIZIA QUI ---
+  // Aggiunto Container opaco per prevenire glitch di rendering
+  return Container(
+    color: Theme.of(context).colorScheme.surface,
+    child: Column(
+      children: [
+        // Header personalizzato che sostituisce l'AppBar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(
+              bottom: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+                width: 1,
+              ),
+            ),
           ),
-        ) : BackButton(onPressed: (){ 
-              if(context.canPop()) {
-                 context.pop();
-              } else {
-                 context.goNamed(AppRouter.home);
-              }
-            }),
-        actions: [ 
-           // --- NUOVO PULSANTE INVITA ---
-           // Mostra il pulsante "Invita" solo se sei nella cartella root
-           if (isRootFolder) 
-             IconButton(
-               icon: const Icon(Icons.person_add_outlined),
-               tooltip: 'Invite Member',
-               onPressed: _showInviteMemberDialog,
-             ),
-           // --- FINE ---
-           IconButton(
-            icon: const Icon(Icons.arrow_back),
-            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            onPressed: () {
-              if(context.canPop()) {
-                 context.pop();
-              } else {
-                 context.goNamed(AppRouter.home);
-              }
-            },
+          child: Row(
+            children: [
+              // Leading button
+              if (isMobile && isRootFolder)
+                IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  tooltip: 'Menu',
+                )
+              else if (!isMobile)
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Back',
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/');
+                    }
+                  },
+                )
+              else if (isMobile && !isRootFolder)
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Back',
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/');
+                    }
+                  },
+                ),
+
+              if (isRootFolder && isMobile) const SizedBox(width: 8),
+
+              // Titolo
+              Expanded(
+                child: Text(
+                  widget.parentFolder.title,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              // Actions
+              if (isRootFolder)
+                IconButton(
+                  icon: const Icon(Icons.person_add_outlined),
+                  tooltip: 'Invite Member',
+                  onPressed: _showInviteMemberDialog,
+                ),
+            ],
           ),
-        ],
-       ),
-      drawer: const AppDrawer(),
-      body: RefreshIndicator(
-        onRefresh: () async => _refreshStreams(),
-        child: CustomScrollView(
-          slivers: [
-            // Sezione Cartelle (con collapse)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
-                    .copyWith(top: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ),
+
+        // Contenuto principale
+        Expanded(
+          child: Stack(
+            children: [
+              RefreshIndicator(
+                onRefresh: () async => _refreshStreams(),
+                child: CustomScrollView(
+                  slivers: [
+                    // Sezione Cartelle
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
+                            .copyWith(top: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Folders',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(color: Colors.grey),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                _isFoldersCollapsed ? Icons.expand_more : Icons.expand_less,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _isFoldersCollapsed = !_isFoldersCollapsed),
+                              tooltip:
+                                  _isFoldersCollapsed ? 'Expand Folders' : 'Collapse Folders',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    StreamBuilder<List<Folder>>(
+                      stream: _foldersStream,
+                      builder: (context, snapshot) {
+                        if (_isFoldersCollapsed) {
+                          return const SliverToBoxAdapter(child: SizedBox.shrink());
+                        }
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const SliverToBoxAdapter(
+                            child: Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                          );
+                        }
+                        if (snapshot.hasError) {
+                          return SliverToBoxAdapter(
+                            child: Center(
+                              child: Text(
+                                'Error loading folders: ${snapshot.error}',
+                              ),
+                            ),
+                          );
+                        }
+                        final folders = snapshot.data ?? [];
+                        if (folders.isEmpty) {
+                          return const SliverToBoxAdapter(child: SizedBox.shrink());
+                        }
+
+                        return SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final folder = folders[index];
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: FolderListTile(
+                                  folder: folder,
+                                  onTap: () {
+                                    context.goNamed(
+                                      AppRouter.folderDetail,
+                                      pathParameters: {
+                                        'listId': widget.todoList.id,
+                                        'folderId': folder.id,
+                                      },
+                                      extra: {
+                                        'todoList': widget.todoList,
+                                        'parentFolder': folder,
+                                      },
+                                    );
+                                  },
+                                  onEdit: () =>
+                                      _openFolderDialog(folderToEdit: folder),
+                                  onDelete: () => _showDeleteFolderDialog(folder),
+                                ),
+                              );
+                            },
+                            childCount: folders.length,
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Sezione Task
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
+                            .copyWith(top: 24),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Tasks',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(color: Colors.grey),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                _isTasksCollapsed ? Icons.expand_more : Icons.expand_less,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _isTasksCollapsed = !_isTasksCollapsed),
+                              tooltip:
+                                  _isTasksCollapsed ? 'Expand Tasks' : 'Collapse Tasks',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    StreamBuilder<List<Task>>(
+                      stream: _tasksStream,
+                      builder: (context, snapshot) {
+                        if (_isTasksCollapsed) {
+                          return const SliverToBoxAdapter(child: SizedBox.shrink());
+                        }
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const SliverToBoxAdapter(
+                            child: Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                          );
+                        }
+                        if (snapshot.hasError) {
+                          debugPrint('Errore StreamBuilder Tasks: ${snapshot.error}');
+                          return SliverToBoxAdapter(
+                            child: Center(
+                              child: Text('Error loading tasks: ${snapshot.error}'),
+                            ),
+                          );
+                        }
+                        final tasks = snapshot.data ?? [];
+                        if (tasks.isEmpty) {
+                          return SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 32.0),
+                              child: Center(
+                                child: Text(
+                                  'No tasks in this folder yet.',
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        return SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final task = tasks[index];
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: TaskListTile(
+                                  task: task,
+                                  onTap: () {},
+                                  onEdit: () => _openTaskDialog(taskToEdit: task),
+                                  onDelete: () => _showDeleteTaskDialog(task),
+                                  onStatusChanged: (newStatus) =>
+                                      _handleTaskStatusChange(task, newStatus),
+                                ),
+                              );
+                            },
+                            childCount: tasks.length,
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SliverToBoxAdapter(child: SizedBox(height: 160)),
+                  ],
+                ),
+              ),
+
+              // FloatingActionButtons posizionati manualmente
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Folders', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
-                    IconButton(
-                      icon: Icon(_isFoldersCollapsed ? Icons.expand_more : Icons.expand_less, color: Colors.grey),
-                      onPressed: () => setState(() => _isFoldersCollapsed = !_isFoldersCollapsed),
-                      tooltip: _isFoldersCollapsed ? 'Expand Folders' : 'Collapse Folders',
+                    FloatingActionButton.extended(
+                      onPressed: () => _openFolderDialog(),
+                      tooltip: 'New Folder',
+                      heroTag: 'fabFolder',
+                      icon: const Icon(Icons.create_new_folder),
+                      label: const SizedBox(
+                        width: 110,
+                        child: Text('New Folder', textAlign: TextAlign.center),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FloatingActionButton.extended(
+                      onPressed: () => _openTaskDialog(),
+                      tooltip: 'New Task',
+                      heroTag: 'fabTask',
+                      icon: const Icon(Icons.add_task),
+                      label: const SizedBox(
+                        width: 110,
+                        child: Text('New Task', textAlign: TextAlign.center),
+                      ),
                     ),
                   ],
                 ),
               ),
-            ),
-            StreamBuilder<List<Folder>>(
-              stream: _foldersStream,
-              builder: (context, snapshot) {
-                 if (_isFoldersCollapsed) { return const SliverToBoxAdapter(child: SizedBox.shrink());}
-                 if (snapshot.connectionState == ConnectionState.waiting) { return const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator())));}
-                 if (snapshot.hasError) { return SliverToBoxAdapter(child: Center(child: Text('Error loading folders: ${snapshot.error}'))); }
-                 final folders = snapshot.data ?? [];
-                 if (folders.isEmpty) { return const SliverToBoxAdapter(child: SizedBox.shrink()); }
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate( (context, index) {
-                      final folder = folders[index];
-                      return Padding(
-                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                         child: FolderListTile(
-                            folder: folder,
-                            onTap: () {
-                              context.pushNamed(
-                                AppRouter.folderDetail,
-                                pathParameters: {
-                                  'listId': widget.todoList.id,
-                                  'folderId': folder.id,
-                                },
-                                extra: {
-                                  'todoList': widget.todoList,
-                                  'parentFolder': folder,
-                                },
-                              );
-                            },
-                            onEdit: () => _openFolderDialog(folderToEdit: folder),
-                            onDelete: () => _showDeleteFolderDialog(folder),
-                         ),
-                       );
-                    }, childCount: folders.length, ),
-                );
-              },
-            ),
-
-            // Sezione Task (con collapse)
-            SliverToBoxAdapter(
-              child: Padding(
-                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0).copyWith(top: 24),
-                 child: Row(
-                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                   children: [
-                     Text('Tasks', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
-                     IconButton(
-                       icon: Icon(_isTasksCollapsed ? Icons.expand_more : Icons.expand_less, color: Colors.grey),
-                       onPressed: () => setState(() => _isTasksCollapsed = !_isTasksCollapsed),
-                       tooltip: _isTasksCollapsed ? 'Expand Tasks' : 'Collapse Tasks',
-                    ),
-                   ],
-                 ),
-              ),
-            ),
-             StreamBuilder<List<Task>>(
-              stream: _tasksStream,
-              builder: (context, snapshot) {
-                 if (_isTasksCollapsed) { return const SliverToBoxAdapter(child: SizedBox.shrink()); }
-                 if (snapshot.connectionState == ConnectionState.waiting) { return const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))); }
-                 if (snapshot.hasError) {
-                   debugPrint('Errore StreamBuilder Tasks: ${snapshot.error}');
-                   return SliverToBoxAdapter(child: Center(child: Text('Error loading tasks: ${snapshot.error}')));
-                 }
-                 final tasks = snapshot.data ?? [];
-                 if (tasks.isEmpty) { 
-                    return SliverToBoxAdapter(
-                     child: Padding(
-                       padding: const EdgeInsets.symmetric(vertical: 32.0), 
-                       child: Center(
-                         child: Text(
-                           'No tasks in this folder yet.',
-                            style: TextStyle(color: Colors.grey[600]),
-                         ),
-                       ),
-                     ),
-                   );
-                  }
-
-                 // Lista Task
-                 return SliverList(
-                   delegate: SliverChildBuilderDelegate( 
-                     (context, index) {
-                       final task = tasks[index];
-                       return Padding(
-                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                         child: TaskListTile(
-                           task: task,
-                           onTap: () { /* ... */ },
-                           onEdit: () { _openTaskDialog(taskToEdit: task); },
-                           onDelete: () { _showDeleteTaskDialog(task); },
-                           onStatusChanged: (newStatus) { _handleTaskStatusChange(task, newStatus); },
-                         ),
-                       );
-                     },
-                     childCount: tasks.length,
-                   ),
-                 );
-               },
-             ),
-             const SliverToBoxAdapter( child: SizedBox(height: 160), ) // Spacer
-          ],
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-            onPressed: () => _openFolderDialog(),
-            tooltip: 'New Folder',
-            heroTag: 'fabFolder', 
-            icon: const Icon(Icons.create_new_folder),
-            label: const SizedBox(
-              width: 110,
-              child: Text('New Folder', textAlign: TextAlign.center),
-            ),
-          ),
-          const SizedBox(height: 16),
-          FloatingActionButton.extended(
-            onPressed: () => _openTaskDialog(),
-            tooltip: 'New Task',
-            heroTag: 'fabTask',
-            icon: const Icon(Icons.add_task),
-            label: const SizedBox(
-              width: 110,
-              child: Text('New Task', textAlign: TextAlign.center),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+  // --- MODIFICA FINISCE QUI ---
+}
+
 }

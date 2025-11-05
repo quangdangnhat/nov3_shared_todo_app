@@ -24,18 +24,14 @@ class _FolderCreatePageState extends State<FolderCreatePage> {
   void initState() {
     super.initState();
 
-    // Inizializza il controller
     _controller = FolderCreateController(
       todoListRepo: TodoListRepository(),
       folderRepo: FolderRepository(),
     );
     _controller.initialize();
 
-    // Ascolta i cambiamenti del campo nome per aggiornare il pulsante
     _folderNameController.addListener(() {
-      setState(() {
-        // Forza il rebuild per aggiornare lo stato del pulsante
-      });
+      setState(() {});
     });
   }
 
@@ -93,11 +89,12 @@ class _FolderCreatePageState extends State<FolderCreatePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) {
-          return SingleChildScrollView(
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) {
+        return Container(
+          color: Theme.of(context).colorScheme.surface,
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,16 +112,16 @@ class _FolderCreatePageState extends State<FolderCreatePage> {
                   'Add a folder in your todo list',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Colors.grey,
                   ),
                 ),
                 const SizedBox(height: 24),
 
-                // Campo nome cartella
+                // Nome cartella
                 FolderNameField(controller: _folderNameController),
                 const SizedBox(height: 16),
 
-                // Selettori TodoList e Folder
+                // Selector liste + folder
                 Row(
                   children: [
                     Expanded(
@@ -157,9 +154,9 @@ class _FolderCreatePageState extends State<FolderCreatePage> {
                 ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

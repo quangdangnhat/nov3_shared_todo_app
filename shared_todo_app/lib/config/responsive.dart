@@ -15,7 +15,7 @@ class ResponsiveLayout extends StatelessWidget {
 
   // imposto le diverse larghezze per distinguere il dispositivo che si sta usando 
   // break point width of the devices
-  static const double mobileBreakpoint = 904;
+  static const double mobileBreakpoint = 650;
   static const double desktopBreakpoint = 1280;
 
 // funzioni per facilitare l'utilizzo quando devo modificare l'UI in base al dispositivo

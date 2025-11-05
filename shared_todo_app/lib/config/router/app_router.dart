@@ -17,8 +17,9 @@ import '../../features/todo_lists/presentation/screens/todo_lists_screen.dart'
 // Importa la schermata Account dal suo file
 import '../../features/account/presentation/screens/account_screen.dart';
 // Importa la schermata Inviti dal suo file
-import '../../features/invitations/presentation/screens/invitation_screen.dart'; 
+import '../../features/invitations/presentation/screens/invitation_screen.dart';
 
+import '../../features/todo_lists/presentation/widgets/layout/main_layout.dart';
 import '../../main.dart'; // Importa 'supabase' helper
 
 /// Notifier che ascolta i cambiamenti dello stato di autenticazione
@@ -53,8 +54,8 @@ class AppRouter {
   static const String signup = '/signup';
   static const String home = '/';
   static const String calendar = '/calendar';
-  static const String listDetail = '/list/:listId';
-  static const String folderDetail = '/list/:listId/folder/:folderId';
+  static const String listDetail = 'listDetail'; // Nome per la navigazione
+  static const String folderDetail = 'folderDetail'; // Nome per la navigazione
   static const String account = '/account';
   static const String create = '/create';
   static const String invitations = '/invitations';
@@ -63,11 +64,12 @@ class AppRouter {
 
   /// L'istanza del router GoRouter configurata per l'app.
   static final GoRouter router = GoRouter(
-    initialLocation: home, // Parte dalla home
-    refreshListenable: _authNotifier, // Ascolta i cambiamenti di auth
-
+    initialLocation: home,
+    refreshListenable: _authNotifier,
     routes: <RouteBase>[
-      // Rotte di Autenticazione
+      // ========================================
+      // ROTTE DI AUTENTICAZIONE (senza MainLayout)
+      // ========================================
       GoRoute(
         path: login,
         name: login,
@@ -82,89 +84,180 @@ class AppRouter {
           return const SignUpScreen();
         },
       ),
-      
-      // Rotte Principali (protette dal redirect)
-      GoRoute(
-        path: calendar,
-        name: calendar,
-        builder: (BuildContext context, GoRouterState state) {
-          return const CalendarScreen();
-        },
-      ),
-       GoRoute(
-        path: invitations,
-        name: invitations,
-        builder: (BuildContext context, GoRouterState state) {
-          return const InvitationsScreen();
-        },
-      ),
-       GoRoute(
-        path: account, // Spostato al livello superiore
-        name: account,
-        builder: (context, state) => const AccountScreen(),
-      ),
-       GoRoute(
-        path: create, // Spostato al livello superiore
-        name: create, 
-        builder: (BuildContext context, GoRouterState state) {
-          return CreatePage();
-        },
-      ),
 
-      // Rotta Home e sue sotto-rotte
-      GoRoute(
-        path: home,
-        name: home,
-        builder: (BuildContext context, GoRouterState state) {
-          return const lists_screen.TodoListsScreen();
+      // ========================================
+      // SHELL ROUTE - Tutte le rotte con MainLayout persistente
+      // ========================================
+      ShellRoute(
+        builder: (context, state, child) {
+          // Questo builder wrappa TUTTE le rotte figlie con MainLayout
+          // mantenendo la sidebar sempre visibile e consistente
+          return MainLayout(child: child);
         },
         routes: <RouteBase>[
-          // Dettaglio Lista (mostra la root folder)
+          // Home - Lista Todo
           GoRoute(
-            path: 'list/:listId', // Path relativo: /list/:listId
-            name: listDetail,
-            builder: (BuildContext context, GoRouterState state) {
-              // Recupera i dati passati
-              final Map<String, dynamic> extras =
-                  state.extra as Map<String, dynamic>;
-              final TodoList todoListExtra = extras['todoList'] as TodoList;
-              final Folder parentFolderExtra = extras['parentFolder'] as Folder;
-
-              return detail_screen.TodoListDetailScreen(
-                todoList: todoListExtra,
-                parentFolder: parentFolderExtra,
+            path: home,
+            name: home,
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const lists_screen.TodoListsScreen(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  // Nessuna animazione per transizioni fluide
+                  return child;
+                },
               );
             },
             routes: <RouteBase>[
-              // Dettaglio Sottocartella
+              // Dettaglio Lista (mostra la root folder)
               GoRoute(
-                path: 'folder/:folderId', // Path relativo: /list/:listId/folder/:folderId
-                name: folderDetail,
-                builder: (BuildContext context, GoRouterState state) {
+                path: 'list/:listId', // Path relativo: /list/:listId
+                name: listDetail,
+                pageBuilder: (BuildContext context, GoRouterState state) {
+                  // Recupera i dati passati
                   final Map<String, dynamic> extras =
                       state.extra as Map<String, dynamic>;
                   final TodoList todoListExtra = extras['todoList'] as TodoList;
                   final Folder parentFolderExtra =
                       extras['parentFolder'] as Folder;
 
-                  return detail_screen.TodoListDetailScreen(
-                    todoList: todoListExtra,
-                    parentFolder: parentFolderExtra,
+                  return CustomTransitionPage(
+                    key: state.pageKey,
+                    child: detail_screen.TodoListDetailScreen(
+                      todoList: todoListExtra,
+                      parentFolder: parentFolderExtra,
+                    ),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      // Nessuna animazione per transizioni fluide
+                      return child;
+                    },
                   );
                 },
+                routes: <RouteBase>[
+                  // Dettaglio Sottocartella
+                  GoRoute(
+                    path:
+                        'folder/:folderId', // Path relativo: /list/:listId/folder/:folderId
+                    name: folderDetail,
+                    pageBuilder: (BuildContext context, GoRouterState state) {
+                      final Map<String, dynamic> extras =
+                          state.extra as Map<String, dynamic>;
+                      final TodoList todoListExtra =
+                          extras['todoList'] as TodoList;
+                      final Folder parentFolderExtra =
+                          extras['parentFolder'] as Folder;
+
+                      return CustomTransitionPage(
+                        key: state.pageKey,
+                        child: detail_screen.TodoListDetailScreen(
+                          todoList: todoListExtra,
+                          parentFolder: parentFolderExtra,
+                        ),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                          // Nessuna animazione per transizioni fluide
+                          return child;
+                        },
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
+
+          // Calendario
+          GoRoute(
+            path: calendar,
+            name: calendar,
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const CalendarScreen(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return child;
+                },
+              );
+            },
+          ),
+
+          // Inviti
+          GoRoute(
+            path: invitations,
+            name: invitations,
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const InvitationsScreen(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return child;
+                },
+              );
+            },
+          ),
+
+          // Crea nuova lista
+          GoRoute(
+            path: create,
+            name: create,
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: CreatePage(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  // --- USA QUESTO BLOCCO ---
+
+                  // Definiamo un'animazione di scorrimento (Slide)
+                  // che sposta la pagina da destra (Offset(1.0, 0.0))
+                  // alla sua posizione finale (Offset.zero).
+                  final tween = Tween<Offset>(
+                    begin:
+                        const Offset(1.0, 0.0), // Inizia fuori schermo a destra
+                    end: Offset.zero, // Finisce sullo schermo
+                  ).chain(CurveTween(
+                      curve: Curves.easeInOut)); // Usa un'animazione fluida
+
+                  // Applichiamo l'animazione solo alla pagina che entra (animation)
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
         ],
+      ),
+      // Account/Profile
+      GoRoute(
+        path: account,
+        name: account,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const AccountScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return child;
+            },
+          );
+        },
       ),
     ],
 
     // Logica di Redirect per l'autenticazione
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = supabase.auth.currentUser != null;
-      
+
       // Controlla se l'utente sta cercando di accedere a una pagina di autenticazione
-      final bool onAuthRoute = state.matchedLocation == login || state.matchedLocation == signup;
+      final bool onAuthRoute =
+          state.matchedLocation == login || state.matchedLocation == signup;
 
       // Se l'utente NON è loggato E NON sta andando a una pagina auth -> vai al login
       if (!loggedIn && !onAuthRoute) {
@@ -175,10 +268,16 @@ class AppRouter {
       if (loggedIn && onAuthRoute) {
         return home;
       }
-      
+
       // In tutti gli altri casi, non fare nulla
       return null;
     },
+
+    // Gestione errori
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Text('Pagina non trovata: ${state.matchedLocation}'),
+      ),
+    ),
   );
 }
-

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_todo_app/config/router/app_router.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/createPage/folder_create.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/createPage/task_create.dart';
-
-import '../../../../../data/repositories/todo_list_repository.dart'
-    show TodoListRepository;
+import '../../../../../config/responsive.dart';
 
 class CreatePage extends StatefulWidget {
   const CreatePage({super.key});
@@ -15,47 +15,72 @@ class CreatePage extends StatefulWidget {
 class _CreatePageState extends State<CreatePage> {
   // 0 = Folder, 1 = Task
   int _selectedIndex = 0;
-
-  // Per poter visualizzare le todoList dell'utente
-  final _todoListRepo = TodoListRepository();
-
-
-
-  // Gestione dei campi della sezione folders
-  final TextEditingController _folderNameController = TextEditingController();
-  final TextEditingController _searchController = TextEditingController();
-
-
-  @override
-  void dispose() {
-    _folderNameController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-
+  
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Create"),
-      ),
-      body: Column(
+    final isMobile = ResponsiveLayout.isMobile(context);
+
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
         children: [
-          // Selector in alto a tutta larghezza
+          // Header custom (al posto dell'AppBar)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                if (isMobile) ...[
+                  IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                    tooltip: 'Menu',
+                  ),
+                  const SizedBox(width: 8),
+                ]else...[
+                  IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                   context.go(AppRouter.home);
+                  },
+                  tooltip: 'back', // Tooltip per accessibilità
+                ),
+                const SizedBox(width: 8),
+                ],
+                Text(
+                  'Create',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+          ),
+
+          // Selector Folder / Task
           _buildSelector(),
 
-          // Contenuto che cambia in base alla selezione
+          // Contenuto dinamico
           Expanded(
-            child: _selectedIndex == 0 ? FolderCreatePage() : TaskCreatePage(),
+            child: _selectedIndex == 0
+                ? const FolderCreatePage()
+                : const TaskCreatePage(),
           ),
         ],
       ),
     );
   }
 
-  // ==================== SELECTOR ====================
+  // Widget per il selettore top
   Widget _buildSelector() {
     return Container(
       width: double.infinity,
@@ -124,63 +149,6 @@ class _CreatePageState extends State<CreatePage> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // ==================== HELPER WIDGETS ====================
-
-  Widget _buildColorOption(Color color) {
-    return GestureDetector(
-      onTap: () {
-        // TODO: Seleziona colore
-      },
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey[300]!, width: 2),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIconOption(IconData icon) {
-    return GestureDetector(
-      onTap: () {
-        // TODO: Seleziona icona
-      },
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey[300]!, width: 2),
-        ),
-        child: Icon(icon, color: Colors.grey[700]),
-      ),
-    );
-  }
-
-  Widget _buildPriorityChip(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w600,
-          ),
         ),
       ),
     );
