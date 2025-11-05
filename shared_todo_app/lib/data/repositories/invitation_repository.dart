@@ -121,7 +121,7 @@ class InvitationRepository {
           'todo_lists': {'title': listTitles[todoListId] ?? '[Unknown List]'},
           'users': {'email': inviterEmails[inviterId] ?? '[Unknown User]'}
         };
-        return Invitation.fromMap(enrichedMap as Map<String, dynamic>);
+        return Invitation.fromMap(enrichedMap);
       }).toList();
     });
   }

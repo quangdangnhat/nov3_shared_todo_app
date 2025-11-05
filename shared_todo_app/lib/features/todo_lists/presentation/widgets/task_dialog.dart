@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../data/models/task.dart';
 import '../../../../data/repositories/task_repository.dart';
-import '../../../../core/utils/snackbar_utils.dart';
+
 
 /// Un dialog per creare o modificare un Task.
 class TaskDialog extends StatefulWidget {

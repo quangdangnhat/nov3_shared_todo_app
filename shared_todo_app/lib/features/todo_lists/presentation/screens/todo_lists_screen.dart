@@ -170,6 +170,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       },
     );
   }
+  
 
   void _showDeleteConfirmationDialog(TodoList list) {
     showDialog(
@@ -218,8 +219,6 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       }
     }
   }
-
-  // In: todo_lists_screen.dart
 
 // In: todo_lists_screen.dart
 

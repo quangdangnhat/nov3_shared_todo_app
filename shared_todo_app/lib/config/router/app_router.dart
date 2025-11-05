@@ -18,7 +18,6 @@ import '../../features/todo_lists/presentation/screens/todo_lists_screen.dart'
 import '../../features/account/presentation/screens/account_screen.dart';
 // Importa la schermata Inviti dal suo file
 import '../../features/invitations/presentation/screens/invitation_screen.dart';
-import '../../features/invitations/presentation/screens/invitation_screen.dart';
 
 import '../../features/todo_lists/presentation/widgets/layout/main_layout.dart';
 import '../../main.dart'; // Importa 'supabase' helper
@@ -111,63 +110,59 @@ class AppRouter {
                 },
               );
             },
-            routes: <RouteBase>[
-              // Dettaglio Lista (mostra la root folder)
-              GoRoute(
-                path: 'list/:listId', // Path relativo: /list/:listId
-                name: listDetail,
-                pageBuilder: (BuildContext context, GoRouterState state) {
-                  // Recupera i dati passati
-                  final Map<String, dynamic> extras =
-                      state.extra as Map<String, dynamic>;
-                  final TodoList todoListExtra = extras['todoList'] as TodoList;
-                  final Folder parentFolderExtra =
-                      extras['parentFolder'] as Folder;
+          ),
+          
+          // Dettaglio Lista (mostra la root folder)
+          GoRoute(
+            path: '/list/:listId', // Path assoluto
+            name: listDetail,
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              // Recupera i dati passati
+              final Map<String, dynamic> extras =
+                  state.extra as Map<String, dynamic>;
+              final TodoList todoListExtra = extras['todoList'] as TodoList;
+              final Folder parentFolderExtra =
+                  extras['parentFolder'] as Folder;
 
-                  return CustomTransitionPage(
-                    key: state.pageKey,
-                    child: detail_screen.TodoListDetailScreen(
-                      todoList: todoListExtra,
-                      parentFolder: parentFolderExtra,
-                    ),
-                    transitionsBuilder:
-                        (context, animation, secondaryAnimation, child) {
-                      // Nessuna animazione per transizioni fluide
-                      return child;
-                    },
-                  );
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: detail_screen.TodoListDetailScreen(
+                  todoList: todoListExtra,
+                  parentFolder: parentFolderExtra,
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  // Nessuna animazione per transizioni fluide
+                  return child;
                 },
-                routes: <RouteBase>[
-                  // Dettaglio Sottocartella
-                  GoRoute(
-                    path:
-                        'folder/:folderId', // Path relativo: /list/:listId/folder/:folderId
-                    name: folderDetail,
-                    pageBuilder: (BuildContext context, GoRouterState state) {
-                      final Map<String, dynamic> extras =
-                          state.extra as Map<String, dynamic>;
-                      final TodoList todoListExtra =
-                          extras['todoList'] as TodoList;
-                      final Folder parentFolderExtra =
-                          extras['parentFolder'] as Folder;
+              );
+            },
+          ),
+          
+          // Route per folder - path assoluto, stesso livello di listDetail
+          GoRoute(
+            path: '/list/:listId/folder/:folderId',
+            name: folderDetail,
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              final Map<String, dynamic> extras =
+                  state.extra as Map<String, dynamic>;
+              final TodoList todoListExtra =
+                  extras['todoList'] as TodoList;
+              final Folder parentFolderExtra =
+                  extras['parentFolder'] as Folder;
 
-                      return CustomTransitionPage(
-                        key: state.pageKey,
-                        child: detail_screen.TodoListDetailScreen(
-                          todoList: todoListExtra,
-                          parentFolder: parentFolderExtra,
-                        ),
-                        transitionsBuilder:
-                            (context, animation, secondaryAnimation, child) {
-                          // Nessuna animazione per transizioni fluide
-                          return child;
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
+              return CustomTransitionPage(
+                key: ValueKey('folder_${parentFolderExtra.id}'),
+                child: detail_screen.TodoListDetailScreen(
+                  todoList: todoListExtra,
+                  parentFolder: parentFolderExtra,
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return child;
+                },
+              );
+            },
           ),
 
           // Calendario
@@ -212,19 +207,12 @@ class AppRouter {
                 child: CreatePage(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
-                  // --- USA QUESTO BLOCCO ---
-
                   // Definiamo un'animazione di scorrimento (Slide)
-                  // che sposta la pagina da destra (Offset(1.0, 0.0))
-                  // alla sua posizione finale (Offset.zero).
                   final tween = Tween<Offset>(
-                    begin:
-                        const Offset(1.0, 0.0), // Inizia fuori schermo a destra
-                    end: Offset.zero, // Finisce sullo schermo
-                  ).chain(CurveTween(
-                      curve: Curves.easeInOut)); // Usa un'animazione fluida
+                    begin: const Offset(1.0, 0.0),
+                    end: Offset.zero,
+                  ).chain(CurveTween(curve: Curves.easeInOut));
 
-                  // Applichiamo l'animazione solo alla pagina che entra (animation)
                   return SlideTransition(
                     position: animation.drive(tween),
                     child: child,
