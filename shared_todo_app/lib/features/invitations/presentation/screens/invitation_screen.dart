@@ -14,9 +14,9 @@ class InvitationsScreen extends StatefulWidget {
 
 class _InvitationsScreenState extends State<InvitationsScreen> {
   final InvitationRepository _invitationRepo = InvitationRepository();
-  
+
   late Stream<List<Invitation>> _invitationsStream;
-  
+
   // Set per tenere traccia degli inviti in corso di elaborazione
   final Set<String> _loadingInvitations = {};
 
@@ -39,11 +39,11 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
 
     try {
       await _invitationRepo.respondToInvitation(invitation.id, accept);
-      
+
       if (mounted) {
-        showSuccessSnackBar(context, 
-          message: 'Invitation ${accept ? 'accepted' : 'declined'} successfully'
-        );
+        showSuccessSnackBar(context,
+            message:
+                'Invitation ${accept ? 'accepted' : 'declined'} successfully');
       }
       
       // Forza il refresh dello stream
@@ -52,12 +52,11 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
           _invitationsStream = _invitationRepo.getPendingInvitationsStream();
         });
       }
-
     } catch (error) {
       if (mounted) {
-        showErrorSnackBar(context, 
-          message: 'Failed to respond: ${error.toString().replaceFirst("Exception: ", "")}'
-        );
+        showErrorSnackBar(context,
+            message:
+                'Failed to respond: ${error.toString().replaceFirst("Exception: ", "")}');
       }
     } finally {
       if (mounted) {

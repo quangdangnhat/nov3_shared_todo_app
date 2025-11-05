@@ -6,7 +6,6 @@ import '../../../../../data/repositories/folder_repository.dart';
 import '../../../../../data/repositories/todo_list_repository.dart';
 import '../base_controller.dart';
 
-
 class FolderCreateController extends BaseFolderSelectionController {
   final TodoListRepository _todoListRepo;
   final FolderRepository _folderRepo;
@@ -128,7 +127,6 @@ class FolderCreateController extends BaseFolderSelectionController {
     return _selectedTodoList != null && folderName.trim().isNotEmpty;
   }
 
-
   // Reset form to initial state
   void resetForm() {
     _selectedTodoList = null;
@@ -138,6 +136,4 @@ class FolderCreateController extends BaseFolderSelectionController {
     _searchQuery = '';
     notifyListeners();
   }
-
-
 }

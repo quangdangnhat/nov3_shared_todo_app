@@ -46,7 +46,8 @@ class _AppDrawerState extends State<AppDrawer> {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
-    final username = (user?.userMetadata?['username'] as String?) ?? 'No Username';
+    final username =
+        (user?.userMetadata?['username'] as String?) ?? 'No Username';
     final email = user?.email ?? 'No Email';
     final initial = username.isNotEmpty ? username[0].toUpperCase() : '?';
 

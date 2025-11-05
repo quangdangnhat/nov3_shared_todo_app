@@ -7,28 +7,29 @@ class FolderRepository {
 
   // --- GET: Stream di folder DENTRO una cartella ---
   Stream<List<Folder>> getFoldersStream(String todoListId, {String? parentId}) {
-    
     // --- MODIFICA CON FILTRO LATO CLIENT ---
-    
+
     // 1. Crea lo stream filtrando SOLO per todo_list_id (che è supportato)
     final stream = _supabase
         .from('folders')
         .stream(primaryKey: ['id'])
         .eq('todo_list_id', todoListId)
         .order('created_at', ascending: false);
-        
+
     // 2. Mappa i risultati e filtra in Dart
     return stream.map((data) {
       // 'data' contiene TUTTE le cartelle della lista
       final allFolders = data.map((json) => Folder.fromMap(json));
-      
+
       // 3. Applica il filtro parentId in Dart
       if (parentId == null) {
         // Cerca le cartelle root
         return allFolders.where((folder) => folder.parentId == null).toList();
       } else {
         // Cerca le sottocartelle
-        return allFolders.where((folder) => folder.parentId == parentId).toList();
+        return allFolders
+            .where((folder) => folder.parentId == parentId)
+            .toList();
       }
     });
     // --- FINE MODIFICA ---
@@ -45,7 +46,7 @@ class FolderRepository {
           .eq('todo_list_id', todoListId)
           .filter('parent_id', 'is', null) // Cerca la cartella root
           .single(); // Ci aspettiamo che ce ne sia solo UNA
-          
+
       return Folder.fromMap(response);
     } catch (e) {
       debugPrint("Errore in getRootFolder: $e");
@@ -92,7 +93,6 @@ class FolderRepository {
       }
       if (title != null) updates['title'] = title;
       if (parentId != null) updates['parent_id'] = parentId;
-      
 
       final response = await _supabase
           .from('folders')
@@ -116,4 +116,3 @@ class FolderRepository {
     }
   }
 }
-

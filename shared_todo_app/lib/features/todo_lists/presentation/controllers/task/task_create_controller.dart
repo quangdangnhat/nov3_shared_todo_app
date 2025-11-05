@@ -196,5 +196,4 @@ class TaskCreateController extends BaseFolderSelectionController {
     _selectedStatus = TaskStatus.toDo;
     notifyListeners();
   }
-
 }

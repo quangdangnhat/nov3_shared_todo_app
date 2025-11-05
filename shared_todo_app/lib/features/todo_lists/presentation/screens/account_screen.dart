@@ -7,7 +7,8 @@ class AccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
-    final username = (user?.userMetadata?['username'] as String?) ?? 'Sconosciuto';
+    final username =
+        (user?.userMetadata?['username'] as String?) ?? 'Sconosciuto';
     final email = user?.email ?? '—';
     final initial = username.isNotEmpty ? username[0].toUpperCase() : 'U';
 
@@ -26,7 +27,8 @@ class AccountScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Center(
             child: Text(username,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
           ),
           const SizedBox(height: 24),
 
@@ -57,7 +59,8 @@ class AccountScreen extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.delete_forever),
             label: const Text('Elimina account'),
@@ -69,7 +72,9 @@ class AccountScreen extends StatelessWidget {
                   content: const Text(
                       'Questa azione è definitiva. Confermi di voler eliminare il tuo account?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annulla')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Annulla')),
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, true),
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -85,7 +90,8 @@ class AccountScreen extends StatelessWidget {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Eliminazione account: implementare backend.'),
+                    content:
+                        Text('Eliminazione account: implementare backend.'),
                     backgroundColor: Colors.orange,
                   ),
                 );
@@ -102,7 +108,8 @@ class _ReadOnlyTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _ReadOnlyTile({required this.icon, required this.label, required this.value});
+  const _ReadOnlyTile(
+      {required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +117,8 @@ class _ReadOnlyTile extends StatelessWidget {
       leading: Icon(icon),
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(value),
-      trailing: const Icon(Icons.chevron_right, color: Colors.transparent), // per allineamento
+      trailing: const Icon(Icons.chevron_right,
+          color: Colors.transparent), // per allineamento
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
     );
   }

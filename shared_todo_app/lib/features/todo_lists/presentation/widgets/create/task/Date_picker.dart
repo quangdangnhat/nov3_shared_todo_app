@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 enum DatePickerType {
-  startDate,  // 0
-  dueDate,    // 1
+  startDate, // 0
+  dueDate, // 1
 }
 
 class DatePickerCard extends StatelessWidget {
@@ -56,9 +56,8 @@ class DatePickerCard extends StatelessWidget {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
-      firstDate: type == DatePickerType.startDate 
-          ? DateTime.now() 
-          : DateTime.now(),
+      firstDate:
+          type == DatePickerType.startDate ? DateTime.now() : DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
     );
 

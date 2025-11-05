@@ -18,6 +18,7 @@ import '../../features/todo_lists/presentation/screens/todo_lists_screen.dart'
 import '../../features/account/presentation/screens/account_screen.dart';
 // Importa la schermata Inviti dal suo file
 import '../../features/invitations/presentation/screens/invitation_screen.dart';
+import '../../features/invitations/presentation/screens/invitation_screen.dart';
 
 import '../../features/todo_lists/presentation/widgets/layout/main_layout.dart';
 import '../../main.dart'; // Importa 'supabase' helper

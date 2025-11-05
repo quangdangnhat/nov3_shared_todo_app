@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import '../../../../data/models/folder.dart';
 import '../../../../data/models/todo_list.dart';
 
-
 /// Interfaccia base per i controller che gestiscono la selezione di TodoList e Folder
 abstract class BaseFolderSelectionController extends ChangeNotifier {
   // Getters che devono essere implementati

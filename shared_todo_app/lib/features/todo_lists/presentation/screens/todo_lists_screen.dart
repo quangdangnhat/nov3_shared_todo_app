@@ -39,6 +39,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Create New List'),
+          // --- CODICE RIPRISTINATO ---
           content: Form(
             key: formKey,
             child: Column(
@@ -47,6 +48,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                 TextFormField(
                   controller: titleController,
                   decoration: const InputDecoration(labelText: 'Title'),
+                  autofocus: true,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter a title';
@@ -54,6 +56,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: descController,
                   decoration: const InputDecoration(
@@ -62,6 +65,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
               ],
             ),
           ),
+          // --- FINE ---
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -172,9 +176,9 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete List'),
+          title: const Text('Leave List?'),
           content: Text(
-              'Are you sure you want to delete "${list.title}"? This action cannot be undone.'),
+              'Are you sure you want to leave "${list.title}"?\n\nIf you are the last member, the list will be permanently deleted.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -186,7 +190,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                 Navigator.of(context).pop();
                 _handleDeleteList(list.id);
               },
-              child: const Text('Delete'),
+              child: const Text('Leave'), // Testo aggiornato
             ),
           ],
         );
@@ -196,11 +200,11 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
 
   Future<void> _handleDeleteList(String listId) async {
     try {
-      await _todoListRepo.deleteTodoList(listId);
+      await _todoListRepo.leaveTodoList(listId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('List deleted successfully.'),
+            content: Text('You have left the list.'), // Messaggio aggiornato
             backgroundColor: Colors.green,
           ),
         );
@@ -210,7 +214,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       }
     } catch (error) {
       if (mounted) {
-        showErrorSnackBar(context, message: 'Failed to delete list: $error');
+        showErrorSnackBar(context, message: 'Failed to leave list: $error');
       }
     }
   }
@@ -388,6 +392,7 @@ Widget build(BuildContext context) {
 
 
   Widget _buildEmptyState() {
+    // --- CODICE RIPRISTINATO ---
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(24.0),
@@ -398,9 +403,11 @@ Widget build(BuildContext context) {
         ),
       ),
     );
+    // --- FINE ---
   }
 
   Widget _buildList(List<TodoList> lists) {
+    // Accetta List<TodoList> (non nullo)
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       itemCount: lists.length,

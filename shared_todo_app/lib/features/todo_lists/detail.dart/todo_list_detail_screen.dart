@@ -13,11 +13,15 @@ import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
 import '../presentation/widgets/task_list_tile.dart';
+import '../../../core/enums/task_filter_type.dart';
+import '../../../core/utils/task_sorter.dart';
+import '../presentation/widgets/task_filter_dropdown.dart';
 
 /// Schermata di dettaglio di una TodoList con le sue cartelle e task.
 /// NOTA: La sidebar è gestita da MainLayout tramite ShellRoute
 class TodoListDetailScreen extends StatefulWidget {
   final TodoList todoList;
+  final Folder parentFolder;
   final Folder parentFolder;
 
   const TodoListDetailScreen({
@@ -40,10 +44,12 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
 
   bool _isFoldersCollapsed = false;
   bool _isTasksCollapsed = false;
+  TaskFilterType _selectedTaskFilter = TaskFilterType.createdAtNewest;
 
   @override
   void initState() {
     super.initState();
+    _refreshStreams();
     _refreshStreams();
   }
 
@@ -86,6 +92,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     }
   }
 
+  // Dialog per eliminare Folder (ora usa ConfirmationDialog)
   void _showDeleteFolderDialog(Folder folder) {
     if (!mounted) return;
     showDialog<void>(
@@ -130,17 +137,16 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     );
   }
 
+  // Funzione per mostrare il TaskDialog (già estratto)
   Future<void> _openTaskDialog({Task? taskToEdit}) async {
     if (!mounted) return;
     try {
       final bool? result = await showDialog<bool>(
         context: context,
-        builder: (BuildContext dialogContext) {
-          return TaskDialog(
-            folderId: widget.parentFolder.id,
-            taskToEdit: taskToEdit,
-          );
-        },
+        builder: (BuildContext dialogContext) => TaskDialog(
+          folderId: widget.parentFolder.id,
+          taskToEdit: taskToEdit,
+        ),
       );
       if (result == true && mounted) {
         showSuccessSnackBar(context,
@@ -149,6 +155,11 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         _refreshStreams();
       }
     } catch (error) {
+      if (mounted) {
+        showErrorSnackBar(context,
+            message:
+                'Failed to ${taskToEdit == null ? 'create' : 'update'} task: $error');
+      }
       if (mounted) {
         showErrorSnackBar(context,
             message:

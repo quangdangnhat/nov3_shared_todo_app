@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../../../../../../data/models/folder.dart';
 import '../../../controllers/base_controller.dart';
 
-
 class FolderSelector extends StatelessWidget {
   final BaseFolderSelectionController controller;
   final ValueChanged<Folder> onFolderSelected;

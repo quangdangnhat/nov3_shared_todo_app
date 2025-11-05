@@ -6,7 +6,8 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData.dark().copyWith(
       primaryColor: Colors.blue, // Colore primario
-      scaffoldBackgroundColor: const Color(0xFF121212), // Sfondo leggermente più scuro
+      scaffoldBackgroundColor:
+          const Color(0xFF121212), // Sfondo leggermente più scuro
       appBarTheme: const AppBarTheme(
         elevation: 0, // Nessuna ombra sotto l'AppBar
         backgroundColor: Color(0xFF1F1F1F), // Colore AppBar
@@ -29,7 +30,7 @@ class AppTheme {
         filled: true,
         fillColor: Colors.grey[800],
       ),
-       // Aggiungi qui altre personalizzazioni (colori, font, ecc.)
+      // Aggiungi qui altre personalizzazioni (colori, font, ecc.)
     );
   }
 
