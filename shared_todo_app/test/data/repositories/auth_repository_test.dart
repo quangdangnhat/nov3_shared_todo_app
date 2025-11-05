@@ -143,4 +143,171 @@ void main() {
       )).called(1);
     });
   });
+
+  // ============================================================
+  // GROUP 2: signUp Tests
+  // ============================================================
+    group('signUp Method Tests', () {
+    test('should call signUp with correct email, password, and username', () async {
+      // Arrange
+      final mockResponse = MockAuthResponse();
+      final mockUser = MockUser();
+      
+      when(() => mockResponse.user).thenReturn(mockUser);
+      
+      when(() => mockAuth.signUp(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+        data: any(named: 'data'),
+      )).thenAnswer((_) async => mockResponse);
+
+      // Act
+      await authRepository.signUp(
+        email: 'newuser@example.com',
+        password: 'password123',
+        username: 'testuser',
+      );
+
+      // Assert: Verify username is passed in data object
+      verify(() => mockAuth.signUp(
+        email: 'newuser@example.com',
+        password: 'password123',
+        data: {'username': 'testuser'},
+      )).called(1);
+    });
+
+    test('should throw custom exception when username is already in use', () async {
+      // Arrange: Mock database error for duplicate username
+      when(() => mockAuth.signUp(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+        data: any(named: 'data'),
+      )).thenThrow(AuthException('Database error saving new user'));
+
+      // Act & Assert
+      expect(
+        () => authRepository.signUp(
+          email: 'test@example.com',
+          password: 'password123',
+          username: 'duplicate_user',
+        ),
+        throwsA(
+          isA<AuthException>().having(
+            (e) => e.message,
+            'message',
+            contains('Username already used'),
+          ),
+        ),
+      );
+    });
+
+    test('should rethrow AuthException if not username duplicate error', () async {
+      // Arrange: Mock different auth error
+      when(() => mockAuth.signUp(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+        data: any(named: 'data'),
+      )).thenThrow(AuthException('Email already registered'));
+
+      // Act & Assert
+      expect(
+        () => authRepository.signUp(
+          email: 'test@example.com',
+          password: 'password123',
+          username: 'testuser',
+        ),
+        throwsA(
+          isA<AuthException>().having(
+            (e) => e.message,
+            'message',
+            'Email already registered',
+          ),
+        ),
+      );
+    });
+
+    test('should rethrow generic exceptions during signup', () async {
+      // Arrange
+      when(() => mockAuth.signUp(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+        data: any(named: 'data'),
+      )).thenThrow(Exception('Network error'));
+
+      // Act & Assert
+      expect(
+        () => authRepository.signUp(
+          email: 'test@example.com',
+          password: 'password123',
+          username: 'testuser',
+        ),
+        throwsException,
+      );
+    });
+
+    test('should handle special characters in username', () async {
+      // Arrange
+      final mockResponse = MockAuthResponse();
+      
+      when(() => mockAuth.signUp(
+        email: any(named: 'email'),
+        password: any(named: 'password'),
+        data: any(named: 'data'),
+      )).thenAnswer((_) async => mockResponse);
+
+      // Act
+      await authRepository.signUp(
+        email: 'test@example.com',
+        password: 'password123',
+        username: 'user_name-123',
+      );
+
+      // Assert
+      verify(() => mockAuth.signUp(
+        email: 'test@example.com',
+        password: 'password123',
+        data: {'username': 'user_name-123'},
+      )).called(1);
+    });
+  });
+
+  // ============================================================
+  // GROUP 3: signOut Tests
+  // ============================================================
+    group('signOut Method Tests', () {
+    test('should call signOut on auth client', () async {
+      // Arrange
+      when(() => mockAuth.signOut()).thenAnswer((_) async => {});
+
+      // Act
+      await authRepository.signOut();
+
+      // Assert
+      verify(() => mockAuth.signOut()).called(1);
+    });
+
+    test('should rethrow exceptions during signOut', () async {
+      // Arrange
+      when(() => mockAuth.signOut()).thenThrow(Exception('SignOut failed'));
+
+      // Act & Assert
+      expect(
+        () => authRepository.signOut(),
+        throwsException,
+      );
+    });
+
+    test('should handle AuthException during signOut', () async {
+      // Arrange
+      when(() => mockAuth.signOut()).thenThrow(
+        AuthException('Session expired'),
+      );
+
+      // Act & Assert
+      expect(
+        () => authRepository.signOut(),
+        throwsA(isA<AuthException>()),
+      );
+    });
+  });
 }
