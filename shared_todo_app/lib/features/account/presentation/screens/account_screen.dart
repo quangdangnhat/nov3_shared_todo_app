@@ -10,9 +10,10 @@ class AccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
-    
+
     // Testi tradotti in inglese
-    final username = (user?.userMetadata?['username'] as String?) ?? 'Unknown User';
+    final username =
+        (user?.userMetadata?['username'] as String?) ?? 'Unknown User';
     final email = user?.email ?? '—';
     final initial = username.isNotEmpty ? username[0].toUpperCase() : '?';
 
@@ -43,7 +44,10 @@ class AccountScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Center(child: Text(username, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600))),
+          Center(
+              child: Text(username,
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.w600))),
           const SizedBox(height: 24),
           const Divider(),
           ListTile(
@@ -67,20 +71,24 @@ class AccountScreen extends StatelessWidget {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             icon: const Icon(Icons.delete_forever),
             // Testo tradotto
-            label: const Text('Delete Account'), 
+            label: const Text('Delete Account'),
             onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
                   // Testi tradotti
                   title: const Text('Delete Account?'),
-                  content: const Text('This action is permanent. Are you sure you want to delete your account?'),
+                  content: const Text(
+                      'This action is permanent. Are you sure you want to delete your account?'),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel')),
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, true),
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -93,7 +101,10 @@ class AccountScreen extends StatelessWidget {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   // Testo tradotto
-                  const SnackBar(content: Text('Account deletion: backend logic to be implemented'), backgroundColor: Colors.orange),
+                  const SnackBar(
+                      content: Text(
+                          'Account deletion: backend logic to be implemented'),
+                      backgroundColor: Colors.orange),
                 );
               }
             },
@@ -103,4 +114,3 @@ class AccountScreen extends StatelessWidget {
     );
   }
 }
-

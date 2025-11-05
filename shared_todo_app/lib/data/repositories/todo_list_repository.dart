@@ -6,7 +6,6 @@ import 'dart:async'; // Per Completer e Future.wait
 
 /// Repository per gestire le operazioni sulle TodoList.
 class TodoListRepository {
-  
   /// Ottiene uno stream delle liste a cui l'utente partecipa,
   /// includendo il ruolo dell'utente per ciascuna lista.
   Stream<List<TodoList>> getTodoListsStream() {
@@ -28,16 +27,16 @@ class TodoListRepository {
       // 3. Estrai gli ID delle liste e mappa il ruolo per ogni ID
       final Map<String, String> listIdToRoleMap = {};
       for (var map in participationMaps) {
-         final listId = (map['todo_list_id'] ?? map['todoListId']) as String?;
-         final role = map['role'] as String?;
-         if (listId != null && role != null) {
-            listIdToRoleMap[listId] = role;
-         }
+        final listId = (map['todo_list_id'] ?? map['todoListId']) as String?;
+        final role = map['role'] as String?;
+        if (listId != null && role != null) {
+          listIdToRoleMap[listId] = role;
+        }
       }
 
       final listIds = listIdToRoleMap.keys.toList();
       if (listIds.isEmpty) {
-         return <TodoList>[];
+        return <TodoList>[];
       }
 
       // 4. Fai una query per ottenere i *dettagli* delle liste
@@ -51,13 +50,13 @@ class TodoListRepository {
       return todoListsData.map((listMap) {
         final listId = listMap['id'] as String;
         final role = listIdToRoleMap[listId] ?? 'Unknown'; // Fallback
-        
+
         // --- CORREZIONE ---
         // Aggiungi il ruolo alla mappa prima di passarla al costruttore.
         // Il modello TodoList.fromMap si aspetta di trovarlo lì.
         final enrichedMap = {
           ...listMap, // Copia i dati della lista (id, title, desc, ecc.)
-          'role': role,  // Aggiungi il ruolo
+          'role': role, // Aggiungi il ruolo
         };
 
         // Ora fromMap(map) funzionerà
@@ -68,7 +67,7 @@ class TodoListRepository {
   }
 
   /// Crea una nuova todo_list.
-  /// (Il trigger 'on_todolist_created_add_admin_participation' 
+  /// (Il trigger 'on_todolist_created_add_admin_participation'
   /// aggiungerà automaticamente il creatore come 'admin' in 'participations')
   Future<void> createTodoList({
     required String title,
@@ -93,15 +92,12 @@ class TodoListRepository {
     required String title,
     String? desc,
   }) async {
-     try {
-      await supabase
-          .from('todo_lists')
-          .update({
-            'title': title,
-            'desc': desc,
-            'updated_at': DateTime.now().toIso8601String()
-          })
-          .eq('id', listId);
+    try {
+      await supabase.from('todo_lists').update({
+        'title': title,
+        'desc': desc,
+        'updated_at': DateTime.now().toIso8601String()
+      }).eq('id', listId);
     } catch (error) {
       debugPrint('Errore aggiornamento lista: $error');
       rethrow;
@@ -116,9 +112,9 @@ class TodoListRepository {
   Future<void> leaveTodoList(String todoListId) async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) {
-       throw Exception("Utente non autenticato.");
+      throw Exception("Utente non autenticato.");
     }
-    
+
     try {
       // Elimina la riga dalla tabella 'participations'
       await supabase
@@ -126,11 +122,9 @@ class TodoListRepository {
           .delete()
           .eq('todo_list_id', todoListId)
           .eq('user_id', userId); // Filtro esplicito
-          
     } catch (error) {
       debugPrint('Errore abbandonando la lista: $error');
       rethrow;
     }
   }
 }
-

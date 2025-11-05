@@ -26,15 +26,13 @@ class TaskSorter {
         break;
 
       case TaskFilterType.alphabeticalAZ:
-        sortedTasks.sort((a, b) => 
-          a.title.toLowerCase().compareTo(b.title.toLowerCase())
-        );
+        sortedTasks.sort(
+            (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
         break;
 
       case TaskFilterType.alphabeticalZA:
-        sortedTasks.sort((a, b) => 
-          b.title.toLowerCase().compareTo(a.title.toLowerCase())
-        );
+        sortedTasks.sort(
+            (a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
         break;
     }
 
@@ -50,7 +48,8 @@ class TaskSorter {
       'Low': 3,
     };
 
-    final valueA = priorityOrder[priorityA] ?? 999; // Unknown priority at the end
+    final valueA =
+        priorityOrder[priorityA] ?? 999; // Unknown priority at the end
     final valueB = priorityOrder[priorityB] ?? 999;
 
     return valueA.compareTo(valueB);

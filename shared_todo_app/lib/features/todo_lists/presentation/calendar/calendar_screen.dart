@@ -47,7 +47,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   // ---------- Future for the selected day ----------
   Future<List<Task>> _fetchDayTasks() {
     final start = _dayStart(_selectedDay);
-    final end   = _dayEnd(_selectedDay);
+    final end = _dayEnd(_selectedDay);
     return _repo.getTasksForCalendar_Future(start, end);
   }
 
@@ -102,13 +102,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 color: Theme.of(context).colorScheme.surfaceVariant,
                 child: Row(
                   children: [
-                    Icon(Icons.event, color: Theme.of(context).colorScheme.primary),
+                    Icon(Icons.event,
+                        color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
                       DateFormat('EEEE, d MMMM yyyy').format(_selectedDay),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ],
                 ),
@@ -121,7 +122,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   builder: (context, snapshotDay) {
                     final dayTasks = snapshotDay.data ?? [];
 
-                    if (snapshotDay.connectionState == ConnectionState.waiting &&
+                    if (snapshotDay.connectionState ==
+                            ConnectionState.waiting &&
                         (dayTasks.isEmpty)) {
                       return const Center(child: CircularProgressIndicator());
                     }
@@ -177,7 +179,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   ),
                                   TextButton(
                                     onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                    child: const Text('Delete',
+                                        style: TextStyle(color: Colors.red)),
                                   ),
                                 ],
                               ),

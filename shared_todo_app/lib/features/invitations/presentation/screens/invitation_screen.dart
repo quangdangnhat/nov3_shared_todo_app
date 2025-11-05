@@ -15,9 +15,9 @@ class InvitationsScreen extends StatefulWidget {
 
 class _InvitationsScreenState extends State<InvitationsScreen> {
   final InvitationRepository _invitationRepo = InvitationRepository();
-  
+
   late Stream<List<Invitation>> _invitationsStream;
-  
+
   // Set per tenere traccia degli inviti in corso di elaborazione
   final Set<String> _loadingInvitations = {};
 
@@ -41,25 +41,24 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
     try {
       // Chiama il repository per rispondere all'invito
       await _invitationRepo.respondToInvitation(invitation.id, accept);
-      
+
       if (mounted) {
-        showSuccessSnackBar(context, 
-          message: 'Invitation ${accept ? 'accepted' : 'declined'} successfully'
-        );
+        showSuccessSnackBar(context,
+            message:
+                'Invitation ${accept ? 'accepted' : 'declined'} successfully');
       }
-      
+
       // Forza il refresh dello stream per rimuovere l'invito dalla lista.
       if (mounted) {
         setState(() {
           _invitationsStream = _invitationRepo.getPendingInvitationsStream();
         });
       }
-
     } catch (error) {
       if (mounted) {
-        showErrorSnackBar(context, 
-          message: 'Failed to respond: ${error.toString().replaceFirst("Exception: ", "")}'
-        );
+        showErrorSnackBar(context,
+            message:
+                'Failed to respond: ${error.toString().replaceFirst("Exception: ", "")}');
       }
     } finally {
       // Assicurati di rimuovere l'ID dal set di caricamento
@@ -125,7 +124,8 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
             itemCount: invitations.length,
             itemBuilder: (context, index) {
               final invitation = invitations[index];
-              final bool isLoading = _loadingInvitations.contains(invitation.id);
+              final bool isLoading =
+                  _loadingInvitations.contains(invitation.id);
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12.0),
@@ -136,26 +136,36 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                     children: [
                       // --- MODIFICA 1: Mostra Nome Lista ---
                       Text(
-                        'Invitation to join list:', 
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey),
+                        'Invitation to join list:',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(color: Colors.grey),
                       ),
                       Text(
                         // Usa il titolo recuperato, con un fallback
-                        invitation.todoListTitle ?? '[List Name Not Found]', 
+                        invitation.todoListTitle ?? '[List Name Not Found]',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       // --- FINE MODIFICA ---
                       const SizedBox(height: 8),
                       // --- MODIFICA 2: Mostra Email Invitante ---
-                       Text.rich(
+                      Text.rich(
                         TextSpan(
                           text: 'Invited by: ',
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          style:
+                              const TextStyle(fontSize: 14, color: Colors.grey),
                           children: [
                             TextSpan(
                               // Usa l'email recuperata, con un fallback
-                              text: invitation.invitedByUserEmail ?? '[Unknown User]',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium?.color),
+                              text: invitation.invitedByUserEmail ??
+                                  '[Unknown User]',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color),
                             ),
                           ],
                         ),
@@ -165,11 +175,17 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                       Text.rich(
                         TextSpan(
                           text: 'As: ',
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          style:
+                              const TextStyle(fontSize: 14, color: Colors.grey),
                           children: [
                             TextSpan(
                               text: invitation.role, // Mostra il ruolo
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyMedium?.color),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color),
                             ),
                           ],
                         ),
@@ -184,12 +200,14 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                             const CircularProgressIndicator()
                           else ...[
                             TextButton(
-                              onPressed: () => _handleResponse(invitation, false), // Rifiuta
+                              onPressed: () =>
+                                  _handleResponse(invitation, false), // Rifiuta
                               child: const Text('Decline'),
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
-                              onPressed: () => _handleResponse(invitation, true), // Accetta
+                              onPressed: () =>
+                                  _handleResponse(invitation, true), // Accetta
                               child: const Text('Accept'),
                             ),
                           ],

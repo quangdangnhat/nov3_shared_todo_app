@@ -19,12 +19,9 @@ class _CreatePageState extends State<CreatePage> {
   // Per poter visualizzare le todoList dell'utente
   final _todoListRepo = TodoListRepository();
 
-
-
   // Gestione dei campi della sezione folders
   final TextEditingController _folderNameController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
-
 
   @override
   void dispose() {
@@ -32,8 +29,6 @@ class _CreatePageState extends State<CreatePage> {
     _searchController.dispose();
     super.dispose();
   }
-
-
 
   @override
   Widget build(BuildContext context) {

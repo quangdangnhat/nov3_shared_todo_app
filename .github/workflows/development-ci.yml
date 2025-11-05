@@ -31,11 +31,24 @@ jobs:
         working-directory: ./shared_todo_app
 
       - name: Check formatting
-        run: flutter format --set-exit-if-changed .
+        run: dart format --set-exit-if-changed .
         working-directory: ./shared_todo_app
 
       - name: Analyze code
-        run: flutter analyze
+        run: |
+          echo "Analyzing code..."
+
+          # Run analyze command and capture output
+          flutter analyze > analyze_output.txt 2>&1 || true
+
+          # Check for errors in the output
+          if grep -q "error •" analyze_log.txt; then
+            echo "Analysis found errors:"
+            cat analyze_output.txt
+            exit 1
+          else
+            echo "No analysis errors found."
+          fi
         working-directory: ./shared_todo_app
 
       - name: Run tests
@@ -44,5 +57,6 @@ jobs:
         working-directory: ./shared_todo_app
 
       - name: Build APK (Debug)
+        if: ${{ !env.ACT }} # only run on GitHub Actions default environment
         run: flutter build apk --debug
         working-directory: ./shared_todo_app

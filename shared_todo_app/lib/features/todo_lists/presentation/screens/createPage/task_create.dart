@@ -192,11 +192,10 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
                 const SizedBox(height: 16),
 
                 StatusSelector(
-                  selectedStatus: _controller.selectedStatus, 
-                  onStatusChanged: (status){
-                    _controller.setStatus(status);
-                  }
-                ),
+                    selectedStatus: _controller.selectedStatus,
+                    onStatusChanged: (status) {
+                      _controller.setStatus(status);
+                    }),
                 const SizedBox(height: 16),
                 // priority
                 PrioritySelector(

@@ -32,7 +32,9 @@ class ConfirmationDialog extends StatelessWidget {
             onConfirm(); // Esegui l'azione (es. cancellazione)
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: confirmText.toLowerCase() == 'delete' ? Colors.red : Theme.of(context).primaryColor,
+            backgroundColor: confirmText.toLowerCase() == 'delete'
+                ? Colors.red
+                : Theme.of(context).primaryColor,
             foregroundColor: Colors.white,
           ),
           child: Text(confirmText),

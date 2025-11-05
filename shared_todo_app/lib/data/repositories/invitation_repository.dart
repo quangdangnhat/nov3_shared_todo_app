@@ -25,12 +25,12 @@ class InvitationRepository {
 
       if (response.status != 200) {
         final errorData = response.data as Map<String, dynamic>?;
-        final errorMessage = errorData?['error'] ?? 'Failed to send invitation.';
+        final errorMessage =
+            errorData?['error'] ?? 'Failed to send invitation.';
         throw Exception(errorMessage);
       }
-      
-      debugPrint('Invitation created successfully: ${response.data}');
 
+      debugPrint('Invitation created successfully: ${response.data}');
     } on FunctionException catch (e) {
       debugPrint('FunctionException: ${e.toString()}');
       throw Exception('Function error: ${e.toString()}');
@@ -45,9 +45,10 @@ class InvitationRepository {
   Stream<List<Invitation>> getPendingInvitationsStream() {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
-      return Stream.value([]); // Ritorna uno stream vuoto se l'utente non è loggato
+      return Stream.value(
+          []); // Ritorna uno stream vuoto se l'utente non è loggato
     }
-    
+
     // --- CORREZIONE: Usa asyncMap ---
     // 1. Crea uno stream SEMPLICE solo per lo stato 'pending'
     //    La RLS (Policy) si occupa già di filtrare per l'utente loggato.
@@ -60,7 +61,6 @@ class InvitationRepository {
 
     // 2. Usa asyncMap per "arricchire" i dati
     return stream.asyncMap((invitationDataList) async {
-      
       // Filtra ulteriormente lato client per sicurezza (se RLS dovesse fallire)
       final myInvitations = invitationDataList
           .where((map) => map['invited_user_id'] == userId)
@@ -79,9 +79,9 @@ class InvitationRepository {
           .map((map) => map['invited_by_user_id'] as String)
           .toSet()
           .toList();
-          
+
       if (listIds.isEmpty || inviterIds.isEmpty) {
-         return <Invitation>[];
+        return <Invitation>[];
       }
 
       // 3. Fai query separate per i dati aggiuntivi
@@ -90,7 +90,7 @@ class InvitationRepository {
           .from('todo_lists')
           .select('id, title')
           .filter('id', 'in', listIds); // Corretto
-          
+
       final inviterEmailsFuture = _supabase
           .from('users')
           .select('id, email')
@@ -98,36 +98,30 @@ class InvitationRepository {
       // --- FINE CORREZIONE ---
 
       // Esegui le query in parallelo
-      final [listTitlesResponse, inviterEmailsResponse] = await Future.wait([
-          listTitlesFuture,
-          inviterEmailsFuture
-      ]);
+      final [listTitlesResponse, inviterEmailsResponse] =
+          await Future.wait([listTitlesFuture, inviterEmailsFuture]);
 
       // 4. Mappa i risultati in lookup map per efficienza
       final listTitles = {
-        for (var item in listTitlesResponse) 
+        for (var item in listTitlesResponse)
           item['id'] as String: item['title'] as String
       };
       final inviterEmails = {
-        for (var item in inviterEmailsResponse) 
+        for (var item in inviterEmailsResponse)
           item['id'] as String: item['email'] as String
       };
 
       // 5. Combina i dati e costruisci i modelli Invitation
       return myInvitations.map((invitationMap) {
-         final todoListId = invitationMap['todo_list_id'] as String;
-         final inviterId = invitationMap['invited_by_user_id'] as String;
-         
-         final enrichedMap = {
-           ...invitationMap,
-           'todo_lists': { 
-             'title': listTitles[todoListId] ?? '[Unknown List]'
-           },
-           'users': { 
-             'email': inviterEmails[inviterId] ?? '[Unknown User]'
-           }
-         };
-         return Invitation.fromMap(enrichedMap as Map<String, dynamic>);
+        final todoListId = invitationMap['todo_list_id'] as String;
+        final inviterId = invitationMap['invited_by_user_id'] as String;
+
+        final enrichedMap = {
+          ...invitationMap,
+          'todo_lists': {'title': listTitles[todoListId] ?? '[Unknown List]'},
+          'users': {'email': inviterEmails[inviterId] ?? '[Unknown User]'}
+        };
+        return Invitation.fromMap(enrichedMap as Map<String, dynamic>);
       }).toList();
     });
   }
@@ -136,21 +130,21 @@ class InvitationRepository {
   Future<void> respondToInvitation(String invitationId, bool accept) async {
     try {
       final response = await _supabase.functions.invoke(
-        'respond-to-invitation', 
+        'respond-to-invitation',
         body: {
           'invitation_id': invitationId,
-          'accept': accept, 
+          'accept': accept,
         },
       );
 
-       if (response.status != 200) {
+      if (response.status != 200) {
         final errorData = response.data as Map<String, dynamic>?;
-        final errorMessage = errorData?['error'] ?? 'Failed to respond to invitation.';
+        final errorMessage =
+            errorData?['error'] ?? 'Failed to respond to invitation.';
         throw Exception(errorMessage);
       }
-      
-      debugPrint('Response recorded successfully: ${response.data}');
 
+      debugPrint('Response recorded successfully: ${response.data}');
     } on FunctionException catch (e) {
       debugPrint('FunctionException: ${e.toString()}');
       throw Exception('Function error: ${e.toString()}');
@@ -160,4 +154,3 @@ class InvitationRepository {
     }
   }
 }
-

@@ -7,16 +7,16 @@ class TaskRepository {
 
   /// Ottiene uno stream dei task all'interno di una specifica cartella.
   Stream<List<Task>> getTasksStream(String folderId) {
-     final stream = _supabase
+    final stream = _supabase
         .from('tasks')
         .stream(primaryKey: ['id']) // Chiama stream() prima
         .eq('folder_id', folderId) // Applica filtro DOPO stream()
         .order('created_at', ascending: false); // Applica ordine DOPO stream()
 
-     // Mappa i dati JSON ricevuti in oggetti Task
-     return stream.map((data) {
-          return data.map((json) => Task.fromMap(json)).toList();
-        });
+    // Mappa i dati JSON ricevuti in oggetti Task
+    return stream.map((data) {
+      return data.map((json) => Task.fromMap(json)).toList();
+    });
   }
 
   /// Crea un nuovo task nel database.
@@ -31,23 +31,20 @@ class TaskRepository {
   }) async {
     try {
       final Map<String, dynamic> payload = {
-            'folder_id': folderId,
-            'title': title,
-            'desc': desc,
-            'priority': priority,
-            'status': status,
-            'due_date': dueDate.toIso8601String(),
+        'folder_id': folderId,
+        'title': title,
+        'desc': desc,
+        'priority': priority,
+        'status': status,
+        'due_date': dueDate.toIso8601String(),
       };
       // Aggiungi start_date solo se fornita (altrimenti usa DEFAULT now())
       if (startDate != null) {
-         payload['start_date'] = startDate.toIso8601String();
+        payload['start_date'] = startDate.toIso8601String();
       }
 
-      final response = await _supabase
-          .from('tasks')
-          .insert(payload)
-          .select()
-          .single();
+      final response =
+          await _supabase.from('tasks').insert(payload).select().single();
 
       return Task.fromMap(response);
     } catch (e) {
@@ -66,50 +63,52 @@ class TaskRepository {
     DateTime? startDate,
     DateTime? dueDate,
   }) async {
-     try {
-       // Costruisci dinamicamente il payload con solo i campi da aggiornare
-       final updates = <String, dynamic>{
-         'updated_at': DateTime.now().toIso8601String(), // Aggiorna sempre 'updated_at'
-       };
-       if (title != null) updates['title'] = title;
-       if (desc != null) updates['desc'] = desc; // Permetti di impostare a null? Serve 'desc': desc ?? null?
-       if (priority != null) updates['priority'] = priority;
-       if (status != null) updates['status'] = status;
-       if (startDate != null) updates['start_date'] = startDate.toIso8601String();
-       if (dueDate != null) updates['due_date'] = dueDate.toIso8601String();
+    try {
+      // Costruisci dinamicamente il payload con solo i campi da aggiornare
+      final updates = <String, dynamic>{
+        'updated_at':
+            DateTime.now().toIso8601String(), // Aggiorna sempre 'updated_at'
+      };
+      if (title != null) updates['title'] = title;
+      if (desc != null)
+        updates['desc'] =
+            desc; // Permetti di impostare a null? Serve 'desc': desc ?? null?
+      if (priority != null) updates['priority'] = priority;
+      if (status != null) updates['status'] = status;
+      if (startDate != null)
+        updates['start_date'] = startDate.toIso8601String();
+      if (dueDate != null) updates['due_date'] = dueDate.toIso8601String();
 
-       // Se non ci sono campi da aggiornare (a parte updated_at), potremmo voler uscire prima
-       if (updates.length <= 1) {
-          // Potresti lanciare un errore o restituire il task non modificato
-          // Per ora, procediamo comunque per aggiornare 'updated_at'
-          debugPrint("Nessun campo da aggiornare per il task $taskId (solo updated_at)");
-       }
+      // Se non ci sono campi da aggiornare (a parte updated_at), potremmo voler uscire prima
+      if (updates.length <= 1) {
+        // Potresti lanciare un errore o restituire il task non modificato
+        // Per ora, procediamo comunque per aggiornare 'updated_at'
+        debugPrint(
+            "Nessun campo da aggiornare per il task $taskId (solo updated_at)");
+      }
 
-       final response = await _supabase
-           .from('tasks')
-           .update(updates)
-           .eq('id', taskId)
-           .select() // Restituisce il record aggiornato
-           .single(); // Ci aspettiamo un solo risultato
+      final response = await _supabase
+          .from('tasks')
+          .update(updates)
+          .eq('id', taskId)
+          .select() // Restituisce il record aggiornato
+          .single(); // Ci aspettiamo un solo risultato
 
-       return Task.fromMap(response);
-     } catch (e) {
-       debugPrint('Errore durante l\'aggiornamento del task $taskId: $e');
-       throw Exception('Failed to update task: $e');
-     }
+      return Task.fromMap(response);
+    } catch (e) {
+      debugPrint('Errore durante l\'aggiornamento del task $taskId: $e');
+      throw Exception('Failed to update task: $e');
+    }
   }
 
   // --- Elimina un task ---
   Future<void> deleteTask(String taskId) async {
-     try {
-       await _supabase
-           .from('tasks')
-           .delete()
-           .eq('id', taskId);
-     } catch (e) {
-       debugPrint('Errore durante l\'eliminazione del task $taskId: $e');
-       throw Exception('Failed to delete task: $e');
-     }
+    try {
+      await _supabase.from('tasks').delete().eq('id', taskId);
+    } catch (e) {
+      debugPrint('Errore durante l\'eliminazione del task $taskId: $e');
+      throw Exception('Failed to delete task: $e');
+    }
   }
 
   // Nel tuo TaskRepository:
@@ -120,7 +119,8 @@ class TaskRepository {
 
 // --- Task per periodo (griglia mensile del calendario) ---
 // Recupera i task che si sovrappongono all'intervallo di date [from, to).
-  Future<List<Task>> getTasksForCalendar_Future(DateTime from, DateTime to) async {
+  Future<List<Task>> getTasksForCalendar_Future(
+      DateTime from, DateTime to) async {
     try {
       final fromIso = from.toUtc().toIso8601String();
       final toIso = to.toUtc().toIso8601String();
@@ -134,8 +134,8 @@ class TaskRepository {
           .select()
           .lt('start_date', toIso)
           .gte('due_date', fromIso)
-      // Ordiniamo primariamente per data di scadenza direttamente in query,
-      // che è più efficiente.
+          // Ordiniamo primariamente per data di scadenza direttamente in query,
+          // che è più efficiente.
           .order('due_date', ascending: true);
 
       // Trasforma i dati grezzi in una lista di oggetti Task.
@@ -154,7 +154,8 @@ class TaskRepository {
         }
 
         // 2. Se la scadenza è la stessa, ordina per priorità (da Alta a Bassa)
-        comparison = _rankPriority(taskA.priority).compareTo(_rankPriority(taskB.priority));
+        comparison = _rankPriority(taskA.priority)
+            .compareTo(_rankPriority(taskB.priority));
         if (comparison != 0) {
           return comparison;
         }
@@ -183,7 +184,8 @@ class TaskRepository {
 // --- Task per il giorno selezionato ---
 
 // --- Task per il giorno selezionato ---
-  Future<List<Task>> getTasksForDay_Future(DateTime dayStartInclusive, DateTime dayEndExclusive) async {
+  Future<List<Task>> getTasksForDay_Future(
+      DateTime dayStartInclusive, DateTime dayEndExclusive) async {
     try {
       final res = await _supabase
           .from('tasks')
@@ -203,6 +205,4 @@ class TaskRepository {
       rethrow;
     }
   }
-
 }
-

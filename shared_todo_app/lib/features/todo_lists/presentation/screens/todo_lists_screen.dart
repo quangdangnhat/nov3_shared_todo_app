@@ -10,7 +10,6 @@ import '../widgets/todo_list_tile.dart';
 import '../../../../data/models/folder.dart'; // Necessario per Folder
 import '../../../../data/repositories/folder_repository.dart'; // Necessario per getRootFolder
 
-
 /// Schermata principale che mostra l'elenco delle TodoList dell'utente.
 class TodoListsScreen extends StatefulWidget {
   const TodoListsScreen({super.key});
@@ -22,7 +21,7 @@ class TodoListsScreen extends StatefulWidget {
 class _TodoListsScreenState extends State<TodoListsScreen> {
   // Istanziamo i repository necessari
   final TodoListRepository _todoListRepo = TodoListRepository();
-  final FolderRepository _folderRepo = FolderRepository(); 
+  final FolderRepository _folderRepo = FolderRepository();
 
   // Mantiene lo stato dello stream per poterlo aggiornare
   late Stream<List<TodoList>> _listsStream;
@@ -65,8 +64,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: descController,
-                  decoration:
-                      const InputDecoration(labelText: 'Description (Optional)'),
+                  decoration: const InputDecoration(
+                      labelText: 'Description (Optional)'),
                 ),
               ],
             ),
@@ -104,81 +103,80 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
   }
 
-   /// Mostra un dialog per modificare una TodoList esistente.
+  /// Mostra un dialog per modificare una TodoList esistente.
   void _showEditListDialog(TodoList list) {
-     final formKey = GlobalKey<FormState>();
-     final titleController = TextEditingController(text: list.title);
-     final descController = TextEditingController(text: list.desc);
+    final formKey = GlobalKey<FormState>();
+    final titleController = TextEditingController(text: list.title);
+    final descController = TextEditingController(text: list.desc);
 
-     showDialog(
-       context: context,
-       builder: (context) {
-         return AlertDialog(
-          title: const Text('Edit List'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Title'),
-                   autofocus: true,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a title';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: descController,
-                  decoration:
-                      const InputDecoration(labelText: 'Description (Optional)'),
-                ),
-              ],
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Edit List'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: titleController,
+                    decoration: const InputDecoration(labelText: 'Title'),
+                    autofocus: true,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a title';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: descController,
+                    decoration: const InputDecoration(
+                        labelText: 'Description (Optional)'),
+                  ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  try {
-                    await _todoListRepo.updateTodoList(
-                      listId: list.id,
-                      title: titleController.text.trim(),
-                      desc: descController.text.trim().isNotEmpty
-                          ? descController.text.trim()
-                          : null,
-                    );
-                    if (mounted) {
-                      Navigator.of(context).pop();
-                      showSuccessSnackBar(context,
-                          message: 'List updated successfully');
-                      setState(() {
-                        _listsStream = _todoListRepo.getTodoListsStream();
-                      });
-                    }
-                  } catch (error) {
-                    if (mounted) {
-                      showErrorSnackBar(context,
-                          message: 'Failed to update list: $error');
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
+                    try {
+                      await _todoListRepo.updateTodoList(
+                        listId: list.id,
+                        title: titleController.text.trim(),
+                        desc: descController.text.trim().isNotEmpty
+                            ? descController.text.trim()
+                            : null,
+                      );
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                        showSuccessSnackBar(context,
+                            message: 'List updated successfully');
+                        setState(() {
+                          _listsStream = _todoListRepo.getTodoListsStream();
+                        });
+                      }
+                    } catch (error) {
+                      if (mounted) {
+                        showErrorSnackBar(context,
+                            message: 'Failed to update list: $error');
+                      }
                     }
                   }
-                }
-              },
-              child: const Text('Save Changes'),
-            ),
-          ],
-         );
-       }
-     );
-     // --- FINE ---
+                },
+                child: const Text('Save Changes'),
+              ),
+            ],
+          );
+        });
+    // --- FINE ---
   }
 
   /// Mostra un popup di conferma prima di abbandonare una lista.
@@ -227,41 +225,41 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       }
     } catch (error) {
       if (mounted) {
-        showErrorSnackBar(context,
-            message: 'Failed to leave list: $error');
+        showErrorSnackBar(context, message: 'Failed to leave list: $error');
       }
     }
   }
 
   /// Naviga alla schermata di dettaglio della lista selezionata.
   Future<void> _onSelectedList(TodoList list) async {
-     // Mostra un dialog di caricamento
-     showDialog(
-       context: context,
-       barrierDismissible: false, 
-       builder: (context) => const Center(child: CircularProgressIndicator()),
-     );
-     try {
-       final Folder rootFolder = await _folderRepo.getRootFolder(list.id);
-       if (mounted) {
-         Navigator.of(context).pop(); // Chiudi dialog caricamento
-         context.pushNamed(
-           AppRouter.listDetail, 
-           pathParameters: {'listId': list.id}, 
-           extra: { 
-             'todoList': list,
-             'parentFolder': rootFolder,
-           },
-         );
-       }
-     } catch (e) { 
-        if (mounted) {
-         Navigator.of(context).pop(); 
-         showErrorSnackBar(context, message: 'Could not load list details: ${e.toString().replaceFirst("Exception: ","")}');
-        }
-     }
+    // Mostra un dialog di caricamento
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final Folder rootFolder = await _folderRepo.getRootFolder(list.id);
+      if (mounted) {
+        Navigator.of(context).pop(); // Chiudi dialog caricamento
+        context.pushNamed(
+          AppRouter.listDetail,
+          pathParameters: {'listId': list.id},
+          extra: {
+            'todoList': list,
+            'parentFolder': rootFolder,
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        showErrorSnackBar(context,
+            message:
+                'Could not load list details: ${e.toString().replaceFirst("Exception: ", "")}');
+      }
+    }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -281,9 +279,10 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
 
           // Stato di errore
           if (snapshot.hasError) {
-             debugPrint('Errore StreamBuilder: ${snapshot.error}');
-             debugPrint('Stack trace: ${snapshot.stackTrace}');
-             return Center(child: Text('Error loading lists: ${snapshot.error}'));
+            debugPrint('Errore StreamBuilder: ${snapshot.error}');
+            debugPrint('Stack trace: ${snapshot.stackTrace}');
+            return Center(
+                child: Text('Error loading lists: ${snapshot.error}'));
           }
 
           final lists = snapshot.data;
@@ -296,7 +295,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
 
           // Mostra la lista usando il widget Tile esterno
           // Questa chiamata è ora sicura perché 'lists' non è nullo
-          return _buildList(lists); 
+          return _buildList(lists);
         },
       ),
       floatingActionButton: FloatingActionButton(
@@ -308,9 +307,9 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
   }
 
   /// Costruisce il widget da mostrare quando non ci sono liste.
-  Widget _buildEmptyState() { 
-     // --- CODICE RIPRISTINATO ---
-     return const Center(
+  Widget _buildEmptyState() {
+    // --- CODICE RIPRISTINATO ---
+    return const Center(
       child: Padding(
         padding: EdgeInsets.all(24.0),
         child: Text(
@@ -324,7 +323,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
   }
 
   /// Costruisce la ListView usando il widget TodoListTile.
-  Widget _buildList(List<TodoList> lists) { // Accetta List<TodoList> (non nullo)
+  Widget _buildList(List<TodoList> lists) {
+    // Accetta List<TodoList> (non nullo)
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       itemCount: lists.length,
@@ -332,12 +332,12 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
         final list = lists[index];
         return TodoListTile(
           list: list,
-          onTap: () => _onSelectedList(list), 
-          onEdit: () => _showEditListDialog(list), 
-          onDelete: () => _showLeaveConfirmationDialog(list), // Aggiornato per "Leave"
+          onTap: () => _onSelectedList(list),
+          onEdit: () => _showEditListDialog(list),
+          onDelete: () =>
+              _showLeaveConfirmationDialog(list), // Aggiornato per "Leave"
         );
       },
     );
   }
 }
-

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_todo_app/data/models/todo_list.dart';
 import '../../../../../../data/models/folder.dart';
 
-
 class FolderDisplayCard extends StatelessWidget {
   final TodoList? selectedTodoList;
   final Folder? selectedFolder;

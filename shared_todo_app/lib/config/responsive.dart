@@ -5,7 +5,6 @@ class ResponsiveLayout extends StatelessWidget {
   final Widget? tablet;
   final Widget desktop;
 
-
   const ResponsiveLayout({
     super.key,
     required this.mobile,
@@ -13,13 +12,13 @@ class ResponsiveLayout extends StatelessWidget {
     required this.desktop,
   });
 
-  // imposto le diverse larghezze per distinguere il dispositivo che si sta usando 
+  // imposto le diverse larghezze per distinguere il dispositivo che si sta usando
   // break point width of the devices
   static const double mobileBreakpoint = 904;
   static const double desktopBreakpoint = 1280;
 
 // funzioni per facilitare l'utilizzo quando devo modificare l'UI in base al dispositivo
-// functions to make the code easier to read and use depending the device.   
+// functions to make the code easier to read and use depending the device.
   static bool isMobile(BuildContext context) =>
       MediaQuery.sizeOf(context).width < mobileBreakpoint;
 
@@ -31,7 +30,7 @@ class ResponsiveLayout extends StatelessWidget {
       MediaQuery.sizeOf(context).width >= desktopBreakpoint;
 
   // Helper per ottenere il tipo di dispositivo
-  //Helpr to get the device type 
+  //Helpr to get the device type
   static DeviceType getDeviceType(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     if (width >= desktopBreakpoint) return DeviceType.desktop;
@@ -93,6 +92,4 @@ Text(
   }
 }
 
-enum DeviceType { mobile, tablet, desktop } // to avoid the use of ( if/else )  
-
-
+enum DeviceType { mobile, tablet, desktop } // to avoid the use of ( if/else )

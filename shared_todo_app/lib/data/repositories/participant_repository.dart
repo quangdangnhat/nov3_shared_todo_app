@@ -17,7 +17,7 @@ class ParticipantRepository {
           // e le colonne 'username' ed 'email' dalla tabella 'users' collegata
           .select('*, users(username, email)')
           .eq('todo_list_id', todoListId);
-          // Non serve ordinare qui, possiamo farlo nella UI se necessario
+      // Non serve ordinare qui, possiamo farlo nella UI se necessario
 
       // Trasforma la lista di mappe JSON in una lista di oggetti Participant
       final List<Participant> participants = response
@@ -25,7 +25,6 @@ class ParticipantRepository {
           .toList();
 
       return participants;
-
     } catch (e) {
       debugPrint('Errore durante il recupero dei partecipanti: $e');
       throw Exception('Failed to load participants: $e');

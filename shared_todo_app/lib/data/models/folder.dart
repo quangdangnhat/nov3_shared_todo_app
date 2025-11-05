@@ -18,10 +18,9 @@ class Folder {
   // --- METODO 'fromMap' ROBUSTO ---
   // Ora gestisce sia snake_case che camelCase
   factory Folder.fromMap(Map<String, dynamic> map) {
-    
     // Gestione sicura per 'updated_at' che può essere nullo
     final uaValue = map['updated_at'] ?? map['updatedAt'];
-    
+
     // Gestione sicura per 'parent_id' che può essere nullo
     final pValue = map['parent_id'] ?? map['parentId'];
 
@@ -31,10 +30,10 @@ class Folder {
     return Folder(
       id: map['id'],
       title: map['title'],
-      
+
       // Assicura che 'createdAt' venga letto e PARSATO
       createdAt: DateTime.parse(map['created_at'] ?? map['createdAt']),
-      
+
       // Assicura che gli altri campi vengano letti
       todoListId: tlValue,
       parentId: pValue,
@@ -55,4 +54,3 @@ class Folder {
     };
   }
 }
-

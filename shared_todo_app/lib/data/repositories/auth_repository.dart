@@ -10,8 +10,7 @@ class AuthRepository {
   //
   // In production: Use the global client from main.dart
   // In test: Inject a mock client
-  AuthRepository({SupabaseClient? client}) 
-      : _client = client ?? supabase;
+  AuthRepository({SupabaseClient? client}) : _client = client ?? supabase;
 
   // Metodo per registrarsi
   // Nota come gestiamo il campo 'username' nella tua tabella 'users'
@@ -25,7 +24,8 @@ class AuthRepository {
     required String username, // MANTENIAMO QUESTO per passarlo nei metadata
   }) async {
     try {
-      await _client.auth.signUp( // USE _client instead of global supabase
+      await _client.auth.signUp(
+        // USE _client instead of global supabase
         email: email,
         password: password,
         // Il Trigger che abbiamo creato in Supabase leggerà
@@ -36,12 +36,9 @@ class AuthRepository {
       );
     } on AuthException catch (error) {
       if (error.message.contains('Database error saving new user')) {
-        throw AuthException(
-          'Username già in uso. Prova con un altro.'
-        );
+        throw AuthException('Username already used. Try another one.');
       }
 
-      
       rethrow;
     } catch (error) {
       debugPrint('Generic sign up error: $error');
@@ -55,7 +52,8 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      await _client.auth.signInWithPassword( // USE _client instead of global supabase
+      await _client.auth.signInWithPassword(
+        // USE _client instead of global supabase
         email: email,
         password: password,
       );
@@ -83,4 +81,4 @@ class AuthRepository {
 
   /// Auth event stream (for reactive UI).
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
-}  
+}

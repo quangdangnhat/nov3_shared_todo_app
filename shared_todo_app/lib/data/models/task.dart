@@ -27,26 +27,28 @@ class Task {
   factory Task.fromMap(Map<String, dynamic> map) {
     // Helper sicuro per parsare date nullable
     DateTime? parseNullableDate(dynamic value) {
-        if (value is String) {
-          try {
-            return DateTime.parse(value);
-          } catch (_) {
-            return null; // Ignora formati non validi
-          }
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (_) {
+          return null; // Ignora formati non validi
         }
-        return null;
+      }
+      return null;
     }
 
-     // Helper sicuro per parsare date NON nullable
+    // Helper sicuro per parsare date NON nullable
     DateTime parseRequiredDate(dynamic value, String fieldName) {
-        if (value is String) {
-          try {
-            return DateTime.parse(value);
-          } catch (e) {
-             throw FormatException('Invalid date format for required field $fieldName: $value');
-          }
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (e) {
+          throw FormatException(
+              'Invalid date format for required field $fieldName: $value');
         }
-         throw FormatException('Missing or invalid type for required field $fieldName: $value');
+      }
+      throw FormatException(
+          'Missing or invalid type for required field $fieldName: $value');
     }
 
     final sdValue = map['start_date'] ?? map['startDate'];
@@ -88,4 +90,3 @@ class Task {
     };
   }
 }
-

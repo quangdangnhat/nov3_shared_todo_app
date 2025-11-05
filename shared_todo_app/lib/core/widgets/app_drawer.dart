@@ -46,7 +46,8 @@ class _AppDrawerState extends State<AppDrawer> {
   Widget build(BuildContext context) {
     // Recupera l'utente corrente per mostrare i dati
     final user = Supabase.instance.client.auth.currentUser;
-    final username = (user?.userMetadata?['username'] as String?) ?? 'No Username';
+    final username =
+        (user?.userMetadata?['username'] as String?) ?? 'No Username';
     final email = user?.email ?? 'No Email';
     final initial = username.isNotEmpty ? username[0].toUpperCase() : '?';
 
@@ -64,7 +65,8 @@ class _AppDrawerState extends State<AppDrawer> {
               backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               child: Text(
                 initial,
-                style: const TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    fontSize: 40.0, fontWeight: FontWeight.bold),
               ),
             ),
             margin: EdgeInsets.zero, // Rimuove il margine inferiore
@@ -91,7 +93,7 @@ class _AppDrawerState extends State<AppDrawer> {
           ),
 
           // Link al Calendario
-           ListTile(
+          ListTile(
             leading: const Icon(Icons.calendar_today_outlined),
             title: const Text('Calendar View'),
             onTap: () {

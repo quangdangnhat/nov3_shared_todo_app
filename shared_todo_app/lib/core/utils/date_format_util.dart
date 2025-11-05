@@ -14,15 +14,15 @@ String formatDate(DateTime date) {
       return '${difference.inMinutes}m ago';
     }
     return '${difference.inHours}h ago';
-  } 
+  }
   // Gestione per "ieri"
   else if (difference.inDays == 1) {
     return 'Yesterday';
-  } 
+  }
   // Gestione per la settimana scorsa
   else if (difference.inDays < 7) {
     return '${difference.inDays} days ago';
-  } 
+  }
   // Formato standard per date più vecchie
   else {
     return '${localDate.day.toString().padLeft(2, '0')}/${localDate.month.toString().padLeft(2, '0')}/${localDate.year}';

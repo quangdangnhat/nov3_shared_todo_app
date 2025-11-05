@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../../../data/models/todo_list.dart';
 import '../../../controllers/base_controller.dart';
 
-
 class TodoListSelector extends StatefulWidget {
   final BaseFolderSelectionController controller;
   final TextEditingController searchController;

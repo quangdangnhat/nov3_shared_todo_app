@@ -62,32 +62,38 @@ class _FolderDialogState extends State<FolderDialog> {
           title: _titleController.text.trim(),
           parentId: widget.parentId,
         );
-         // --- RIMOSSA SnackBar DA QUI ---
+        // --- RIMOSSA SnackBar DA QUI ---
       }
       // Chiudi il dialog in caso di successo
-      if (mounted) Navigator.of(context).pop(true); // Passa true per indicare successo
-
+      if (mounted)
+        Navigator.of(context).pop(true); // Passa true per indicare successo
     } catch (error) {
-       // Mostra errore nel dialog (va bene qui perché il dialog non si chiude)
-       if (mounted) {
-         showErrorSnackBar(context,
-             message: 'Failed to ${_isEditing ? 'update' : 'create'} folder: $error');
-       }
+      // Mostra errore nel dialog (va bene qui perché il dialog non si chiude)
+      if (mounted) {
+        showErrorSnackBar(context,
+            message:
+                'Failed to ${_isEditing ? 'update' : 'create'} folder: $error');
+      }
     } finally {
-       // Disattiva il loading anche se c'è stato un errore
-       if (mounted) {
-         setState(() => _isLoading = false);
-       }
+      // Disattiva il loading anche se c'è stato un errore
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEditing ? 'Edit Folder' : (widget.parentId == null ? 'Create New Folder' : 'Create Subfolder')),
+      title: Text(_isEditing
+          ? 'Edit Folder'
+          : (widget.parentId == null
+              ? 'Create New Folder'
+              : 'Create Subfolder')),
       content: Form(
         key: _formKey,
-        child: TextFormField( // Avvolto direttamente nel Form se è l'unico campo
+        child: TextFormField(
+          // Avvolto direttamente nel Form se è l'unico campo
           controller: _titleController,
           decoration: const InputDecoration(
             labelText: 'Folder Name',
@@ -104,17 +110,21 @@ class _FolderDialogState extends State<FolderDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false), // Passa false
+          onPressed: _isLoading
+              ? null
+              : () => Navigator.of(context).pop(false), // Passa false
           child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           child: _isLoading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2))
               : Text(_isEditing ? 'Save' : 'Create'),
         ),
       ],
     );
   }
 }
-

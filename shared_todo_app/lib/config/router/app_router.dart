@@ -17,7 +17,7 @@ import '../../features/todo_lists/presentation/screens/todo_lists_screen.dart'
 // Importa la schermata Account dal suo file
 import '../../features/account/presentation/screens/account_screen.dart';
 // Importa la schermata Inviti dal suo file
-import '../../features/invitations/presentation/screens/invitation_screen.dart'; 
+import '../../features/invitations/presentation/screens/invitation_screen.dart';
 
 import '../../main.dart'; // Importa 'supabase' helper
 
@@ -82,7 +82,7 @@ class AppRouter {
           return const SignUpScreen();
         },
       ),
-      
+
       // Rotte Principali (protette dal redirect)
       GoRoute(
         path: calendar,
@@ -91,21 +91,21 @@ class AppRouter {
           return const CalendarScreen();
         },
       ),
-       GoRoute(
+      GoRoute(
         path: invitations,
         name: invitations,
         builder: (BuildContext context, GoRouterState state) {
           return const InvitationsScreen();
         },
       ),
-       GoRoute(
+      GoRoute(
         path: account, // Spostato al livello superiore
         name: account,
         builder: (context, state) => const AccountScreen(),
       ),
-       GoRoute(
+      GoRoute(
         path: create, // Spostato al livello superiore
-        name: create, 
+        name: create,
         builder: (BuildContext context, GoRouterState state) {
           return CreatePage();
         },
@@ -138,7 +138,8 @@ class AppRouter {
             routes: <RouteBase>[
               // Dettaglio Sottocartella
               GoRoute(
-                path: 'folder/:folderId', // Path relativo: /list/:listId/folder/:folderId
+                path:
+                    'folder/:folderId', // Path relativo: /list/:listId/folder/:folderId
                 name: folderDetail,
                 builder: (BuildContext context, GoRouterState state) {
                   final Map<String, dynamic> extras =
@@ -162,9 +163,10 @@ class AppRouter {
     // Logica di Redirect per l'autenticazione
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = supabase.auth.currentUser != null;
-      
+
       // Controlla se l'utente sta cercando di accedere a una pagina di autenticazione
-      final bool onAuthRoute = state.matchedLocation == login || state.matchedLocation == signup;
+      final bool onAuthRoute =
+          state.matchedLocation == login || state.matchedLocation == signup;
 
       // Se l'utente NON è loggato E NON sta andando a una pagina auth -> vai al login
       if (!loggedIn && !onAuthRoute) {
@@ -175,10 +177,9 @@ class AppRouter {
       if (loggedIn && onAuthRoute) {
         return home;
       }
-      
+
       // In tutti gli altri casi, non fare nulla
       return null;
     },
   );
 }
-

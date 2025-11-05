@@ -59,7 +59,8 @@ class _TaskDialogState extends State<TaskDialog> {
   }
 
   // Funzione helper per mostrare il date picker
-  Future<DateTime?> _selectDate(BuildContext context, DateTime? initialDate) async {
+  Future<DateTime?> _selectDate(
+      BuildContext context, DateTime? initialDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate ?? DateTime.now(),
@@ -85,19 +86,22 @@ class _TaskDialogState extends State<TaskDialog> {
         await _taskRepo.updateTask(
           taskId: widget.taskToEdit!.id, // ID del task da modificare
           title: _titleController.text.trim(),
-          desc: _descController.text.trim().isNotEmpty ? _descController.text.trim() : null,
+          desc: _descController.text.trim().isNotEmpty
+              ? _descController.text.trim()
+              : null,
           priority: _selectedPriority,
           status: _selectedStatus,
           startDate: _selectedStartDate,
           dueDate: _selectedDueDate, // _selectedDueDate non può essere null qui
         );
-
       } else {
         // Logica di Creazione
         await _taskRepo.createTask(
           folderId: widget.folderId,
           title: _titleController.text.trim(),
-          desc: _descController.text.trim().isNotEmpty ? _descController.text.trim() : null,
+          desc: _descController.text.trim().isNotEmpty
+              ? _descController.text.trim()
+              : null,
           priority: _selectedPriority,
           status: _selectedStatus,
           startDate: _selectedStartDate, // Può essere null (usa default DB)
@@ -120,7 +124,6 @@ class _TaskDialogState extends State<TaskDialog> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -135,12 +138,15 @@ class _TaskDialogState extends State<TaskDialog> {
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Task Title'),
-                validator: (value) => value == null || value.trim().isEmpty ? 'Please enter a title' : null,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Please enter a title'
+                    : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descController,
-                decoration: const InputDecoration(labelText: 'Description (Optional)'),
+                decoration:
+                    const InputDecoration(labelText: 'Description (Optional)'),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -148,7 +154,8 @@ class _TaskDialogState extends State<TaskDialog> {
                 value: _selectedPriority,
                 decoration: const InputDecoration(labelText: 'Priority'),
                 items: _priorities.map((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
+                  return DropdownMenuItem<String>(
+                      value: value, child: Text(value));
                 }).toList(),
                 onChanged: (newValue) {
                   setState(() => _selectedPriority = newValue!);
@@ -159,7 +166,8 @@ class _TaskDialogState extends State<TaskDialog> {
                 value: _selectedStatus,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: _statuses.map((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
+                  return DropdownMenuItem<String>(
+                      value: value, child: Text(value));
                 }).toList(),
                 onChanged: (newValue) {
                   setState(() => _selectedStatus = newValue!);
@@ -167,31 +175,33 @@ class _TaskDialogState extends State<TaskDialog> {
               ),
               const SizedBox(height: 8),
               ListTile(
-                 contentPadding: EdgeInsets.zero,
-                 title: Text(_selectedStartDate == null
-                     ? 'Start Date (Defaults to Today)'
-                     : 'Start: ${DateFormat('dd/MM/yyyy').format(_selectedStartDate!)}'),
-                 trailing: const Icon(Icons.calendar_today),
-                 onTap: () async {
-                   final date = await _selectDate(context, _selectedStartDate ?? DateTime.now());
-                   if (date != null) {
-                     setState(() => _selectedStartDate = date);
-                   }
-                 },
-               ),
-              ListTile(
                 contentPadding: EdgeInsets.zero,
-                 title: Text(_selectedDueDate == null
-                     ? 'Select Due Date *'
-                     // Ora _selectedDueDate non è mai null qui se _isEditing è true
-                     : 'Due: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate!)}'),
+                title: Text(_selectedStartDate == null
+                    ? 'Start Date (Defaults to Today)'
+                    : 'Start: ${DateFormat('dd/MM/yyyy').format(_selectedStartDate!)}'),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
-                   final date = await _selectDate(context, _selectedDueDate ?? DateTime.now());
-                   if (date != null) {
-                     setState(() => _selectedDueDate = date);
-                   }
-                 },
+                  final date = await _selectDate(
+                      context, _selectedStartDate ?? DateTime.now());
+                  if (date != null) {
+                    setState(() => _selectedStartDate = date);
+                  }
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(_selectedDueDate == null
+                    ? 'Select Due Date *'
+                    // Ora _selectedDueDate non è mai null qui se _isEditing è true
+                    : 'Due: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate!)}'),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () async {
+                  final date = await _selectDate(
+                      context, _selectedDueDate ?? DateTime.now());
+                  if (date != null) {
+                    setState(() => _selectedDueDate = date);
+                  }
+                },
               ),
               if (_selectedDueDate == null)
                 Padding(
@@ -215,7 +225,10 @@ class _TaskDialogState extends State<TaskDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           child: _isLoading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2))
               // Testo dinamico
               : Text(_isEditing ? 'Save Task' : 'Create Task'),
         ),
@@ -223,4 +236,3 @@ class _TaskDialogState extends State<TaskDialog> {
     );
   }
 }
-

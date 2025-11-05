@@ -37,21 +37,21 @@ class _InviteMemberDialogState extends State<InviteMemberDialog> {
         email: _emailController.text.trim(),
         role: _selectedRole,
       );
-      
+
       // Se l'invito ha successo, chiudi il dialog e ritorna 'true'
       if (mounted) {
-         Navigator.of(context).pop(true); 
+        Navigator.of(context).pop(true);
       }
-
     } catch (error) {
-       // Se fallisce, mostra l'errore in questo dialog
-       if (mounted) {
-         showErrorSnackBar(context, message: error.toString().replaceFirst("Exception: ", ""));
-       }
+      // Se fallisce, mostra l'errore in questo dialog
+      if (mounted) {
+        showErrorSnackBar(context,
+            message: error.toString().replaceFirst("Exception: ", ""));
+      }
     } finally {
-       if (mounted) {
-         setState(() => _isLoading = false);
-       }
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -73,7 +73,9 @@ class _InviteMemberDialogState extends State<InviteMemberDialog> {
               ),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
-                if (value == null || value.trim().isEmpty || !value.contains('@')) {
+                if (value == null ||
+                    value.trim().isEmpty ||
+                    !value.contains('@')) {
                   return 'Please enter a valid email';
                 }
                 return null;
@@ -104,7 +106,10 @@ class _InviteMemberDialogState extends State<InviteMemberDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _sendInvite,
           child: _isLoading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2))
               : const Text('Send Invite'),
         ),
       ],
