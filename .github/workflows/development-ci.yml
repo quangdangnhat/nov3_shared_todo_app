@@ -28,21 +28,21 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-        working-directory: ./
+        working-directory: ./shared_todo_app
 
       - name: Check formatting
         run: flutter format --set-exit-if-changed .
-        working-directory: ./
+        working-directory: ./shared_todo_app
 
       - name: Analyze code
         run: flutter analyze
-        working-directory: ./
+        working-directory: ./shared_todo_app
 
       - name: Run tests
         # Questo comando esegue i test
         run: flutter test
-        working-directory: ./
+        working-directory: ./shared_todo_app
 
       - name: Build APK (Debug)
         run: flutter build apk --debug
-        working-directory: ./
+        working-directory: ./shared_todo_app
