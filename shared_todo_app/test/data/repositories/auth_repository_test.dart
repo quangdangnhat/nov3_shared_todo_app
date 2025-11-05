@@ -320,11 +320,11 @@ void main() {
       );
     });
   });
-  
+
   // ============================================================
   // GROUP 4: currentUser Getter Tests
   // ============================================================
-  
+
   group('currentUser Getter Tests', () {
     test('should return user when logged in', () {
       // Arrange
@@ -358,15 +358,15 @@ void main() {
       // Arrange
       final mockUser1 = MockUser();
       final mockUser2 = MockUser();
-      
+
       when(() => mockAuth.currentUser).thenReturn(mockUser1);
 
       // Act: First call
       final user1 = authRepository.currentUser;
-      
+
       // Change mock return value
       when(() => mockAuth.currentUser).thenReturn(mockUser2);
-      
+
       // Act: Second call
       final user2 = authRepository.currentUser;
 
@@ -380,7 +380,7 @@ void main() {
   // ============================================================
   // GROUP 5: authStateChanges Stream Tests
   // ============================================================
-  
+
   group('authStateChanges Stream Tests', () {
     test('should return auth state change stream', () {
       // Arrange
@@ -403,7 +403,7 @@ void main() {
         AuthChangeEvent.signedIn,
         mockSession,
       );
-      
+
       final streamController = StreamController<AuthState>();
       when(() => mockAuth.onAuthStateChange).thenAnswer(
         (_) => streamController.stream,
@@ -427,25 +427,25 @@ void main() {
   // ============================================================
   // GROUP 6: Integration Scenarios (Still Mocked)
   // ============================================================
-  
+
   group('Integration Scenario Tests', () {
     test('should handle complete signup → login flow', () async {
       // Arrange: Signup
       final signUpResponse = MockAuthResponse();
       when(() => mockAuth.signUp(
-        email: any(named: 'email'),
-        password: any(named: 'password'),
-        data: any(named: 'data'),
-      )).thenAnswer((_) async => signUpResponse);
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+            data: any(named: 'data'),
+          )).thenAnswer((_) async => signUpResponse);
 
       // Arrange: Login
       final signInResponse = MockAuthResponse();
       final mockUser = MockUser();
       when(() => signInResponse.user).thenReturn(mockUser);
       when(() => mockAuth.signInWithPassword(
-        email: any(named: 'email'),
-        password: any(named: 'password'),
-      )).thenAnswer((_) async => signInResponse);
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+          )).thenAnswer((_) async => signInResponse);
 
       // Act: Signup
       await authRepository.signUp(
@@ -462,24 +462,24 @@ void main() {
 
       // Assert
       verify(() => mockAuth.signUp(
-        email: 'newuser@example.com',
-        password: 'password123',
-        data: {'username': 'newuser'},
-      )).called(1);
-      
+            email: 'newuser@example.com',
+            password: 'password123',
+            data: {'username': 'newuser'},
+          )).called(1);
+
       verify(() => mockAuth.signInWithPassword(
-        email: 'newuser@example.com',
-        password: 'password123',
-      )).called(1);
+            email: 'newuser@example.com',
+            password: 'password123',
+          )).called(1);
     });
 
     test('should handle login → logout flow', () async {
       // Arrange: Login
       final signInResponse = MockAuthResponse();
       when(() => mockAuth.signInWithPassword(
-        email: any(named: 'email'),
-        password: any(named: 'password'),
-      )).thenAnswer((_) async => signInResponse);
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+          )).thenAnswer((_) async => signInResponse);
 
       // Arrange: Logout
       when(() => mockAuth.signOut()).thenAnswer((_) async => {});
@@ -495,10 +495,10 @@ void main() {
 
       // Assert
       verify(() => mockAuth.signInWithPassword(
-        email: 'test@example.com',
-        password: 'password123',
-      )).called(1);
-      
+            email: 'test@example.com',
+            password: 'password123',
+          )).called(1);
+
       verify(() => mockAuth.signOut()).called(1);
     });
   });
@@ -506,17 +506,17 @@ void main() {
   // ============================================================
   // GROUP 7: Edge Cases
   // ============================================================
-  
+
   group('Edge Case Tests', () {
     test('should handle very long email', () async {
       // Arrange
       final mockResponse = MockAuthResponse();
       final longEmail = 'a' * 100 + '@example.com';
-      
+
       when(() => mockAuth.signInWithPassword(
-        email: any(named: 'email'),
-        password: any(named: 'password'),
-      )).thenAnswer((_) async => mockResponse);
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+          )).thenAnswer((_) async => mockResponse);
 
       // Act
       await authRepository.signIn(
@@ -526,21 +526,21 @@ void main() {
 
       // Assert
       verify(() => mockAuth.signInWithPassword(
-        email: longEmail,
-        password: 'password123',
-      )).called(1);
+            email: longEmail,
+            password: 'password123',
+          )).called(1);
     });
 
     test('should handle very long password', () async {
       // Arrange
       final mockResponse = MockAuthResponse();
       final longPassword = 'p' * 200;
-      
+
       when(() => mockAuth.signUp(
-        email: any(named: 'email'),
-        password: any(named: 'password'),
-        data: any(named: 'data'),
-      )).thenAnswer((_) async => mockResponse);
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+            data: any(named: 'data'),
+          )).thenAnswer((_) async => mockResponse);
 
       // Act
       await authRepository.signUp(
@@ -551,21 +551,21 @@ void main() {
 
       // Assert
       verify(() => mockAuth.signUp(
-        email: 'test@example.com',
-        password: longPassword,
-        data: {'username': 'testuser'},
-      )).called(1);
+            email: 'test@example.com',
+            password: longPassword,
+            data: {'username': 'testuser'},
+          )).called(1);
     });
 
     test('should handle unicode characters in username', () async {
       // Arrange
       final mockResponse = MockAuthResponse();
-      
+
       when(() => mockAuth.signUp(
-        email: any(named: 'email'),
-        password: any(named: 'password'),
-        data: any(named: 'data'),
-      )).thenAnswer((_) async => mockResponse);
+            email: any(named: 'email'),
+            password: any(named: 'password'),
+            data: any(named: 'data'),
+          )).thenAnswer((_) async => mockResponse);
 
       // Act
       await authRepository.signUp(
@@ -576,10 +576,10 @@ void main() {
 
       // Assert
       verify(() => mockAuth.signUp(
-        email: 'test@example.com',
-        password: 'password123',
-        data: {'username': 'utente_àéìòù'},
-      )).called(1);
+            email: 'test@example.com',
+            password: 'password123',
+            data: {'username': 'utente_àéìòù'},
+          )).called(1);
     });
   });
 }
