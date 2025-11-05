@@ -83,6 +83,4 @@ class AuthRepository {
 
   /// Auth event stream (for reactive UI).
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
-}
-
-  
+}  
