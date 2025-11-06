@@ -6,13 +6,18 @@ class AppTheme {
   /// Restituisce il tema chiaro con bianco dominante e celeste per contenitori complessi.
   static ThemeData get lightTheme {
     // Palette colori: bianco dominante, celeste per contenitori con molti elementi, grigio chiaro per contrasto delicato
-    const Color primaryBlue = Color(0xFF0288D1);      // Celeste principale
-    const Color containerBlue = Color(0xFFE1F5FE);    // Celeste molto chiaro per contenitori complessi (liste, gruppi)
-    const Color white = Color(0xFFFFFFFF);            // Bianco dominante per sfondo e card singole
-    const Color lightGrey = Color(0xFFF5F5F5);        // Grigio chiarissimo per separazione delicata
-    const Color accentOrange = Color(0xFFFF6F00);     // Arancione intenso per contrasto
-    const Color textDark = Color(0xFF212121);         // Grigio scurissimo per testo
-    const Color textSecondary = Color(0xFF616161);    // Grigio medio per testi secondari
+    const Color primaryBlue = Color(0xFF0288D1); // Celeste principale
+    const Color containerBlue = Color(
+        0xFFE1F5FE); // Celeste molto chiaro per contenitori complessi (liste, gruppi)
+    const Color white =
+        Color(0xFFFFFFFF); // Bianco dominante per sfondo e card singole
+    const Color lightGrey =
+        Color(0xFFF5F5F5); // Grigio chiarissimo per separazione delicata
+    const Color accentOrange =
+        Color(0xFFFF6F00); // Arancione intenso per contrasto
+    const Color textDark = Color(0xFF212121); // Grigio scurissimo per testo
+    const Color textSecondary =
+        Color(0xFF616161); // Grigio medio per testi secondari
 
     return ThemeData.light().copyWith(
       // Colori principali
@@ -57,7 +62,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: white, // Input bianchi
-        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
           borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
@@ -84,7 +90,8 @@ class AppTheme {
         onBackground: textDark,
         onSurface: textDark,
         error: const Color(0xFFD32F2F),
-        surfaceVariant: containerBlue, // Celeste chiaro per contenitori complessi
+        surfaceVariant:
+            containerBlue, // Celeste chiaro per contenitori complessi
       ),
 
       // Tema per le Card
@@ -103,8 +110,10 @@ class AppTheme {
         bodyLarge: TextStyle(color: textDark, fontSize: 16),
         bodyMedium: TextStyle(color: textDark, fontSize: 14),
         bodySmall: TextStyle(color: textSecondary, fontSize: 12),
-        titleLarge: TextStyle(color: textDark, fontSize: 22, fontWeight: FontWeight.bold),
-        titleMedium: TextStyle(color: textDark, fontSize: 18, fontWeight: FontWeight.w600),
+        titleLarge: TextStyle(
+            color: textDark, fontSize: 22, fontWeight: FontWeight.bold),
+        titleMedium: TextStyle(
+            color: textDark, fontSize: 18, fontWeight: FontWeight.w600),
       ),
 
       // Tema FloatingActionButton
@@ -151,13 +160,18 @@ class AppTheme {
   /// Restituisce il tema scuro con nero dominante negli elementi grandi e testo bianco.
   static ThemeData get darkTheme {
     // Palette colori scura: nero/grigio per aree grandi, bianco per testo, turchese accento
-    const Color background = Color(0xFF121212);       // Nero molto scuro per sfondo (area grande)
-    const Color surface = Color(0xFF1E1E1E);          // Superficie grigio scurissimo (aree grandi)
-    const Color cardColor = Color(0xFF252525);        // Card grigio scuro (aree grandi)
-    const Color accentCyan = Color(0xFF00E5FF);       // Turchese brillante per contrasto
-    const Color primaryCyan = Color(0xFF00BCD4);      // Turchese principale
-    const Color white = Color(0xFFFFFFFF);            // Bianco per tutto il testo
-    const Color textSecondary = Color(0xFFE0E0E0);    // Bianco leggermente più soft
+    const Color background =
+        Color(0xFF121212); // Nero molto scuro per sfondo (area grande)
+    const Color surface =
+        Color(0xFF1E1E1E); // Superficie grigio scurissimo (aree grandi)
+    const Color cardColor =
+        Color(0xFF252525); // Card grigio scuro (aree grandi)
+    const Color accentCyan =
+        Color(0xFF00E5FF); // Turchese brillante per contrasto
+    const Color primaryCyan = Color(0xFF00BCD4); // Turchese principale
+    const Color white = Color(0xFFFFFFFF); // Bianco per tutto il testo
+    const Color textSecondary =
+        Color(0xFFE0E0E0); // Bianco leggermente più soft
 
     return ThemeData.dark().copyWith(
       primaryColor: primaryCyan,
@@ -167,7 +181,7 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         elevation: 0,
         backgroundColor: surface, // AppBar grigio scuro (area grande)
-        foregroundColor: white,   // Testo bianco
+        foregroundColor: white, // Testo bianco
         iconTheme: const IconThemeData(color: white),
         titleTextStyle: const TextStyle(
           color: white,
@@ -201,7 +215,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: cardColor, // Input grigio scuro
-        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.0),
           borderSide: BorderSide(color: Colors.grey[700]!, width: 1.5),
@@ -224,9 +239,9 @@ class AppTheme {
         secondary: accentCyan,
         background: background,
         surface: surface,
-        onPrimary: white,      // Testo su primary: bianco
-        onBackground: white,   // Testo su background: bianco
-        onSurface: white,      // Testo su surface: bianco
+        onPrimary: white, // Testo su primary: bianco
+        onBackground: white, // Testo su background: bianco
+        onSurface: white, // Testo su surface: bianco
         error: const Color(0xFFFF5252),
       ),
 
@@ -245,11 +260,16 @@ class AppTheme {
         bodyLarge: const TextStyle(color: white, fontSize: 16),
         bodyMedium: const TextStyle(color: white, fontSize: 14),
         bodySmall: TextStyle(color: textSecondary, fontSize: 12),
-        titleLarge: const TextStyle(color: white, fontSize: 22, fontWeight: FontWeight.bold),
-        titleMedium: const TextStyle(color: white, fontSize: 18, fontWeight: FontWeight.w600),
-        headlineLarge: const TextStyle(color: white, fontSize: 32, fontWeight: FontWeight.bold),
-        headlineMedium: const TextStyle(color: white, fontSize: 28, fontWeight: FontWeight.bold),
-        headlineSmall: const TextStyle(color: white, fontSize: 24, fontWeight: FontWeight.bold),
+        titleLarge: const TextStyle(
+            color: white, fontSize: 22, fontWeight: FontWeight.bold),
+        titleMedium: const TextStyle(
+            color: white, fontSize: 18, fontWeight: FontWeight.w600),
+        headlineLarge: const TextStyle(
+            color: white, fontSize: 32, fontWeight: FontWeight.bold),
+        headlineMedium: const TextStyle(
+            color: white, fontSize: 28, fontWeight: FontWeight.bold),
+        headlineSmall: const TextStyle(
+            color: white, fontSize: 24, fontWeight: FontWeight.bold),
       ),
 
       // Tema FloatingActionButton
