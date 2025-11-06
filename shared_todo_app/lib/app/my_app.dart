@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-// Rimuovi import non necessari qui (supabase, schermate, main)
+import 'package:provider/provider.dart'; // 1. IMPORTA PROVIDER
+import '../theme_provider.dart'; // 1. IMPORTA IL TUO THEME PROVIDER
 import '../config/app_theme.dart';
 import '../config/router/app_router.dart'; // Importa la configurazione del router
 
@@ -11,16 +12,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Usa MaterialApp.router per integrare GoRouter
-    return MaterialApp.router(
-      // Passa la configurazione del router definita in app_router.dart
-      routerConfig: AppRouter.router,
+    // 2. AVVOLGI IL TUO MATERIALAPP CON UN CONSUMER
+    //    Questo "ascolta" il ThemeProvider per i cambiamenti.
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        
+        // Ora restituiamo MaterialApp.router dall'interno del builder
+        return MaterialApp.router(
+          // Passa la configurazione del router definita in app_router.dart
+          routerConfig: AppRouter.router,
 
-      title: 'Shared To-Do',
-      theme: AppTheme.darkTheme,
-      debugShowCheckedModeBanner: false,
+          title: 'Shared To-Do',
+          
+          // 3. IMPOSTA I TEMI IN MODO DINAMICO
+          theme: AppTheme.lightTheme, // Il tuo tema chiaro
+          darkTheme: AppTheme.darkTheme, // Il tuo tema scuro
+          themeMode: themeProvider.currentThemeMode, // Prende lo stato dal provider!
 
-      // IMPORTANTE: NON ci devono essere 'home:' né 'StreamBuilder<AuthState>' qui
+          debugShowCheckedModeBanner: false,
+
+          // IMPORTANTE: NON ci devono essere 'home:' né 'StreamBuilder<AuthState>' qui
+        );
+      },
     );
   }
 }

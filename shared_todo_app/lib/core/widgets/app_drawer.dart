@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/router/app_router.dart';
+import 'package:provider/provider.dart';
+import '../../theme_provider.dart'; // Assicurati che questo percorso sia corretto
 
 /// Il Drawer (menu laterale) riutilizzabile per l'applicazione.
 class AppDrawer extends StatefulWidget {
@@ -52,19 +54,22 @@ class _AppDrawerState extends State<AppDrawer> {
     final initial = username.isNotEmpty ? username[0].toUpperCase() : '?';
 
     final screenWidth = MediaQuery.of(context).size.width;
-
-    
     final drawerWidth = screenWidth * 0.85;
+
+    // Colori del tema
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
       width: drawerWidth,
       decoration: BoxDecoration(
+        // Sfondo del drawer che usa i colori del tema
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-            Theme.of(context).colorScheme.surface,
+            colorScheme.surface.withOpacity(0.8),
+            colorScheme.surface,
           ],
         ),
       ),
@@ -75,12 +80,13 @@ class _AppDrawerState extends State<AppDrawer> {
           Container(
             padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
             decoration: BoxDecoration(
+              // Gradient con colori primari del tema
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.primaryContainer,
+                  colorScheme.primary,
+                  colorScheme.primaryContainer,
                 ],
               ),
             ),
@@ -93,7 +99,8 @@ class _AppDrawerState extends State<AppDrawer> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        // Ombra basata sul tema
+                        color: theme.shadowColor.withOpacity(0.15),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -101,13 +108,15 @@ class _AppDrawerState extends State<AppDrawer> {
                   ),
                   child: CircleAvatar(
                     radius: 36,
-                    backgroundColor: Colors.white,
+                    // Sfondo dell'avatar (chiaro)
+                    backgroundColor: colorScheme.onPrimary,
                     child: Text(
                       initial,
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
+                        // Colore iniziale (primario)
+                        color: colorScheme.primary,
                       ),
                     ),
                   ),
@@ -116,10 +125,11 @@ class _AppDrawerState extends State<AppDrawer> {
                 // Username con stile moderno
                 Text(
                   username,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    // Colore del testo (chiaro sopra lo sfondo primario)
+                    color: colorScheme.onPrimary,
                     letterSpacing: 0.5,
                   ),
                   maxLines: 1,
@@ -130,14 +140,16 @@ class _AppDrawerState extends State<AppDrawer> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    // Sfondo del badge email
+                    color: colorScheme.onPrimary.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     email,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white,
+                      // Colore testo email
+                      color: colorScheme.onPrimary,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 1,
@@ -156,9 +168,8 @@ class _AppDrawerState extends State<AppDrawer> {
             icon: Icons.today_rounded,
             title: 'Main Page',
             subtitle: 'Tasks of the day',
-            route: '/', // TODO: cambia con la rotta corretta quando implementata
+            route: '/',
             onTap: () {
-              // Chiudi il drawer solo su mobile
               if (Scaffold.of(context).isDrawerOpen) {
                 Navigator.of(context).pop();
               }
@@ -175,7 +186,6 @@ class _AppDrawerState extends State<AppDrawer> {
             title: 'Todo Lists',
             route: '/',
             onTap: () {
-              // Chiudi il drawer solo su mobile
               if (Scaffold.of(context).isDrawerOpen) {
                 Navigator.of(context).pop();
               }
@@ -190,7 +200,6 @@ class _AppDrawerState extends State<AppDrawer> {
             title: 'Calendar View',
             route: AppRouter.calendar,
             onTap: () {
-              // Chiudi il drawer solo su mobile
               if (Scaffold.of(context).isDrawerOpen) {
                 Navigator.of(context).pop();
               }
@@ -205,7 +214,6 @@ class _AppDrawerState extends State<AppDrawer> {
             title: 'My Invitations',
             route: AppRouter.invitations,
             onTap: () {
-              // Chiudi il drawer solo su mobile
               if (Scaffold.of(context).isDrawerOpen) {
                 Navigator.of(context).pop();
               }
@@ -222,12 +230,43 @@ class _AppDrawerState extends State<AppDrawer> {
             title: 'Profile',
             route: AppRouter.account,
             onTap: () {
-              // Chiudi il drawer solo su mobile
               if (Scaffold.of(context).isDrawerOpen) {
                 Navigator.of(context).pop();
               }
               context.go(AppRouter.account);
             },
+          ),
+
+          _buildDivider(),
+
+          // Switch Tema
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: ListTile(
+              leading: Icon(
+                context.watch<ThemeProvider>().isDarkMode
+                    ? Icons.dark_mode_rounded
+                    : Icons.light_mode_rounded,
+                color: colorScheme.primary,
+              ),
+              title: Text(
+                // Usiamo un operatore ternario per cambiare il testo
+                context.watch<ThemeProvider>().isDarkMode
+                    ? 'Modalità Scura' // Testo se isDarkMode è true
+                    : 'Modalità Chiara', // Testo se isDarkMode è false
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              trailing: Switch(
+                value: context.watch<ThemeProvider>().isDarkMode,
+                onChanged: (bool newValue) {
+                  context.read<ThemeProvider>().toggleTheme(newValue);
+                },
+              ),
+            ),
           ),
 
           const SizedBox(height: 8),
@@ -236,12 +275,12 @@ class _AppDrawerState extends State<AppDrawer> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Material(
-              color: Colors.red.shade50,
+              // Sfondo del bottone Log Out (usa i colori di errore del tema)
+              color: colorScheme.errorContainer.withOpacity(0.6),
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  // Chiudi il drawer solo su mobile
                   if (Scaffold.of(context).isDrawerOpen) {
                     Navigator.of(context).pop();
                   }
@@ -251,14 +290,16 @@ class _AppDrawerState extends State<AppDrawer> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                   child: Row(
                     children: [
-                      Icon(Icons.logout_rounded, color: Colors.red.shade700),
+                      // Icona Log Out (usa i colori di errore del tema)
+                      Icon(Icons.logout_rounded, color: colorScheme.error),
                       const SizedBox(width: 16),
                       Text(
                         'Log Out',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.red.shade700,
+                          // Testo Log Out (usa i colori di errore del tema)
+                          color: colorScheme.error,
                         ),
                       ),
                     ],
@@ -284,12 +325,15 @@ class _AppDrawerState extends State<AppDrawer> {
     required VoidCallback onTap,
   }) {
     final isActive = _isRouteActive(context, route);
+    // Prendo il colorScheme una sola volta
+    final colorScheme = Theme.of(context).colorScheme;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
+        // Sfondo tile (attivo o trasparente)
         color: isActive 
-            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+            ? colorScheme.primaryContainer.withOpacity(0.3)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
@@ -302,16 +346,18 @@ class _AppDrawerState extends State<AppDrawer> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
+                    // Sfondo icona (attivo o inattivo)
                     color: isActive
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                        ? colorScheme.primary
+                        : colorScheme.primaryContainer.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     icon,
+                    // Colore icona
                     color: isActive
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.primary,
+                        ? colorScheme.onPrimary // Colore su primario (es. bianco)
+                        : colorScheme.primary, // Colore primario
                     size: 22,
                   ),
                 ),
@@ -325,9 +371,10 @@ class _AppDrawerState extends State<AppDrawer> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                          // Colore testo (attivo o standard)
                           color: isActive
-                              ? Theme.of(context).colorScheme.primary
-                              : null,
+                              ? colorScheme.primary
+                              : colorScheme.onSurface,
                         ),
                       ),
                       if (subtitle != null) ...[
@@ -337,7 +384,8 @@ class _AppDrawerState extends State<AppDrawer> {
                           style: TextStyle(
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            // Colore sottotitolo
+                            color: colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       ],
@@ -358,6 +406,7 @@ class _AppDrawerState extends State<AppDrawer> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Divider(
         thickness: 1,
+        // Colore divisore
         color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
       ),
     );

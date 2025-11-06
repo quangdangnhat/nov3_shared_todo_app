@@ -10,8 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   table_calendar: ^3.0.9
-
-  
+  provider: ^6.1.5
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.10.3
   url_launcher: ^6.2.0
