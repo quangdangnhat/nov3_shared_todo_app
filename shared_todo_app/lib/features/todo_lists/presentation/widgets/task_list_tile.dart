@@ -36,8 +36,13 @@ class TaskListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Determina se il task è scaduto
-    final bool isOverdue = task.dueDate.isBefore(DateTime(
-            DateTime.now().year, DateTime.now().month, DateTime.now().day)) &&
+    final bool isOverdue = task.dueDate.isBefore(
+          DateTime(
+            DateTime.now().year,
+            DateTime.now().month,
+            DateTime.now().day,
+          ),
+        ) &&
         task.status != 'Done';
     final bool isDone = task.status == 'Done';
     final Color? textColor = isDone ? Colors.grey[600] : null;
@@ -62,8 +67,11 @@ class TaskListTile extends StatelessWidget {
               children: [
                 // Icona Task a sinistra
                 Padding(
-                  padding:
-                      const EdgeInsets.only(top: 4.0, left: 8.0, right: 16.0),
+                  padding: const EdgeInsets.only(
+                    top: 4.0,
+                    left: 8.0,
+                    right: 16.0,
+                  ),
                   child: Icon(
                     Icons.assignment_outlined, // NUOVA ICONA
                     color: isDone
@@ -91,9 +99,11 @@ class TaskListTile extends StatelessWidget {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today,
-                              size: 12,
-                              color: isOverdue ? Colors.red : Colors.grey),
+                          Icon(
+                            Icons.calendar_today,
+                            size: 12,
+                            color: isOverdue ? Colors.red : Colors.grey,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             DateFormat('dd/MM/yy').format(task.dueDate),
@@ -116,7 +126,9 @@ class TaskListTile extends StatelessWidget {
                           child: Text(
                             task.desc!,
                             style: TextStyle(
-                                fontSize: 13, color: Colors.grey[500]),
+                              fontSize: 13,
+                              color: Colors.grey[500],
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -138,19 +150,23 @@ class TaskListTile extends StatelessWidget {
                   itemBuilder: (context) => [
                     const PopupMenuItem(
                       value: 'edit',
-                      child: Row(children: [
-                        Icon(Icons.edit, size: 20),
-                        SizedBox(width: 8),
-                        Text('Edit')
-                      ]),
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 20),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ],
+                      ),
                     ),
                     const PopupMenuItem(
                       value: 'delete',
-                      child: Row(children: [
-                        Icon(Icons.delete, size: 20, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete', style: TextStyle(color: Colors.red))
-                      ]),
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -186,7 +202,8 @@ class TaskListTile extends StatelessWidget {
                     ),
                     backgroundColor: Colors.grey.withOpacity(0.1),
                     shape: StadiumBorder(
-                        side: BorderSide(color: Colors.grey.withOpacity(0.3))),
+                      side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                    ),
                   );
                 }).toList(),
               ),

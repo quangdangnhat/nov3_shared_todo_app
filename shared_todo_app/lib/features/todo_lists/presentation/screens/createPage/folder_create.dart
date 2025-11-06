@@ -48,9 +48,9 @@ class _FolderCreatePageState extends State<FolderCreatePage> {
       await _controller.selectTodoList(list);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading folders: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading folders: $e')));
       }
     }
   }
@@ -60,9 +60,9 @@ class _FolderCreatePageState extends State<FolderCreatePage> {
       await _controller.selectFolder(folder);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error selecting folder: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error selecting folder: $e')));
       }
     }
   }
@@ -72,17 +72,17 @@ class _FolderCreatePageState extends State<FolderCreatePage> {
       await _controller.createFolder(_folderNameController.text);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Folder created')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Folder created')));
         _folderNameController.clear();
         _controller.resetForm();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Folder error')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Folder error')));
       }
     }
   }
@@ -102,18 +102,12 @@ class _FolderCreatePageState extends State<FolderCreatePage> {
                 // Titolo
                 const Text(
                   'Create a new folder',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Add a folder in your todo list',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 24),
 

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 // 1. Usiamo 'ChangeNotifier' per permettere a questa classe
 //    di inviare "notifiche" ai widget quando lo stato cambia.
 class ThemeProvider extends ChangeNotifier {
-
   // 2. Questa è la variabile privata che memorizza lo stato attuale.
   //    Iniziamo con il tema chiaro (light) come default.
   ThemeMode _themeMode = ThemeMode.light;
@@ -21,8 +20,8 @@ class ThemeProvider extends ChangeNotifier {
   //    e aggiorna lo stato.
   void toggleTheme(bool isDark) {
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    
-    // 6. FONDAMENTALE: Questo comando "notifica" a tutti i widget 
+
+    // 6. FONDAMENTALE: Questo comando "notifica" a tutti i widget
     //    in ascolto (principalmente il tuo MaterialApp in my_app.dart)
     //    che devono ricostruirsi perché lo stato è cambiato.
     notifyListeners();

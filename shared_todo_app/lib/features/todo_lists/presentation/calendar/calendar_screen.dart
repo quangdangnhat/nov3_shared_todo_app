@@ -72,12 +72,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
             children: [
               // Header personalizzato che sostituisce l'AppBar
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   border: Border(
                     bottom: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outlineVariant.withOpacity(0.5),
                       width: 1,
                     ),
                   ),
@@ -94,9 +99,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ],
                     Text(
                       'Calendar',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -110,7 +116,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       firstDay: DateTime.utc(2015, 1, 1),
                       lastDay: DateTime.utc(2035, 12, 31),
                       focusedDay: _focusedDay,
-                      selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                      selectedDayPredicate: (day) =>
+                          isSameDay(_selectedDay, day),
                       calendarFormat: CalendarFormat.month,
                       startingDayOfWeek: StartingDayOfWeek.monday,
                       eventLoader: (day) {
@@ -137,14 +144,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       color: Theme.of(context).colorScheme.surfaceVariant,
                       child: Row(
                         children: [
-                          Icon(Icons.event,
-                              color: Theme.of(context).colorScheme.primary),
+                          Icon(
+                            Icons.event,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                           const SizedBox(width: 8),
                           Text(
-                            DateFormat('EEEE, d MMMM yyyy').format(_selectedDay),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            DateFormat(
+                              'EEEE, d MMMM yyyy',
+                            ).format(_selectedDay),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -160,7 +172,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           if (snapshotDay.connectionState ==
                                   ConnectionState.waiting &&
                               (dayTasks.isEmpty)) {
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
                           }
 
                           if (dayTasks.isEmpty) {
@@ -209,13 +223,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                       content: Text('Delete "${t.title}"?'),
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.pop(ctx, false),
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, false),
                                           child: const Text('Cancel'),
                                         ),
                                         TextButton(
-                                          onPressed: () => Navigator.pop(ctx, true),
-                                          child: const Text('Delete',
-                                              style: TextStyle(color: Colors.red)),
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, true),
+                                          child: const Text(
+                                            'Delete',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
                                         ),
                                       ],
                                     ),

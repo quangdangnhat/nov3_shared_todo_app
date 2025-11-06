@@ -41,11 +41,13 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
       await _invitationRepo.respondToInvitation(invitation.id, accept);
 
       if (mounted) {
-        showSuccessSnackBar(context,
-            message:
-                'Invitation ${accept ? 'accepted' : 'declined'} successfully');
+        showSuccessSnackBar(
+          context,
+          message:
+              'Invitation ${accept ? 'accepted' : 'declined'} successfully',
+        );
       }
-      
+
       // Forza il refresh dello stream
       if (mounted) {
         setState(() {
@@ -54,9 +56,11 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
       }
     } catch (error) {
       if (mounted) {
-        showErrorSnackBar(context,
-            message:
-                'Failed to respond: ${error.toString().replaceFirst("Exception: ", "")}');
+        showErrorSnackBar(
+          context,
+          message:
+              'Failed to respond: ${error.toString().replaceFirst("Exception: ", "")}',
+        );
       }
     } finally {
       if (mounted) {
@@ -80,7 +84,9 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
             color: Theme.of(context).colorScheme.surface,
             border: Border(
               bottom: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outlineVariant.withOpacity(0.5),
                 width: 1,
               ),
             ),
@@ -100,8 +106,8 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
               Text(
                 'My Invitations',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ],
           ),
@@ -150,7 +156,9 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                 itemCount: invitations.length,
                 itemBuilder: (context, index) {
                   final invitation = invitations[index];
-                  final bool isLoading = _loadingInvitations.contains(invitation.id);
+                  final bool isLoading = _loadingInvitations.contains(
+                    invitation.id,
+                  );
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12.0),
@@ -160,24 +168,33 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Invitation to join list:', 
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.grey),
+                            'Invitation to join list:',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(color: Colors.grey),
                           ),
                           Text(
-                            invitation.todoListTitle ?? '[List Name Not Found]', 
+                            invitation.todoListTitle ?? '[List Name Not Found]',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 8),
                           Text.rich(
                             TextSpan(
                               text: 'Invited by: ',
-                              style: const TextStyle(fontSize: 14, color: Colors.grey),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
                               children: [
                                 TextSpan(
-                                  text: invitation.invitedByUserEmail ?? '[Unknown User]',
+                                  text: invitation.invitedByUserEmail ??
+                                      '[Unknown User]',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold, 
-                                    color: Theme.of(context).textTheme.bodyMedium?.color
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.color,
                                   ),
                                 ),
                               ],
@@ -187,13 +204,18 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                           Text.rich(
                             TextSpan(
                               text: 'As: ',
-                              style: const TextStyle(fontSize: 14, color: Colors.grey),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
                               children: [
                                 TextSpan(
                                   text: invitation.role,
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold, 
-                                    color: Theme.of(context).textTheme.bodyMedium?.color
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.color,
                                   ),
                                 ),
                               ],
@@ -208,17 +230,19 @@ class _InvitationsScreenState extends State<InvitationsScreen> {
                                 const CircularProgressIndicator()
                               else ...[
                                 TextButton(
-                                  onPressed: () => _handleResponse(invitation, false),
+                                  onPressed: () =>
+                                      _handleResponse(invitation, false),
                                   child: const Text('Decline'),
                                 ),
                                 const SizedBox(width: 8),
                                 ElevatedButton(
-                                  onPressed: () => _handleResponse(invitation, true),
+                                  onPressed: () =>
+                                      _handleResponse(invitation, true),
                                   child: const Text('Accept'),
                                 ),
                               ],
                             ],
-                          )
+                          ),
                         ],
                       ),
                     ),

@@ -5,10 +5,7 @@ import 'package:flutter/material.dart';
 class TaskTitleField extends StatelessWidget {
   final TextEditingController controller;
 
-  const TaskTitleField({
-    super.key,
-    required this.controller,
-  });
+  const TaskTitleField({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +15,7 @@ class TaskTitleField extends StatelessWidget {
         labelText: 'Task title',
         hintText: 'Ex: workout',
         prefixIcon: const Icon(Icons.task_alt),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

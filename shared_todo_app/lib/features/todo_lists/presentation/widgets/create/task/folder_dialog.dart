@@ -8,10 +8,7 @@ import '../folder/folder_selector.dart';
 class FolderSelectionDialog extends StatefulWidget {
   final BaseFolderSelectionController controller;
 
-  const FolderSelectionDialog({
-    super.key,
-    required this.controller,
-  });
+  const FolderSelectionDialog({super.key, required this.controller});
 
   @override
   State<FolderSelectionDialog> createState() => _FolderSelectionDialogState();
@@ -31,9 +28,9 @@ class _FolderSelectionDialogState extends State<FolderSelectionDialog> {
       await widget.controller.selectTodoList(list);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading folders: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading folders: $e')));
       }
     }
   }
@@ -43,9 +40,9 @@ class _FolderSelectionDialogState extends State<FolderSelectionDialog> {
       await widget.controller.selectFolder(folder);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error selecting folder: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error selecting folder: $e')));
       }
     }
   }
@@ -53,9 +50,7 @@ class _FolderSelectionDialogState extends State<FolderSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -67,10 +62,7 @@ class _FolderSelectionDialogState extends State<FolderSelectionDialog> {
               children: [
                 const Text(
                   'Select Folder',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -81,10 +73,7 @@ class _FolderSelectionDialogState extends State<FolderSelectionDialog> {
             const SizedBox(height: 16),
             const Text(
               'Choose the list and folder for your task',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 20),
 

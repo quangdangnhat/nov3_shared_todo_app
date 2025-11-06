@@ -68,14 +68,8 @@ class TodoListRepository {
   /// Crea una nuova todo_list.
   /// (Il trigger 'on_todolist_created_add_admin_participation'
   /// aggiungerà automaticamente il creatore come 'admin' in 'participations')
-  Future<void> createTodoList({
-    required String title,
-    String? desc,
-  }) async {
-    final newRow = {
-      'title': title,
-      'desc': desc,
-    };
+  Future<void> createTodoList({required String title, String? desc}) async {
+    final newRow = {'title': title, 'desc': desc};
     try {
       await supabase.from('todo_lists').insert(newRow);
     } catch (error) {
@@ -95,7 +89,7 @@ class TodoListRepository {
       await supabase.from('todo_lists').update({
         'title': title,
         'desc': desc,
-        'updated_at': DateTime.now().toIso8601String()
+        'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', listId);
     } catch (error) {
       debugPrint('Errore aggiornamento lista: $error');

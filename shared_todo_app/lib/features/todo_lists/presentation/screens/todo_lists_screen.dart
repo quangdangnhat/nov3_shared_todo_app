@@ -60,7 +60,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                 TextFormField(
                   controller: descController,
                   decoration: const InputDecoration(
-                      labelText: 'Description (Optional)'),
+                    labelText: 'Description (Optional)',
+                  ),
                 ),
               ],
             ),
@@ -84,8 +85,10 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                     if (mounted) Navigator.of(context).pop();
                   } catch (error) {
                     if (mounted) {
-                      showErrorSnackBar(context,
-                          message: 'Failed to create list: $error');
+                      showErrorSnackBar(
+                        context,
+                        message: 'Failed to create list: $error',
+                      );
                     }
                   }
                 }
@@ -126,7 +129,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                 TextFormField(
                   controller: descController,
                   decoration: const InputDecoration(
-                      labelText: 'Description (Optional)'),
+                    labelText: 'Description (Optional)',
+                  ),
                 ),
               ],
             ),
@@ -149,16 +153,20 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                     );
                     if (mounted) {
                       Navigator.of(context).pop();
-                      showSuccessSnackBar(context,
-                          message: 'List updated successfully');
+                      showSuccessSnackBar(
+                        context,
+                        message: 'List updated successfully',
+                      );
                       setState(() {
                         _listsStream = _todoListRepo.getTodoListsStream();
                       });
                     }
                   } catch (error) {
                     if (mounted) {
-                      showErrorSnackBar(context,
-                          message: 'Failed to update list: $error');
+                      showErrorSnackBar(
+                        context,
+                        message: 'Failed to update list: $error',
+                      );
                     }
                   }
                 }
@@ -170,7 +178,6 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       },
     );
   }
-  
 
   void _showDeleteConfirmationDialog(TodoList list) {
     showDialog(
@@ -179,7 +186,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
         return AlertDialog(
           title: const Text('Leave List?'),
           content: Text(
-              'Are you sure you want to leave "${list.title}"?\n\nIf you are the last member, the list will be permanently deleted.'),
+            'Are you sure you want to leave "${list.title}"?\n\nIf you are the last member, the list will be permanently deleted.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -220,175 +228,169 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     }
   }
 
-// In: todo_lists_screen.dart
+  // In: todo_lists_screen.dart
 
-Future<void> _onSelectedList(TodoList list) async {
-  // 1. Mostra il dialog di caricamento
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => const Center(child: CircularProgressIndicator()),
-  );
+  Future<void> _onSelectedList(TodoList list) async {
+    // 1. Mostra il dialog di caricamento
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
 
-  try {
-    // 2. Esegui la logica asincrona
-    final Folder rootFolder = await _folderRepo.getRootFolder(list.id);
+    try {
+      // 2. Esegui la logica asincrona
+      final Folder rootFolder = await _folderRepo.getRootFolder(list.id);
 
-    // 3. Controlla se il widget è ancora valido
-    if (!mounted) return;
+      // 3. Controlla se il widget è ancora valido
+      if (!mounted) return;
 
-    // --- INIZIO MODIFICA ---
+      // --- INIZIO MODIFICA ---
 
-    // 4. Chiudi il dialog.
-    //    Usiamo 'rootNavigator: true' per essere sicuri
-    //    di chiudere il dialog che vive sul Navigator principale.
-    Navigator.of(context, rootNavigator: true).pop();
+      // 4. Chiudi il dialog.
+      //    Usiamo 'rootNavigator: true' per essere sicuri
+      //    di chiudere il dialog che vive sul Navigator principale.
+      Navigator.of(context, rootNavigator: true).pop();
 
-    // 5. Schedula la navigazione per DOPO che questo frame è stato completato.
-    //    Questo dà al Navigator il tempo di finire il 'pop()' e sbloccarsi
-    //    prima di ricevere il comando 'goNamed()'.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      
-      // 6. Ricontrolla 'mounted' perché questo è un callback asincrono
+      // 5. Schedula la navigazione per DOPO che questo frame è stato completato.
+      //    Questo dà al Navigator il tempo di finire il 'pop()' e sbloccarsi
+      //    prima di ricevere il comando 'goNamed()'.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // 6. Ricontrolla 'mounted' perché questo è un callback asincrono
+        if (mounted) {
+          context.goNamed(
+            AppRouter.listDetail,
+            pathParameters: {'listId': list.id},
+            extra: {'todoList': list, 'parentFolder': rootFolder},
+          );
+        }
+      });
+      // --- FINE MODIFICA ---
+    } on Exception catch (e) {
       if (mounted) {
-        context.goNamed(
-          AppRouter.listDetail,
-          pathParameters: {'listId': list.id},
-          extra: {
-            'todoList': list,
-            'parentFolder': rootFolder,
-          },
+        // Anche qui, usa rootNavigator: true per sicurezza
+        Navigator.of(context, rootNavigator: true).pop();
+        showErrorSnackBar(
+          context,
+          message:
+              'Could not load list details: ${e.toString().replaceFirst("Exception: ", "")}',
         );
       }
-    });
-    // --- FINE MODIFICA ---
-
-  } on Exception catch (e) {
-    if (mounted) {
-      // Anche qui, usa rootNavigator: true per sicurezza
-      Navigator.of(context, rootNavigator: true).pop();
-      showErrorSnackBar(context,
-          message:
-              'Could not load list details: ${e.toString().replaceFirst("Exception: ", "")}');
-    }
-  } catch (error) {
-    if (mounted) {
-      Navigator.of(context, rootNavigator: true).pop();
-      showErrorSnackBar(context,
-          message: 'An unexpected error occurred: $error');
+    } catch (error) {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        showErrorSnackBar(
+          context,
+          message: 'An unexpected error occurred: $error',
+        );
+      }
     }
   }
-}
 
-@override
-Widget build(BuildContext context) {
-  final isMobile = ResponsiveLayout.isMobile(context);
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = ResponsiveLayout.isMobile(context);
 
-  // --- MODIFICA INIZIA QUI ---
-  // Aggiunto Container opaco per prevenire glitch di rendering
-  return Container(
-    color: Theme.of(context).colorScheme.surface,
-    child: Column(
-      children: [
-        // Header personalizzato che sostituisce l'AppBar
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outlineVariant
-                    .withOpacity(0.5),
-                width: 1,
+    // --- MODIFICA INIZIA QUI ---
+    // Aggiunto Container opaco per prevenire glitch di rendering
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
+        children: [
+          // Header personalizzato che sostituisce l'AppBar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outlineVariant.withOpacity(0.5),
+                  width: 1,
+                ),
               ),
             ),
-          ),
-          child: Row(
-            children: [
-              // Hamburger menu SOLO su mobile
-              if (isMobile) ...[
+            child: Row(
+              children: [
+                // Hamburger menu SOLO su mobile
+                if (isMobile) ...[
+                  IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                    tooltip: 'Menu',
+                  ),
+                  const SizedBox(width: 8),
+                ],
+
+                // Titolo
+                Text(
+                  'My To-Do Lists',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const Spacer(),
+
+                // Pulsante Create
                 IconButton(
-                  icon: const Icon(Icons.menu),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                  tooltip: 'Menu',
+                  icon: const Icon(Icons.add),
+                  tooltip: "Create",
+                  onPressed: () {
+                    context.go(AppRouter.create); // Usa go invece di pushNamed
+                  },
                 ),
-                const SizedBox(width: 8),
               ],
-
-              // Titolo
-              Text(
-                'My To-Do Lists',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const Spacer(),
-
-              // Pulsante Create
-              IconButton(
-                icon: const Icon(Icons.add),
-                tooltip: "Create",
-                onPressed: () {
-                  context.go(AppRouter.create); // Usa go invece di pushNamed
-                },
-              ),
-            ],
+            ),
           ),
-        ),
 
-        // Contenuto principale (StreamBuilder)
-        Expanded(
-          child: Stack(
-            children: [
-              StreamBuilder<List<TodoList>>(
-                stream: _listsStream,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+          // Contenuto principale (StreamBuilder)
+          Expanded(
+            child: Stack(
+              children: [
+                StreamBuilder<List<TodoList>>(
+                  stream: _listsStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                  if (snapshot.hasError) {
-                    debugPrint('Errore StreamBuilder: ${snapshot.error}');
-                    debugPrint('Stack trace: ${snapshot.stackTrace}');
-                    return Center(
-                      child: Text('Error loading lists: ${snapshot.error}'),
-                    );
-                  }
+                    if (snapshot.hasError) {
+                      debugPrint('Errore StreamBuilder: ${snapshot.error}');
+                      debugPrint('Stack trace: ${snapshot.stackTrace}');
+                      return Center(
+                        child: Text('Error loading lists: ${snapshot.error}'),
+                      );
+                    }
 
-                  final lists = snapshot.data;
+                    final lists = snapshot.data;
 
-                  if (lists == null || lists.isEmpty) {
-                    return _buildEmptyState();
-                  }
+                    if (lists == null || lists.isEmpty) {
+                      return _buildEmptyState();
+                    }
 
-                  return _buildList(lists);
-                },
-              ),
-
-              // FloatingActionButton posizionato manualmente
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: FloatingActionButton(
-                  onPressed: _showCreateListDialog,
-                  tooltip: 'Create List',
-                  child: const Icon(Icons.add),
+                    return _buildList(lists);
+                  },
                 ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-  // --- MODIFICA FINISCE QUI ---
-}
 
+                // FloatingActionButton posizionato manualmente
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: FloatingActionButton(
+                    onPressed: _showCreateListDialog,
+                    tooltip: 'Create List',
+                    child: const Icon(Icons.add),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    // --- MODIFICA FINISCE QUI ---
+  }
 
   Widget _buildEmptyState() {
     // --- CODICE RIPRISTINATO ---

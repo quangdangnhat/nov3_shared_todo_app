@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../../../config/responsive.dart';
 import '../../../../../core/widgets/app_drawer.dart';
 
-
 /// Layout principale dell'app con sidebar persistente.
 /// Questo widget avvolge tutte le schermate per mantenere
 /// la sidebar sempre visibile su tablet/desktop.
@@ -11,10 +10,7 @@ class MainLayout extends StatelessWidget {
   /// Il contenuto della pagina corrente (child route)
   final Widget child;
 
-  const MainLayout({
-    super.key,
-    required this.child,
-  });
+  const MainLayout({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -48,9 +44,7 @@ class MainLayout extends StatelessWidget {
             ),
 
           // Contenuto principale (pagina corrente)
-          Expanded(
-            child: child,
-          ),
+          Expanded(child: child),
         ],
       ),
     );

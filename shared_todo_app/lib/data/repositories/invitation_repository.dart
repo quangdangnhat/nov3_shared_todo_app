@@ -46,7 +46,8 @@ class InvitationRepository {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
       return Stream.value(
-          []); // Ritorna uno stream vuoto se l'utente non è loggato
+        [],
+      ); // Ritorna uno stream vuoto se l'utente non è loggato
     }
 
     // --- CORREZIONE: Usa asyncMap ---
@@ -98,17 +99,19 @@ class InvitationRepository {
       // --- FINE CORREZIONE ---
 
       // Esegui le query in parallelo
-      final [listTitlesResponse, inviterEmailsResponse] =
-          await Future.wait([listTitlesFuture, inviterEmailsFuture]);
+      final [listTitlesResponse, inviterEmailsResponse] = await Future.wait([
+        listTitlesFuture,
+        inviterEmailsFuture,
+      ]);
 
       // 4. Mappa i risultati in lookup map per efficienza
       final listTitles = {
         for (var item in listTitlesResponse)
-          item['id'] as String: item['title'] as String
+          item['id'] as String: item['title'] as String,
       };
       final inviterEmails = {
         for (var item in inviterEmailsResponse)
-          item['id'] as String: item['email'] as String
+          item['id'] as String: item['email'] as String,
       };
 
       // 5. Combina i dati e costruisci i modelli Invitation
@@ -119,7 +122,7 @@ class InvitationRepository {
         final enrichedMap = {
           ...invitationMap,
           'todo_lists': {'title': listTitles[todoListId] ?? '[Unknown List]'},
-          'users': {'email': inviterEmails[inviterId] ?? '[Unknown User]'}
+          'users': {'email': inviterEmails[inviterId] ?? '[Unknown User]'},
         };
         return Invitation.fromMap(enrichedMap);
       }).toList();
@@ -131,10 +134,7 @@ class InvitationRepository {
     try {
       final response = await _supabase.functions.invoke(
         'respond-to-invitation',
-        body: {
-          'invitation_id': invitationId,
-          'accept': accept,
-        },
+        body: {'invitation_id': invitationId, 'accept': accept},
       );
 
       if (response.status != 200) {

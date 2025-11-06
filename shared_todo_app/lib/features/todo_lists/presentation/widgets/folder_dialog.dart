@@ -70,9 +70,11 @@ class _FolderDialogState extends State<FolderDialog> {
     } catch (error) {
       // Mostra errore nel dialog (va bene qui perché il dialog non si chiude)
       if (mounted) {
-        showErrorSnackBar(context,
-            message:
-                'Failed to ${_isEditing ? 'update' : 'create'} folder: $error');
+        showErrorSnackBar(
+          context,
+          message:
+              'Failed to ${_isEditing ? 'update' : 'create'} folder: $error',
+        );
       }
     } finally {
       // Disattiva il loading anche se c'è stato un errore
@@ -85,11 +87,13 @@ class _FolderDialogState extends State<FolderDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEditing
-          ? 'Edit Folder'
-          : (widget.parentId == null
-              ? 'Create New Folder'
-              : 'Create Subfolder')),
+      title: Text(
+        _isEditing
+            ? 'Edit Folder'
+            : (widget.parentId == null
+                ? 'Create New Folder'
+                : 'Create Subfolder'),
+      ),
       content: Form(
         key: _formKey,
         child: TextFormField(
@@ -121,7 +125,8 @@ class _FolderDialogState extends State<FolderDialog> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2))
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : Text(_isEditing ? 'Save' : 'Create'),
         ),
       ],

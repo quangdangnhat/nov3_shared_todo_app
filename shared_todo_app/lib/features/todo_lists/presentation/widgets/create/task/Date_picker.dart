@@ -88,10 +88,7 @@ class DatePickerCard extends StatelessWidget {
                 children: [
                   Text(
                     _getLabel(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
                     _formatDate(selectedDate),

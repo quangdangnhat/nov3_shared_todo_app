@@ -111,7 +111,7 @@ class AppRouter {
               );
             },
           ),
-          
+
           // Dettaglio Lista (mostra la root folder)
           GoRoute(
             path: '/list/:listId', // Path assoluto
@@ -121,8 +121,7 @@ class AppRouter {
               final Map<String, dynamic> extras =
                   state.extra as Map<String, dynamic>;
               final TodoList todoListExtra = extras['todoList'] as TodoList;
-              final Folder parentFolderExtra =
-                  extras['parentFolder'] as Folder;
+              final Folder parentFolderExtra = extras['parentFolder'] as Folder;
 
               return CustomTransitionPage(
                 key: state.pageKey,
@@ -138,7 +137,7 @@ class AppRouter {
               );
             },
           ),
-          
+
           // Route per folder - path assoluto, stesso livello di listDetail
           GoRoute(
             path: '/list/:listId/folder/:folderId',
@@ -146,10 +145,8 @@ class AppRouter {
             pageBuilder: (BuildContext context, GoRouterState state) {
               final Map<String, dynamic> extras =
                   state.extra as Map<String, dynamic>;
-              final TodoList todoListExtra =
-                  extras['todoList'] as TodoList;
-              final Folder parentFolderExtra =
-                  extras['parentFolder'] as Folder;
+              final TodoList todoListExtra = extras['todoList'] as TodoList;
+              final Folder parentFolderExtra = extras['parentFolder'] as Folder;
 
               return CustomTransitionPage(
                 key: ValueKey('folder_${parentFolderExtra.id}'),
@@ -264,9 +261,7 @@ class AppRouter {
 
     // Gestione errori
     errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('Pagina non trovata: ${state.matchedLocation}'),
-      ),
+      body: Center(child: Text('Pagina non trovata: ${state.matchedLocation}')),
     ),
   );
 }

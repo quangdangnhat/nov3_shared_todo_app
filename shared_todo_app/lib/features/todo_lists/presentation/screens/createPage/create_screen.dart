@@ -15,7 +15,6 @@ class CreatePage extends StatefulWidget {
 class _CreatePageState extends State<CreatePage> {
   // 0 = Folder, 1 = Task
   int _selectedIndex = 0;
-  
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +31,9 @@ class _CreatePageState extends State<CreatePage> {
               color: Theme.of(context).colorScheme.surface,
               border: Border(
                 bottom: BorderSide(
-                  color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outlineVariant.withOpacity(0.5),
                   width: 1,
                 ),
               ),
@@ -46,15 +47,15 @@ class _CreatePageState extends State<CreatePage> {
                     tooltip: 'Menu',
                   ),
                   const SizedBox(width: 8),
-                ]else...[
+                ] else ...[
                   IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () {
-                   context.go(AppRouter.home);
-                  },
-                  tooltip: 'back', // Tooltip per accessibilità
-                ),
-                const SizedBox(width: 8),
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () {
+                      context.go(AppRouter.home);
+                    },
+                    tooltip: 'back', // Tooltip per accessibilità
+                  ),
+                  const SizedBox(width: 8),
                 ],
                 Text(
                   'Create',
@@ -86,9 +87,7 @@ class _CreatePageState extends State<CreatePage> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[300]!, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey[300]!, width: 1)),
       ),
       child: Row(
         children: [
@@ -134,11 +133,7 @@ class _CreatePageState extends State<CreatePage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.blue : Colors.grey,
-              size: 24,
-            ),
+            Icon(icon, color: isSelected ? Colors.blue : Colors.grey, size: 24),
             const SizedBox(width: 8),
             Text(
               label,

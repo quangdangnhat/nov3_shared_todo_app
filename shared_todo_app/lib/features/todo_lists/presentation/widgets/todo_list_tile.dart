@@ -29,20 +29,20 @@ class TodoListTile extends StatelessWidget {
     return Card(
       elevation: 3.0,
       margin: const EdgeInsets.only(bottom: 12.0), // Spazio tra le card
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
-        leading:
-            const Icon(Icons.list_alt_rounded, size: 40, color: Colors.blue),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 10.0,
+          horizontal: 16.0,
+        ),
+        leading: const Icon(
+          Icons.list_alt_rounded,
+          size: 40,
+          color: Colors.blue,
+        ),
         title: Text(
           list.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 17,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
         ),
         // Sottotitolo con descrizione, ruolo e data
         subtitle: Column(
@@ -57,14 +57,15 @@ class TodoListTile extends StatelessWidget {
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 10), // Spaziatore
-
             // Riga per i metadati (Ruolo e Data)
             Row(
               children: [
                 // CHIP PER IL RUOLO
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: roleColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -80,16 +81,16 @@ class TodoListTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 // DATA DI CREAZIONE
-                Icon(Icons.calendar_today,
-                    size: 12, color: Colors.grey.shade600),
+                Icon(
+                  Icons.calendar_today,
+                  size: 12,
+                  color: Colors.grey.shade600,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   // Usa l'utility di formattazione
                   formatDate(list.createdAt),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -133,8 +134,8 @@ class TodoListTile extends StatelessWidget {
             return items;
           },
         ),
-        // --- FINE MODIFICA ---
 
+        // --- FINE MODIFICA ---
         onTap: onTap,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),

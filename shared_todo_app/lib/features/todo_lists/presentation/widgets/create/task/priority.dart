@@ -19,37 +19,18 @@ class PrioritySelector extends StatelessWidget {
       children: [
         const Text(
           'Priority',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(
-              child: _buildPriorityChip(
-                'low',
-                'Low',
-                Colors.green,
-              ),
-            ),
+            Expanded(child: _buildPriorityChip('low', 'Low', Colors.green)),
             const SizedBox(width: 8),
             Expanded(
-              child: _buildPriorityChip(
-                'medium',
-                'Medium',
-                Colors.orange,
-              ),
+              child: _buildPriorityChip('medium', 'Medium', Colors.orange),
             ),
             const SizedBox(width: 8),
-            Expanded(
-              child: _buildPriorityChip(
-                'high',
-                'High',
-                Colors.red,
-              ),
-            ),
+            Expanded(child: _buildPriorityChip('high', 'High', Colors.red)),
           ],
         ),
       ],

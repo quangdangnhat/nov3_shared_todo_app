@@ -30,8 +30,9 @@ void main() {
 
   // Test case: Verify the app shows the Login screen on initial startup.
   // The test name is still in Italian.
-  testWidgets('L\'app mostra la schermata di Login all\'avvio',
-      (WidgetTester tester) async {
+  testWidgets('L\'app mostra la schermata di Login all\'avvio', (
+    WidgetTester tester,
+  ) async {
     // Build the root widget 'MyApp'.
     await tester.pumpWidget(const MyApp());
 

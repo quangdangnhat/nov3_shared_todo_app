@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import '../../../../data/models/task.dart';
 import '../../../../data/repositories/task_repository.dart';
 
-
 /// Un dialog per creare o modificare un Task.
 class TaskDialog extends StatefulWidget {
   final String folderId;
@@ -60,7 +59,9 @@ class _TaskDialogState extends State<TaskDialog> {
 
   // Funzione helper per mostrare il date picker
   Future<DateTime?> _selectDate(
-      BuildContext context, DateTime? initialDate) async {
+    BuildContext context,
+    DateTime? initialDate,
+  ) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate ?? DateTime.now(),
@@ -145,8 +146,9 @@ class _TaskDialogState extends State<TaskDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descController,
-                decoration:
-                    const InputDecoration(labelText: 'Description (Optional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Description (Optional)',
+                ),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
@@ -155,7 +157,9 @@ class _TaskDialogState extends State<TaskDialog> {
                 decoration: const InputDecoration(labelText: 'Priority'),
                 items: _priorities.map((String value) {
                   return DropdownMenuItem<String>(
-                      value: value, child: Text(value));
+                    value: value,
+                    child: Text(value),
+                  );
                 }).toList(),
                 onChanged: (newValue) {
                   setState(() => _selectedPriority = newValue!);
@@ -167,7 +171,9 @@ class _TaskDialogState extends State<TaskDialog> {
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: _statuses.map((String value) {
                   return DropdownMenuItem<String>(
-                      value: value, child: Text(value));
+                    value: value,
+                    child: Text(value),
+                  );
                 }).toList(),
                 onChanged: (newValue) {
                   setState(() => _selectedStatus = newValue!);
@@ -176,13 +182,17 @@ class _TaskDialogState extends State<TaskDialog> {
               const SizedBox(height: 8),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(_selectedStartDate == null
-                    ? 'Start Date (Defaults to Today)'
-                    : 'Start: ${DateFormat('dd/MM/yyyy').format(_selectedStartDate!)}'),
+                title: Text(
+                  _selectedStartDate == null
+                      ? 'Start Date (Defaults to Today)'
+                      : 'Start: ${DateFormat('dd/MM/yyyy').format(_selectedStartDate!)}',
+                ),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
                   final date = await _selectDate(
-                      context, _selectedStartDate ?? DateTime.now());
+                    context,
+                    _selectedStartDate ?? DateTime.now(),
+                  );
                   if (date != null) {
                     setState(() => _selectedStartDate = date);
                   }
@@ -190,14 +200,18 @@ class _TaskDialogState extends State<TaskDialog> {
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(_selectedDueDate == null
-                    ? 'Select Due Date *'
-                    // Ora _selectedDueDate non è mai null qui se _isEditing è true
-                    : 'Due: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate!)}'),
+                title: Text(
+                  _selectedDueDate == null
+                      ? 'Select Due Date *'
+                      // Ora _selectedDueDate non è mai null qui se _isEditing è true
+                      : 'Due: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate!)}',
+                ),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
                   final date = await _selectDate(
-                      context, _selectedDueDate ?? DateTime.now());
+                    context,
+                    _selectedDueDate ?? DateTime.now(),
+                  );
                   if (date != null) {
                     setState(() => _selectedDueDate = date);
                   }
@@ -209,8 +223,9 @@ class _TaskDialogState extends State<TaskDialog> {
                   child: Text(
                     'Due date is required',
                     style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 12),
+                      color: Theme.of(context).colorScheme.error,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
             ],
@@ -228,7 +243,8 @@ class _TaskDialogState extends State<TaskDialog> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2))
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               // Testo dinamico
               : Text(_isEditing ? 'Save Task' : 'Create Task'),
         ),

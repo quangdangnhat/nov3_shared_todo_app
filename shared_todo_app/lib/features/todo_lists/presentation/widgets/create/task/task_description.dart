@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class TaskDescriptionField extends StatelessWidget {
   final TextEditingController controller;
 
-  const TaskDescriptionField({
-    super.key,
-    required this.controller,
-  });
+  const TaskDescriptionField({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +14,7 @@ class TaskDescriptionField extends StatelessWidget {
         labelText: 'Description (optional)',
         hintText: 'Add details',
         prefixIcon: const Icon(Icons.description),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

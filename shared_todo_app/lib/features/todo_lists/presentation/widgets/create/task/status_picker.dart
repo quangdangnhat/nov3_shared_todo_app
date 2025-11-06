@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum TaskStatus {
-  toDo,
-  inProgress,
-  done,
-}
+enum TaskStatus { toDo, inProgress, done }
 
 class StatusSelector extends StatelessWidget {
   final TaskStatus selectedStatus;

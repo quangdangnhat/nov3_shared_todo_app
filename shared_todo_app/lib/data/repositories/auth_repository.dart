@@ -30,9 +30,7 @@ class AuthRepository {
         password: password,
         // Il Trigger che abbiamo creato in Supabase leggerà
         // questo campo 'data' per popolare public.users
-        data: {
-          'username': username,
-        },
+        data: {'username': username},
       );
     } on AuthException catch (error) {
       if (error.message.contains('Database error saving new user')) {
@@ -47,10 +45,7 @@ class AuthRepository {
   }
 
   // Metodo per accedere
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     try {
       await _client.auth.signInWithPassword(
         // USE _client instead of global supabase

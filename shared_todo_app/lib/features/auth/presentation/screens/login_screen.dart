@@ -39,8 +39,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) showErrorSnackBar(scaffoldContext, message: error.message);
     } catch (error) {
       if (mounted)
-        showErrorSnackBar(scaffoldContext,
-            message: 'An unknown error occurred.');
+        showErrorSnackBar(
+          scaffoldContext,
+          message: 'An unknown error occurred.',
+        );
     } finally {
       if (mounted)
         setState(() {
@@ -65,72 +67,73 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
+      appBar: AppBar(title: const Text('Login')),
       // --- AGGIUNTA CHIAVE: Builder Widget ---
       // Usiamo un Builder per ottenere un contesto sicuramente sotto lo Scaffold
-      body: Builder(builder: (scaffoldContext) {
-        // Questo è il nuovo contesto da usare
-        return Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      final emailRegex =
-                          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                      if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Please enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-                  _isLoading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                          // Passa il contesto corretto
-                          onPressed: () => _submitLogin(scaffoldContext),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 48),
+      body: Builder(
+        builder: (scaffoldContext) {
+          // Questo è il nuovo contesto da usare
+          return Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        final emailRegex = RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        );
+                        if (!emailRegex.hasMatch(value.trim())) {
+                          return 'Please enter a valid email address';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: const InputDecoration(labelText: 'Password'),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                            // Passa il contesto corretto
+                            onPressed: () => _submitLogin(scaffoldContext),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                            child: const Text('Login'),
                           ),
-                          child: const Text('Login'),
-                        ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    // Passa il contesto corretto
-                    onPressed: () => _navigateToSignUp(scaffoldContext),
-                    child: const Text('Don\'t have an account? Sign Up'),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    TextButton(
+                      // Passa il contesto corretto
+                      onPressed: () => _navigateToSignUp(scaffoldContext),
+                      child: const Text('Don\'t have an account? Sign Up'),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
       // --- FINE AGGIUNTA ---
     );
   }

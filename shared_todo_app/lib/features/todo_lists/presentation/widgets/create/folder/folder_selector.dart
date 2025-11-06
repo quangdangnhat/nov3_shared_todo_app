@@ -42,9 +42,7 @@ class FolderSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: isEnabled ? Colors.grey : Colors.grey[300]!,
-        ),
+        border: Border.all(color: isEnabled ? Colors.grey : Colors.grey[300]!),
         borderRadius: BorderRadius.circular(12),
         color: isEnabled ? null : Colors.grey[100],
       ),
@@ -97,11 +95,7 @@ class FolderSelector extends StatelessWidget {
           value: controller.selectedFolder,
           child: Row(
             children: [
-              const Icon(
-                Icons.folder_open,
-                size: 18,
-                color: Colors.blue,
-              ),
+              const Icon(Icons.folder_open, size: 18, color: Colors.blue),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

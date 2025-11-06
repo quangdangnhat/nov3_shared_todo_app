@@ -27,12 +27,14 @@ class TaskSorter {
 
       case TaskFilterType.alphabeticalAZ:
         sortedTasks.sort(
-            (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
         break;
 
       case TaskFilterType.alphabeticalZA:
         sortedTasks.sort(
-            (a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
+          (a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()),
+        );
         break;
     }
 
@@ -42,11 +44,7 @@ class TaskSorter {
   /// Helper method for comparing priorities
   /// High = 1, Medium = 2, Low = 3
   static int _comparePriority(String priorityA, String priorityB) {
-    final priorityOrder = {
-      'High': 1,
-      'Medium': 2,
-      'Low': 3,
-    };
+    final priorityOrder = {'High': 1, 'Medium': 2, 'Low': 3};
 
     final valueA =
         priorityOrder[priorityA] ?? 999; // Unknown priority at the end

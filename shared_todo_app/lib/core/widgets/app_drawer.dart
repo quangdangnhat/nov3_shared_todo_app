@@ -67,10 +67,7 @@ class _AppDrawerState extends State<AppDrawer> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            colorScheme.surface.withOpacity(0.8),
-            colorScheme.surface,
-          ],
+          colors: [colorScheme.surface.withOpacity(0.8), colorScheme.surface],
         ),
       ),
       child: ListView(
@@ -84,10 +81,7 @@ class _AppDrawerState extends State<AppDrawer> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.primaryContainer,
-                ],
+                colors: [colorScheme.primary, colorScheme.primaryContainer],
               ),
             ),
             child: Column(
@@ -138,7 +132,10 @@ class _AppDrawerState extends State<AppDrawer> {
                 const SizedBox(height: 4),
                 // Email con container arrotondato
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     // Sfondo del badge email
                     color: colorScheme.onPrimary.withOpacity(0.2),
@@ -287,7 +284,10 @@ class _AppDrawerState extends State<AppDrawer> {
                   _handleLogout();
                 },
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 16,
+                  ),
                   child: Row(
                     children: [
                       // Icona Log Out (usa i colori di errore del tema)
@@ -327,12 +327,12 @@ class _AppDrawerState extends State<AppDrawer> {
     final isActive = _isRouteActive(context, route);
     // Prendo il colorScheme una sola volta
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
         // Sfondo tile (attivo o trasparente)
-        color: isActive 
+        color: isActive
             ? colorScheme.primaryContainer.withOpacity(0.3)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
@@ -356,7 +356,8 @@ class _AppDrawerState extends State<AppDrawer> {
                     icon,
                     // Colore icona
                     color: isActive
-                        ? colorScheme.onPrimary // Colore su primario (es. bianco)
+                        ? colorScheme
+                            .onPrimary // Colore su primario (es. bianco)
                         : colorScheme.primary, // Colore primario
                     size: 22,
                   ),
@@ -370,7 +371,8 @@ class _AppDrawerState extends State<AppDrawer> {
                         title,
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+                          fontWeight:
+                              isActive ? FontWeight.bold : FontWeight.w600,
                           // Colore testo (attivo o standard)
                           color: isActive
                               ? colorScheme.primary

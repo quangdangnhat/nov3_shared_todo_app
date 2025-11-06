@@ -44,11 +44,13 @@ class Task {
           return DateTime.parse(value);
         } catch (e) {
           throw FormatException(
-              'Invalid date format for required field $fieldName: $value');
+            'Invalid date format for required field $fieldName: $value',
+          );
         }
       }
       throw FormatException(
-          'Missing or invalid type for required field $fieldName: $value');
+        'Missing or invalid type for required field $fieldName: $value',
+      );
     }
 
     final sdValue = map['start_date'] ?? map['startDate'];

@@ -82,9 +82,9 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating task: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error creating task: $e')));
       }
     }
   }
@@ -103,34 +103,24 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
               children: [
                 const Text(
                   'Create a new task',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Add a task in your todo list',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
                 const SizedBox(height: 24),
-
                 TaskTitleField(controller: _titleController),
                 const SizedBox(height: 16),
-
                 TaskDescriptionField(controller: _descriptionController),
                 const SizedBox(height: 16),
-
                 FolderDisplayCard(
                   selectedTodoList: _controller.selectedTodoList,
                   selectedFolder: _controller.selectedFolder,
                   onTap: _showFolderSelectionDialog,
                 ),
                 const SizedBox(height: 16),
-
                 DatePickerCard(
                   key: const ValueKey('start_date_picker'),
                   type: DatePickerType.startDate,
@@ -138,19 +128,21 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
                   onDateSelected: (date) => _controller.setStartDate(date),
                 ),
                 const SizedBox(height: 16),
-
                 DatePickerCard(
                   key: const ValueKey('due_date_picker'),
                   type: DatePickerType.dueDate,
                   selectedDate: _controller.selectedDueDate,
                   onDateSelected: (date) => _controller.setDueDate(date),
                 ),
-
                 if (_controller.dateError != null) ...[
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.red[700],
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -164,21 +156,18 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
                     ],
                   ),
                 ],
-
                 const SizedBox(height: 16),
-
                 StatusSelector(
                   selectedStatus: _controller.selectedStatus,
                   onStatusChanged: (status) => _controller.setStatus(status),
                 ),
                 const SizedBox(height: 16),
-
                 PrioritySelector(
                   selectedPriority: _controller.selectedPriority,
-                  onPriorityChanged: (priority) => _controller.setPriority(priority),
+                  onPriorityChanged: (priority) =>
+                      _controller.setPriority(priority),
                 ),
                 const SizedBox(height: 32),
-
                 CreateTaskButton(
                   isEnabled: _controller.canCreateTask(_titleController.text),
                   onPressed: _handleCreateTask,

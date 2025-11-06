@@ -94,10 +94,7 @@ class TaskCreateController extends BaseFolderSelectionController {
       final root = await _folderRepo.getRootFolder(list.id);
       _rootFolder = root;
       _selectedFolder = root;
-      _folderStream = _folderRepo.getFoldersStream(
-        list.id,
-        parentId: root.id,
-      );
+      _folderStream = _folderRepo.getFoldersStream(list.id, parentId: root.id);
       _isLoading = false;
       notifyListeners();
     } catch (e) {

@@ -84,7 +84,8 @@ class TaskRepository {
         // Potresti lanciare un errore o restituire il task non modificato
         // Per ora, procediamo comunque per aggiornare 'updated_at'
         debugPrint(
-            "Nessun campo da aggiornare per il task $taskId (solo updated_at)");
+          "Nessun campo da aggiornare per il task $taskId (solo updated_at)",
+        );
       }
 
       final response = await _supabase
@@ -117,10 +118,12 @@ class TaskRepository {
   // Calendar: task che "cadono" (anche solo in parte) dentro [from, to)
   // Nel tuo TaskRepository:
 
-// --- Task per periodo (griglia mensile del calendario) ---
-// Recupera i task che si sovrappongono all'intervallo di date [from, to).
+  // --- Task per periodo (griglia mensile del calendario) ---
+  // Recupera i task che si sovrappongono all'intervallo di date [from, to).
   Future<List<Task>> getTasksForCalendar_Future(
-      DateTime from, DateTime to) async {
+    DateTime from,
+    DateTime to,
+  ) async {
     try {
       final fromIso = from.toUtc().toIso8601String();
       final toIso = to.toUtc().toIso8601String();
@@ -154,8 +157,9 @@ class TaskRepository {
         }
 
         // 2. Se la scadenza è la stessa, ordina per priorità (da Alta a Bassa)
-        comparison = _rankPriority(taskA.priority)
-            .compareTo(_rankPriority(taskB.priority));
+        comparison = _rankPriority(
+          taskA.priority,
+        ).compareTo(_rankPriority(taskB.priority));
         if (comparison != 0) {
           return comparison;
         }
@@ -181,11 +185,13 @@ class TaskRepository {
     return 2; // Bassa, low, o qualsiasi altro valore
   }
 
-// --- Task per il giorno selezionato ---
+  // --- Task per il giorno selezionato ---
 
-// --- Task per il giorno selezionato ---
+  // --- Task per il giorno selezionato ---
   Future<List<Task>> getTasksForDay_Future(
-      DateTime dayStartInclusive, DateTime dayEndExclusive) async {
+    DateTime dayStartInclusive,
+    DateTime dayEndExclusive,
+  ) async {
     try {
       final res = await _supabase
           .from('tasks')

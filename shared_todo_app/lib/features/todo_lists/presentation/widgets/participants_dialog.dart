@@ -37,9 +37,8 @@ class _ParticipantsDialogState extends State<ParticipantsDialog> {
   void _openInviteDialog(BuildContext parentContext) {
     showDialog<bool>(
       context: parentContext, // Usa il contesto del ParticipantsDialog
-      builder: (dialogContext) => InviteMemberDialog(
-        todoListId: widget.todoListId,
-      ),
+      builder: (dialogContext) =>
+          InviteMemberDialog(todoListId: widget.todoListId),
     ).then((invitationSent) {
       // Se l'invito è stato inviato con successo (restituisce true)
       if (invitationSent == true) {
@@ -71,8 +70,9 @@ class _ParticipantsDialogState extends State<ParticipantsDialog> {
         if (snapshot.hasError) {
           return AlertDialog(
             title: const Text('Error'),
-            content:
-                Text(snapshot.error.toString().replaceFirst("Exception: ", "")),
+            content: Text(
+              snapshot.error.toString().replaceFirst("Exception: ", ""),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -98,19 +98,24 @@ class _ParticipantsDialogState extends State<ParticipantsDialog> {
                 final bool isAdmin = participant.role == 'admin';
                 return ListTile(
                   leading: CircleAvatar(
-                    child: Text(participant.username.isNotEmpty
-                        ? participant.username[0].toUpperCase()
-                        : '?'),
+                    child: Text(
+                      participant.username.isNotEmpty
+                          ? participant.username[0].toUpperCase()
+                          : '?',
+                    ),
                   ),
                   title: Text(participant.username),
                   subtitle: Text(participant.email),
                   // Mostra un "chip" per il ruolo
                   trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: (isAdmin ? Colors.blue : Colors.grey)
-                          .withOpacity(0.1),
+                      color: (isAdmin ? Colors.blue : Colors.grey).withOpacity(
+                        0.1,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

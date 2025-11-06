@@ -17,8 +17,8 @@ class ResponsiveLayout extends StatelessWidget {
   static const double mobileBreakpoint = 650;
   static const double desktopBreakpoint = 1280;
 
-// funzioni per facilitare l'utilizzo quando devo modificare l'UI in base al dispositivo
-// functions to make the code easier to read and use depending the device.
+  // funzioni per facilitare l'utilizzo quando devo modificare l'UI in base al dispositivo
+  // functions to make the code easier to read and use depending the device.
   static bool isMobile(BuildContext context) =>
       MediaQuery.sizeOf(context).width < mobileBreakpoint;
 
@@ -50,8 +50,8 @@ class ResponsiveLayout extends StatelessWidget {
     if (width >= mobileBreakpoint) return tablet ?? mobile;
     return mobile;
   }
-// WHY IS IT USEFULL ? :
-/*
+  // WHY IS IT USEFULL ? :
+  /*
  
 WITHOUT THE HELPER:
 double getFontSize(BuildContext context) {

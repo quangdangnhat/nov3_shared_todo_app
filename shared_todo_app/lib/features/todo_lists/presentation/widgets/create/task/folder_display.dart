@@ -43,10 +43,7 @@ class FolderDisplayCard extends StatelessWidget {
                 children: [
                   Text(
                     'Destination',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
                     hasSelection

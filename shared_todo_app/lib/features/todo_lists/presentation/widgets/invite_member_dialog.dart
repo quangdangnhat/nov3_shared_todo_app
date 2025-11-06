@@ -45,8 +45,10 @@ class _InviteMemberDialogState extends State<InviteMemberDialog> {
     } catch (error) {
       // Se fallisce, mostra l'errore in questo dialog
       if (mounted) {
-        showErrorSnackBar(context,
-            message: error.toString().replaceFirst("Exception: ", ""));
+        showErrorSnackBar(
+          context,
+          message: error.toString().replaceFirst("Exception: ", ""),
+        );
       }
     } finally {
       if (mounted) {
@@ -109,7 +111,8 @@ class _InviteMemberDialogState extends State<InviteMemberDialog> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2))
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Send Invite'),
         ),
       ],

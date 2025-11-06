@@ -16,18 +16,18 @@ class MyApp extends StatelessWidget {
     //    Questo "ascolta" il ThemeProvider per i cambiamenti.
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        
         // Ora restituiamo MaterialApp.router dall'interno del builder
         return MaterialApp.router(
           // Passa la configurazione del router definita in app_router.dart
           routerConfig: AppRouter.router,
 
           title: 'Shared To-Do',
-          
+
           // 3. IMPOSTA I TEMI IN MODO DINAMICO
           theme: AppTheme.lightTheme, // Il tuo tema chiaro
           darkTheme: AppTheme.darkTheme, // Il tuo tema scuro
-          themeMode: themeProvider.currentThemeMode, // Prende lo stato dal provider!
+          themeMode:
+              themeProvider.currentThemeMode, // Prende lo stato dal provider!
 
           debugShowCheckedModeBanner: false,
 

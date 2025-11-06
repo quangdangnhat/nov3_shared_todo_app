@@ -18,10 +18,7 @@ class CreateFolderButton extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: isEnabled ? onPressed : null,
         icon: const Icon(Icons.add),
-        label: const Text(
-          'Create Folder',
-          style: TextStyle(fontSize: 16),
-        ),
+        label: const Text('Create Folder', style: TextStyle(fontSize: 16)),
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

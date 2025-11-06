@@ -40,8 +40,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // Mostra un messaggio di successo
         ScaffoldMessenger.of(scaffoldContext).showSnackBar(
           const SnackBar(
-            content:
-                Text('Sign up successful! Please check your email to verify.'),
+            content: Text(
+              'Sign up successful! Please check your email to verify.',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -54,8 +55,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (mounted) showErrorSnackBar(scaffoldContext, message: error.message);
     } catch (error) {
       if (mounted)
-        showErrorSnackBar(scaffoldContext,
-            message: 'An unknown error occurred.');
+        showErrorSnackBar(
+          scaffoldContext,
+          message: 'An unknown error occurred.',
+        );
     } finally {
       if (mounted)
         setState(() {
@@ -89,103 +92,108 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // Il pulsante esplicito è più sicuro.
       ),
       body: Builder(
-          // Usiamo Builder per ottenere un contesto valido per GoRouter e SnackBar
-          builder: (scaffoldContext) {
-        return Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Username
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(labelText: 'Username'),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter a username';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+        // Usiamo Builder per ottenere un contesto valido per GoRouter e SnackBar
+        builder: (scaffoldContext) {
+          return Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Username
+                    TextFormField(
+                      controller: _usernameController,
+                      decoration: const InputDecoration(labelText: 'Username'),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter a username';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-                  // Email
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      final emailRegex =
-                          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                      if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Please enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                    // Email
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        final emailRegex = RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        );
+                        if (!emailRegex.hasMatch(value.trim())) {
+                          return 'Please enter a valid email address';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-                  // Password
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                    // Password
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: const InputDecoration(labelText: 'Password'),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-                  // Confirm Password
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    decoration:
-                        const InputDecoration(labelText: 'Confirm Password'),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value != _passwordController.text) {
-                        return 'Passwords do not match';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
+                    // Confirm Password
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      decoration: const InputDecoration(
+                        labelText: 'Confirm Password',
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
 
-                  // Bottone Submit
-                  _isLoading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                          onPressed: () => _submitSignUp(
-                              scaffoldContext), // Passa il contesto
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 48),
+                    // Bottone Submit
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                            onPressed: () => _submitSignUp(
+                              scaffoldContext,
+                            ), // Passa il contesto
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                            child: const Text('Sign Up'),
                           ),
-                          child: const Text('Sign Up'),
-                        ),
 
-                  // --- PULSANTE PER TORNARE AL LOGIN ---
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () =>
-                        _navigateToLogin(scaffoldContext), // Passa il contesto
-                    child: const Text('Already have an account? Login'),
-                  ),
-                  // --- FINE PULSANTE ---
-                ],
+                    // --- PULSANTE PER TORNARE AL LOGIN ---
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () => _navigateToLogin(
+                        scaffoldContext,
+                      ), // Passa il contesto
+                      child: const Text('Already have an account? Login'),
+                    ),
+                    // --- FINE PULSANTE ---
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 }

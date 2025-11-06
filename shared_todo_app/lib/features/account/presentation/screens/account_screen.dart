@@ -45,9 +45,11 @@ class AccountScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Center(
-              child: Text(username,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w600))),
+            child: Text(
+              username,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            ),
+          ),
           const SizedBox(height: 24),
           const Divider(),
           ListTile(
@@ -72,7 +74,8 @@ class AccountScreen extends StatelessWidget {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             icon: const Icon(Icons.delete_forever),
             // Testo tradotto
@@ -84,11 +87,13 @@ class AccountScreen extends StatelessWidget {
                   // Testi tradotti
                   title: const Text('Delete Account?'),
                   content: const Text(
-                      'This action is permanent. Are you sure you want to delete your account?'),
+                    'This action is permanent. Are you sure you want to delete your account?',
+                  ),
                   actions: [
                     TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Cancel')),
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, true),
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -102,9 +107,11 @@ class AccountScreen extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   // Testo tradotto
                   const SnackBar(
-                      content: Text(
-                          'Account deletion: backend logic to be implemented'),
-                      backgroundColor: Colors.orange),
+                    content: Text(
+                      'Account deletion: backend logic to be implemented',
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
                 );
               }
             },
