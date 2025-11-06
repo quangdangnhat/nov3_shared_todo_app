@@ -1,26 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart'; // Import corretto
 import 'package:shared_todo_app/app/my_app.dart';
+import 'package:shared_todo_app/theme_provider.dart'; // Import corretto
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  // Ensure Flutter test bindings are initialized for mocking platform channels.
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  // 'setUpAll' runs once before all tests in this file.
-  // Used here to initialize Supabase.
   setUpAll(() async {
-    // Mock the SharedPreferences implementation.
-    // This is required because Supabase (via supabase_flutter) tries to
-    // access native SharedPreferences to load a saved session.
-    // 'MissingPluginException' occurs in a pure Dart test environment otherwise.
-    //
-    // An empty map simulates no saved user session (logged out state).
     SharedPreferences.setMockInitialValues({});
-
-    // Initialize the Supabase client.
-    // This will now use the mocked SharedPreferences.
     await Supabase.initialize(
       url: 'https://xpcqhvgkzajaoegtxiih.supabase.co',
       anonKey:
@@ -28,26 +18,75 @@ void main() {
     );
   });
 
-  // Test case: Verify the app shows the Login screen on initial startup.
-  // The test name is still in Italian.
-  testWidgets('L\'app mostra la schermata di Login all\'avvio', (
-    WidgetTester tester,
-  ) async {
-    // Build the root widget 'MyApp'.
-    await tester.pumpWidget(const MyApp());
+  group('Avvio App (Utente Non Autenticato)', () {
+    setUp(() async {
+      await Supabase.instance.client.auth.signOut();
+    });
 
-    // 'pumpAndSettle' waits for all animations and async operations (like
-    // GoRouter's initial navigation and auth redirects) to complete.
-    await tester.pumpAndSettle();
+    testWidgets('L\'app mostra la schermata di Login all\'avvio', (
+      WidgetTester tester,
+    ) async {
+      // 1. Esegui: Avvia l'app CON IL PROVIDER
+      // --- ECCO LA CORREZIONE MANCANTE ---
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+          child: const MyApp(),
+        ),
+      );
 
-    // Expectation: The app should have redirected to the Login screen.
+      // 2. Attendi: Aspetta il reindirizzamento
+      await tester.pumpAndSettle();
 
-    // Find a specific widget (ElevatedButton) that contains the text 'Login'.
-    // This is more specific than find.text('Login') to avoid ambiguity.
-    expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
-
-    // Negative Expectation: Text from the authenticated home screen
-    // should not be present.
-    expect(find.text('Le tue To-Do'), findsNothing);
+      // 3. Verifica:
+      expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
+      expect(find.text('My To-Do Lists'), findsNothing);
+    });
   });
+
+/*
+  group('Avvio App (Utente Autenticato)', () {
+    setUpAll(() async {
+      try {
+        final response = await Supabase.instance.client.auth.signInWithPassword(
+          email: 'test@example.com',
+          password: 'test-password-123',
+        );
+        if (response.user == null) {
+          throw Exception('Login fallito: utente nullo o credenziali errate');
+        }
+      } catch (e) {
+        print('--- ERRORE SETUP TEST (GRUPPO 2) ---');
+        print(
+            'Impossibile loggare l\'utente di test (test@example.com / test-password-123).');
+        print('Assicurati che questo utente esista nel tuo Supabase Auth.');
+        print('Errore originale: $e');
+        print('-------------------------------------');
+        rethrow;
+      }
+    });
+
+    tearDownAll(() async {
+      await Supabase.instance.client.auth.signOut();
+    });
+
+    testWidgets('L\'app mostra la schermata Home se l\'utente è loggato', (
+      WidgetTester tester,
+    ) async {
+      // 1. Esegui: Avvia l'app CON IL PROVIDER (questo era già corretto)
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+          child: const MyApp(),
+        ),
+      );
+
+      // 2. Attendi:
+      await tester.pumpAndSettle();
+
+      // 3. Verifica:
+      expect(find.text('My To-Do Lists'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Login'), findsNothing);
+    });
+  });*/
 }
