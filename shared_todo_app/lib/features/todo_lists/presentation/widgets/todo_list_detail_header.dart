@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 
-/// Header personalizzato per la schermata di dettaglio.
 class TodoListDetailHeader extends StatelessWidget {
-  final bool isMobile;
   final bool isRootFolder;
+  final bool isMobile;
   final String title;
-  final VoidCallback onMenuPressed;
-  final VoidCallback onBackPressed;
-  final VoidCallback onInvitePressed;
+  final VoidCallback onBackTap;
+  final VoidCallback onManageTap; // Vecchia funzione per gestire/invitare
+  final VoidCallback onInviteTap; // NUOVA funzione per invitare direttamente
 
   const TodoListDetailHeader({
     super.key,
-    required this.isMobile,
     required this.isRootFolder,
+    required this.isMobile,
     required this.title,
-    required this.onMenuPressed,
-    required this.onBackPressed,
-    required this.onInvitePressed,
+    required this.onBackTap,
+    required this.onManageTap,
+    required this.onInviteTap, // NUOVO PARAMETRO
   });
 
   @override
@@ -27,33 +26,25 @@ class TodoListDetailHeader extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(
-              context,
-            ).colorScheme.outlineVariant.withOpacity(0.5),
+            color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
             width: 1,
           ),
         ),
       ),
       child: Row(
         children: [
-          // Leading button
+          // Leading button: Menu (mobile, root) o Back (desktop, o mobile, subfolder)
           if (isMobile && isRootFolder)
             IconButton(
               icon: const Icon(Icons.menu),
-              onPressed: onMenuPressed,
+              onPressed: () => Scaffold.of(context).openDrawer(),
               tooltip: 'Menu',
             )
-          else if (!isMobile)
+          else if (!isRootFolder)
             IconButton(
               icon: const Icon(Icons.arrow_back),
-              tooltip: 'Back',
-              onPressed: onBackPressed,
-            )
-          else if (isMobile && !isRootFolder)
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Back',
-              onPressed: onBackPressed,
+              tooltip: 'Indietro',
+              onPressed: onBackTap,
             ),
 
           if (isRootFolder && isMobile) const SizedBox(width: 8),
@@ -71,12 +62,20 @@ class TodoListDetailHeader extends StatelessWidget {
           ),
 
           // Actions
-          if (isRootFolder)
+          if (isRootFolder) ...[
+            // 1. NUOVO PULSANTE: Invita Utente (apre il form diretto)
             IconButton(
-              icon: const Icon(Icons.person_add_outlined),
-              tooltip: 'Invite Member',
-              onPressed: onInvitePressed,
+              icon: const Icon(Icons.person_add_alt_1_outlined),
+              tooltip: 'Invita Utente',
+              onPressed: onInviteTap, // Usa la nuova callback
             ),
+            // 2. VECCHIO PULSANTE: Gestisci Membri (apre la lista)
+            IconButton(
+              icon: const Icon(Icons.group_outlined),
+              tooltip: 'Gestisci Membri',
+              onPressed: onManageTap, // Usa la callback originale (rinominata)
+            ),
+          ],
         ],
       ),
     );

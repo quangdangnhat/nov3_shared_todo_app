@@ -115,4 +115,18 @@ class FolderRepository {
       throw Exception('Failed to delete folder: $e');
     }
   }
+
+  Future<Folder> getFolder(String folderId) async {
+    try {
+      final response = await _supabase
+          .from('folders')
+          .select()
+          .eq('id', folderId)
+          .single();
+      return Folder.fromMap(response);
+    } catch (e) {
+      debugPrint("Errore in getFolder: $e");
+      throw Exception('Could not find folder with id $folderId');
+    }
+  }
 }

@@ -9,82 +9,98 @@ class ParticipantRepository {
   /// Fa un join con la tabella 'users' per ottenere username ed email.
   Future<List<Participant>> getParticipants(String todoListId) async {
     try {
-      // La policy RLS ci permette di eseguire questa query se siamo membri.
       final response = await supabase
           .from('participations')
-          // Seleziona tutte le colonne da 'participations' (*)
-          // e le colonne 'username' ed 'email' dalla tabella 'users' collegata
-          .select('*, users(username, email)')
+          .select('*, users(username, email)') // Il JOIN automatico funziona con i Future
           .eq('todo_list_id', todoListId);
-          
-      // Trasforma la lista di mappe JSON in una lista di oggetti Participant
+
       final List<Participant> participants = response
           .map((map) => Participant.fromMap(map as Map<String, dynamic>))
           .toList();
 
       return participants;
-
     } catch (e) {
       debugPrint('Errore durante il recupero dei partecipanti: $e');
       throw Exception('Failed to load participants: $e');
     }
   }
 
+  // --- SOLUZIONE AL PROBLEMA "UNKNOWN USER" E "CARICAMENTO INFINITO" ---
+
   /// Recupera uno stream di partecipanti per una data todo_list_id.
   /// Si aggiorna automaticamente quando i dati cambiano.
   Stream<List<Participant>> getParticipantsStream(String todoListId) {
     try {
-      // Definiamo la query, identica a getParticipants
-      final query = supabase
+      final participationStream = supabase
           .from('participations')
-          .select('*, users(username, email)')
+          .stream(primaryKey: ['todo_list_id', 'user_id'])
           .eq('todo_list_id', todoListId);
 
-      // Creiamo uno stream da questa query.
-      // Specifichiamo la chiave primaria composita della tabella 'participations'
-      // in modo che Supabase possa identificare univocamente le righe
-      // per gli aggiornamenti in tempo reale.
-      return supabase.from('participations')
-          .stream(primaryKey: ['todo_list_id', 'user_id'])
-          .eq('todo_list_id', todoListId)
-          .map(
-        (listOfMaps) {
-          // Trasformiamo la lista di mappe in una lista di oggetti Participant
-          final participants = listOfMaps
-              .map((map) => Participant.fromMap(map as Map<String, dynamic>))
-              .toList();
-          return participants;
-        },
-      );
+      return participationStream.asyncMap((listOfMaps) async {
+        
+        if (listOfMaps.isEmpty) {
+          return <Participant>[];
+        }
+
+        final userIds =
+            listOfMaps.map((map) => map['user_id'] as String).toList();
+
+        // 5. Facciamo una SECONDA query (un Future) per caricare i profili
+        final profileResponse = await supabase
+            .from('users')
+            .select('id, username, email') // La tabella users ha l'id
+            .inFilter('id', userIds); // <-- FIX: Corretto in .inFilter e colonna 'id'
+
+        // 6. Creiamo una Mappa per un "JOIN manuale" veloce.
+        //    (La chiave della mappa è 'id' della tabella users)
+        final profileMap = <String, Map<String, dynamic>>{};
+        for (final profile in profileResponse) {
+          // Usiamo l'ID della tabella users come chiave
+          profileMap[profile['id']] = profile; 
+        }
+
+        // 7. "Iniettiamo" i dati del profilo in ogni mappa di partecipazione.
+        final enrichedMaps = listOfMaps.map((participationMap) {
+          // participationMap ha 'user_id', che corrisponde a users.id
+          final userIdInParticipation = participationMap['user_id'];
+          final userProfile = profileMap[userIdInParticipation]; 
+
+          // Aggiungiamo la mappa "users" che il modello si aspetta.
+          participationMap['users'] = userProfile;
+          
+          return participationMap;
+        }).toList();
+
+        final participants = enrichedMaps
+            .map((map) => Participant.fromMap(map as Map<String, dynamic>))
+            .toList();
+
+        return participants;
+
+      }); // Fine asyncMap
+
     } catch (e) {
       debugPrint('Errore durante la creazione dello stream dei partecipanti: $e');
-      // Rilancia l'eccezione per farla gestire dal chiamante (es. StreamBuilder)
       throw Exception('Failed to create participants stream: $e');
     }
   }
+  // --- FINE SOLUZIONE ---
+
 
   // --- METODO PER RIMUOVERE UN PARTECIPANTE ---
-  /// Rimuove un partecipante (diverso dall'utente corrente) da una lista.
-  /// L'esecuzione riuscirà solo se l'utente corrente è un 'admin'
-  /// e il target non è un altro 'admin', come definito dalle Policy RLS.
-  Future<void> removeParticipant({
-    required String todoListId, 
-    required String userIdToRemove
-  }) async {
+  Future<void> removeParticipant(
+      {required String todoListId, required String userIdToRemove}) async {
     try {
-      // Le policy RLS "Allow admins to remove..." E "Allow users to delete (leave)..."
-      // controlleranno i permessi.
       await supabase
           .from('participations')
           .delete()
           .eq('todo_list_id', todoListId)
-          .eq('user_id', userIdToRemove); // Specifica chi rimuovere
-
+          .eq('user_id', userIdToRemove); 
     } catch (e) {
-      debugPrint('Errore durante la rimozione del partecipante: $e');
-      // Controlla se è un errore di RLS (permesso negato)
+      debugPrint('Errore during la rimozione del partecipante: $e');
       if (e is PostgrestException && e.code == '42501') {
-         throw Exception('Permission denied. You may not have the rights to remove this participant.');
+        throw Exception(
+            'Permission denied. You may not have the rights to remove this participant.');
       }
       throw Exception('Failed to remove participant: $e');
     }
