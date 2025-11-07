@@ -118,11 +118,8 @@ class FolderRepository {
 
   Future<Folder> getFolder(String folderId) async {
     try {
-      final response = await _supabase
-          .from('folders')
-          .select()
-          .eq('id', folderId)
-          .single();
+      final response =
+          await _supabase.from('folders').select().eq('id', folderId).single();
       return Folder.fromMap(response);
     } catch (e) {
       debugPrint("Errore in getFolder: $e");

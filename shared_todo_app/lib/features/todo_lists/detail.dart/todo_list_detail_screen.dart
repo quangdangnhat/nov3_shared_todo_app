@@ -351,8 +351,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             title: widget.parentFolder.title,
             // --- FIX: PARAMETRI CORRETTI ---
             onBackTap: _navigateToParent,
-            onManageTap: _showManageMembersDialog, // Apre la LISTA (ParticipantsDialog)
-            onInviteTap: _showInviteFormDialog, // Apre il FORM (ManageMembersDialog)
+            onManageTap:
+                _showManageMembersDialog, // Apre la LISTA (ParticipantsDialog)
+            onInviteTap:
+                _showInviteFormDialog, // Apre il FORM (ManageMembersDialog)
             // --- FINE FIX ---
           ),
 

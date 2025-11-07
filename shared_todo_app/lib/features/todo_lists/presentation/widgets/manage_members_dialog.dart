@@ -130,7 +130,8 @@ class _ManageMembersDialogState extends State<ManageMembersDialog> {
 
       actions: [
         TextButton(
-          onPressed: _isInviteLoading ? null : () => Navigator.of(context).pop(false),
+          onPressed:
+              _isInviteLoading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
         ElevatedButton(

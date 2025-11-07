@@ -73,9 +73,9 @@ class _ParticipantsDialogState extends State<ParticipantsDialog> {
   // Gestisce l'effettiva rimozione
   Future<void> _handleRemoveParticipant(Participant participantToRemove) async {
     if (!mounted) return;
-    
+
     setState(() => _removingStatus[participantToRemove.userId] = true);
-    
+
     try {
       // 1. Chiama il ViewModel per la logica di business (rimozione)
       await widget.viewModel.removeParticipant(
@@ -89,11 +89,11 @@ class _ParticipantsDialogState extends State<ParticipantsDialog> {
       // *** FINE FIX ***
 
       if (mounted) {
-        showSuccessSnackBar(
-            context, message: '${participantToRemove.username} removed.');
-        
+        showSuccessSnackBar(context,
+            message: '${participantToRemove.username} removed.');
+
         // Non è strettamente necessario, ma lascia la notifica per completezza
-        widget.onParticipantsChanged(); 
+        widget.onParticipantsChanged();
       }
     } catch (e) {
       if (mounted) {
@@ -118,11 +118,12 @@ class _ParticipantsDialogState extends State<ParticipantsDialog> {
 
     // --- Sostituito FutureBuilder con StreamBuilder (Logica MVVM) ---
     return StreamBuilder<List<Participant>>(
-      stream: widget.viewModel
-          .participantsStream, // Usa lo stream dal ViewModel
+      stream:
+          widget.viewModel.participantsStream, // Usa lo stream dal ViewModel
       builder: (context, snapshot) {
         // Stato di Caricamento (ConnectionState.waiting e no data)
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const AlertDialog(
             content: SizedBox(
                 height: 100, child: Center(child: CircularProgressIndicator())),
@@ -133,8 +134,8 @@ class _ParticipantsDialogState extends State<ParticipantsDialog> {
         if (snapshot.hasError) {
           return AlertDialog(
             title: const Text('Error'),
-            content: Text(
-                snapshot.error.toString().replaceFirst("Exception: ", "")),
+            content:
+                Text(snapshot.error.toString().replaceFirst("Exception: ", "")),
             actions: [
               TextButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -179,17 +180,17 @@ class _ParticipantsDialogState extends State<ParticipantsDialog> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (isParticipantAdmin ? Colors.blue : Colors.grey)
-                              .withOpacity(0.1),
+                          color:
+                              (isParticipantAdmin ? Colors.blue : Colors.grey)
+                                  .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           participant.role,
                           style: TextStyle(
-                            color: (isParticipantAdmin
-                                    ? Colors.blue
-                                    : Colors.grey)
-                                .shade700,
+                            color:
+                                (isParticipantAdmin ? Colors.blue : Colors.grey)
+                                    .shade700,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),

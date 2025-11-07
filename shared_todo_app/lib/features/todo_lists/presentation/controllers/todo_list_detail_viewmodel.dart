@@ -29,17 +29,17 @@ class TodoListDetailViewModel extends ChangeNotifier {
   // Streams
   Stream<List<Folder>> _foldersStream = Stream.empty();
   Stream<List<Task>> _tasksStream = Stream.empty();
-  
+
   // 1. Lo stream grezzo (trigger)
   Stream<List<Participant>> _rawParticipantsStream = Stream.empty();
 
   // 2. StreamController per gli aggiornamenti futuri
   final StreamController<List<Participant>> _participantsStreamController =
       StreamController.broadcast();
-  
+
   // 3. Variabile per cacheare l'ultimo valore (il nostro "Behavior")
   List<Participant> _latestParticipants = const [];
-  
+
   // 4. Getter che garantisce che il dato cachato venga emesso subito (FIX 2)
   Stream<List<Participant>> get participantsStream async* {
     // FIX 2: Emitto l'ultimo dato cachato per primo,
@@ -47,7 +47,7 @@ class TodoListDetailViewModel extends ChangeNotifier {
     yield _latestParticipants;
     yield* _participantsStreamController.stream;
   }
-  
+
   // Metodi helper per aggiungere dati e salvare l'ultimo valore
   void _addParticipantsToStream(List<Participant> data) {
     _latestParticipants = data; // Salva l'ultimo valore
@@ -85,12 +85,13 @@ class TodoListDetailViewModel extends ChangeNotifier {
 
     try {
       _foldersStream = _folderRepo.getFoldersStream(
-        todoListId, 
+        todoListId,
         parentId: parentFolderId,
       );
       _tasksStream = _taskRepo.getTasksStream(parentFolderId);
-      _rawParticipantsStream = _participantRepo.getParticipantsStream(todoListId);
-      
+      _rawParticipantsStream =
+          _participantRepo.getParticipantsStream(todoListId);
+
       // Carica i dati iniziali e avvia l'ascolto (Behavior Subject logic)
       await _loadAndListenToParticipants(todoListId);
 
@@ -107,7 +108,8 @@ class TodoListDetailViewModel extends ChangeNotifier {
     // 1. Carica i dati INIZIALI immediatamente e li invia
     try {
       final initialData = await _participantRepo.getParticipants(todoListId);
-      _addParticipantsToStream(initialData); // Invia il dato iniziale (Behavior)
+      _addParticipantsToStream(
+          initialData); // Invia il dato iniziale (Behavior)
     } catch (e) {
       _addErrorToStream(e);
     }
@@ -121,13 +123,12 @@ class TodoListDetailViewModel extends ChangeNotifier {
         final participantsWithData =
             await _participantRepo.getParticipants(todoListId);
 
-        _addParticipantsToStream(participantsWithData); 
+        _addParticipantsToStream(participantsWithData);
       } catch (e) {
         _addErrorToStream(e);
       }
     });
   }
-
 
   /// Carica il ruolo dell'utente corrente per questa todo list
   Future<void> _fetchCurrentUserRole(String todoListId) async {
@@ -149,7 +150,7 @@ class TodoListDetailViewModel extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Errore nel fetch del ruolo utente: $e");
-      _currentUserRole = 'collaborator'; 
+      _currentUserRole = 'collaborator';
     }
   }
 
@@ -171,7 +172,7 @@ class TodoListDetailViewModel extends ChangeNotifier {
 
   Future<void> deleteTask(String taskId) async {
     // Assumo che deleteTask usi solo taskId per l'eliminazione
-    await _taskRepo.deleteTask(taskId); 
+    await _taskRepo.deleteTask(taskId);
   }
 
   Future<void> handleTaskStatusChange(Task task, String newStatus) async {
@@ -182,8 +183,7 @@ class TodoListDetailViewModel extends ChangeNotifier {
   }
 
   /// Invia un invito a un nuovo utente
-  Future<void> inviteUser(
-      String todoListId, String email, String role) async {
+  Future<void> inviteUser(String todoListId, String email, String role) async {
     await _invitationRepo.inviteUserToList(
       todoListId: todoListId,
       email: email,
@@ -212,7 +212,7 @@ class TodoListDetailViewModel extends ChangeNotifier {
     try {
       final participantsWithData =
           await _participantRepo.getParticipants(todoListId);
-      
+
       _addParticipantsToStream(participantsWithData);
     } catch (e) {
       _addErrorToStream(e);

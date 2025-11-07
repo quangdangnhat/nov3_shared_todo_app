@@ -26,7 +26,8 @@ class TodoListDetailHeader extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+            color:
+                Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
             width: 1,
           ),
         ),

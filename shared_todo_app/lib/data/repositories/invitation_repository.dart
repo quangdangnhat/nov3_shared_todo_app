@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/invitation.dart'; 
+import '../models/invitation.dart';
 
 /// Repository per gestire inviti e partecipazioni.
 class InvitationRepository {
@@ -10,7 +10,7 @@ class InvitationRepository {
   Future<void> inviteUserToList({
     required String todoListId,
     required String email,
-    required String role, 
+    required String role,
   }) async {
     try {
       final response = await _supabase.functions.invoke(
@@ -53,13 +53,10 @@ class InvitationRepository {
         .select() // Inizia la query con select()
         .eq('status', 'pending')
         .eq('invited_user_id', userId);
-        
-    // 2. Chiamiamo .select().asStream() su un oggetto che supporta i filtri
-    final stream = baseQuery
-        .order('created_at', ascending: false)
-        .select()
-        .asStream();
 
+    // 2. Chiamiamo .select().asStream() su un oggetto che supporta i filtri
+    final stream =
+        baseQuery.order('created_at', ascending: false).select().asStream();
 
     // 3. Usiamo asyncMap per "arricchire" i dati e filtrare con certezza.
     return stream.asyncMap((invitationDataList) async {
@@ -69,7 +66,7 @@ class InvitationRepository {
           .toList();
 
       if (pendingInvitations.isEmpty) {
-        return <Invitation>[]; 
+        return <Invitation>[];
       }
 
       // Estrai gli ID necessari per le query successive
@@ -119,7 +116,7 @@ class InvitationRepository {
 
         // Aggiunto cast esplicito per risolvere il problema dei tipi
         final Map<String, dynamic> enrichedMap = {
-          ...invitationMap.cast<String, dynamic>(), 
+          ...invitationMap.cast<String, dynamic>(),
           'todo_lists': {'title': listTitles[todoListId] ?? '[Unknown List]'},
           'users': {'email': inviterEmails[inviterId] ?? '[Unknown User]'},
         };
