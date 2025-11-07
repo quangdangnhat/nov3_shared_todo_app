@@ -76,8 +76,7 @@ class TodoListDetailViewModel extends ChangeNotifier {
   }
 
   /// Logica per invitare un utente.
-  Future<void> inviteUser(
-      String todoListId, String email, String role) async {
+  Future<void> inviteUser(String todoListId, String email, String role) async {
     await _invitationRepo.inviteUserToList(
       todoListId: todoListId,
       email: email,

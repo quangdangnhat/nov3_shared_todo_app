@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_todo_app/data/repositories/auth_repository.dart';
+import '../../mocks/mock_repositories.dart'; // Import centralized mock
 
 // ============================================================
 // Mock Classes

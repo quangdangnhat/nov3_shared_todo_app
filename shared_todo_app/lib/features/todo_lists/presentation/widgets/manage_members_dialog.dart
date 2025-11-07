@@ -72,8 +72,8 @@ class _ManageMembersDialogState extends State<ManageMembersDialog> {
   }
 
   /// Costruisce il widget 'trailing' per un partecipante nella lista.
-  Widget? _buildParticipantTrailing(
-      BuildContext dialogContext, Participant participant, String currentUserRole) {
+  Widget? _buildParticipantTrailing(BuildContext dialogContext,
+      Participant participant, String currentUserRole) {
     if (_isDeleting) {
       return const SizedBox(
         width: 24,
@@ -91,7 +91,8 @@ class _ManageMembersDialogState extends State<ManageMembersDialog> {
       return IconButton(
         icon: Icon(Icons.delete_outline, color: Colors.grey[600]),
         tooltip: 'Remove member',
-        onPressed: () => _showDeleteParticipantDialog(dialogContext, participant),
+        onPressed: () =>
+            _showDeleteParticipantDialog(dialogContext, participant),
       );
     }
     return null; // Nessuna azione
@@ -105,8 +106,8 @@ class _ManageMembersDialogState extends State<ManageMembersDialog> {
       builder: (innerDialogContext) {
         return AlertDialog(
           title: const Text('Remove Member'),
-          content: Text(
-              'Are you sure you want to remove ${participant.username}?'),
+          content:
+              Text('Are you sure you want to remove ${participant.username}?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(innerDialogContext).pop(),
@@ -116,7 +117,8 @@ class _ManageMembersDialogState extends State<ManageMembersDialog> {
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () async {
                 setState(() => _isDeleting = true);
-                Navigator.of(innerDialogContext).pop(); // Chiude il mini-dialogo
+                Navigator.of(innerDialogContext)
+                    .pop(); // Chiude il mini-dialogo
 
                 try {
                   await _participantsRepo.removeParticipant(
@@ -166,7 +168,8 @@ class _ManageMembersDialogState extends State<ManageMembersDialog> {
               const SizedBox(height: 8),
               StreamBuilder<List<Participant>>(
                 // Usiamo il nuovo stream
-                stream: _participantsRepo.getParticipantsStream(widget.todoListId),
+                stream:
+                    _participantsRepo.getParticipantsStream(widget.todoListId),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
