@@ -11,7 +11,7 @@ class ConfirmationDialog extends StatelessWidget {
     super.key,
     required this.title,
     required this.content,
-    this.confirmText = 'Delete',
+    this.confirmText = 'Delete', // Testo di default per il pulsante
     required this.onConfirm,
   });
 
@@ -25,15 +25,15 @@ class ConfirmationDialog extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(), // Chiudi
           child: const Text('Cancel'),
         ),
-        // Pulsante di conferma (spesso rosso per pericolo)
+        // Pulsante di conferma (rosso se il testo è 'Delete')
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop(); // Chiudi
             onConfirm(); // Esegui l'azione (es. cancellazione)
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: confirmText.toLowerCase() == 'delete'
-                ? Colors.red
+            backgroundColor: confirmText.toLowerCase() == 'delete' 
+                ? Colors.red 
                 : Theme.of(context).primaryColor,
             foregroundColor: Colors.white,
           ),
