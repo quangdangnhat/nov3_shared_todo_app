@@ -2,20 +2,26 @@ import 'package:flutter/material.dart';
 import '../../../../data/models/participant.dart';
 import '../../../../data/repositories/participant_repository.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import 'invite_member_dialog.dart'; // Importa il dialog di invito
+import '../../../../core/widgets/confirmation_dialog.dart'; // Importa il dialog di conferma
+import 'manage_members_dialog.dart';
 
 /// Dialog per visualizzare i partecipanti e invitare nuovi membri.
 class ParticipantsDialog extends StatefulWidget {
   final String todoListId;
   final String todoListTitle;
-  // Aggiungiamo un callback per notificare la schermata principale che un invito è stato inviato
+  final String currentUserId; // ID dell'utente che sta guardando
+  final String currentUserRole; // Ruolo dell'utente che sta guardando
   final VoidCallback onInvitationSent;
+  final VoidCallback onParticipantsChanged; // Callback per forzare refresh
 
   const ParticipantsDialog({
     super.key,
     required this.todoListId,
     required this.todoListTitle,
+    required this.currentUserId,
+    required this.currentUserRole,
     required this.onInvitationSent,
+    required this.onParticipantsChanged,
   });
 
   @override
@@ -25,61 +31,103 @@ class ParticipantsDialog extends StatefulWidget {
 class _ParticipantsDialogState extends State<ParticipantsDialog> {
   final ParticipantRepository _participantRepo = ParticipantRepository();
   late Future<List<Participant>> _participantsFuture;
+  bool _isLoadingAction = false; // Stato di caricamento per le azioni
 
   @override
   void initState() {
     super.initState();
-    // Carica i partecipanti quando il dialog viene inizializzato
     _participantsFuture = _participantRepo.getParticipants(widget.todoListId);
+  }
+
+  // Ricarica la lista dei partecipanti
+  void _refreshParticipants() {
+     if (!mounted) return;
+    setState(() {
+      _participantsFuture = _participantRepo.getParticipants(widget.todoListId);
+    });
   }
 
   // Apre il sub-dialog per invitare un nuovo membro
   void _openInviteDialog(BuildContext parentContext) {
     showDialog<bool>(
-      context: parentContext, // Usa il contesto del ParticipantsDialog
+      context: parentContext,
       builder: (dialogContext) =>
-          InviteMemberDialog(todoListId: widget.todoListId),
+          ManageMembersDialog(todoListId: widget.todoListId),
     ).then((invitationSent) {
-      // Se l'invito è stato inviato con successo (restituisce true)
       if (invitationSent == true) {
-        // Chiama la callback per notificare la schermata precedente
         widget.onInvitationSent();
       }
-      // Nota: non aggiorniamo la lista partecipanti qui
-      // perché l'invito è solo "inviato", non ancora "accettato".
     });
+  }
+
+  // Mostra dialog di conferma prima di rimuovere un utente
+  void _showDeleteParticipantConfirmation(Participant participantToRemove) {
+    if (participantToRemove.userId == widget.currentUserId) return;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return ConfirmationDialog(
+          title: 'Remove Participant?',
+          content: 'Are you sure you want to remove ${participantToRemove.username} (${participantToRemove.email}) from this list?',
+          confirmText: 'Remove',
+          onConfirm: () => _handleRemoveParticipant(participantToRemove),
+        );
+      },
+    );
+  }
+
+  // Gestisce l'effettiva rimozione
+  Future<void> _handleRemoveParticipant(Participant participantToRemove) async {
+     if (!mounted) return;
+     setState(() => _isLoadingAction = true);
+     try {
+       await _participantRepo.removeParticipant(
+         todoListId: participantToRemove.todoListId,
+         userIdToRemove: participantToRemove.userId,
+       );
+       
+       if (mounted) {
+         showSuccessSnackBar(context, message: '${participantToRemove.username} removed.');
+         _refreshParticipants(); // Ricarica la lista nel dialog
+         widget.onParticipantsChanged(); // Notifica la schermata home
+       }
+     } catch (e) {
+        if (mounted) {
+          String errorMessage = e.toString().replaceFirst("Exception: ", "");
+          if (errorMessage.contains('permission denied') || errorMessage.contains('violates row-level security')) {
+             errorMessage = "You do not have permission to remove this user (e.g., they might be an admin).";
+          }
+          showErrorSnackBar(context, message: errorMessage);
+        }
+     } finally {
+        if (mounted) {
+          setState(() => _isLoadingAction = false);
+        }
+     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Usiamo un FutureBuilder per gestire il caricamento dei dati
+    final bool isCurrentUserAdmin = widget.currentUserRole == 'admin';
+
     return FutureBuilder<List<Participant>>(
       future: _participantsFuture,
       builder: (context, snapshot) {
         // Stato di Caricamento
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const AlertDialog(
-            content: SizedBox(
-              height: 100,
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          );
+           return const AlertDialog(
+             content: SizedBox(height: 100, child: Center(child: CircularProgressIndicator())),
+           );
         }
 
         // Stato di Errore
         if (snapshot.hasError) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: Text(
-              snapshot.error.toString().replaceFirst("Exception: ", ""),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ],
-          );
+           return AlertDialog(
+             title: const Text('Error'),
+             content: Text(snapshot.error.toString().replaceFirst("Exception: ", "")),
+             actions: [ TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')), ],
+           );
         }
 
         // Stato di Successo
@@ -88,60 +136,75 @@ class _ParticipantsDialogState extends State<ParticipantsDialog> {
         return AlertDialog(
           title: Text('Participants (${participants.length})'),
           content: SizedBox(
-            width: double.maxFinite, // Prende la larghezza massima del dialog
-            // Usa ListView.builder se la lista può essere lunga
-            child: ListView.builder(
-              shrinkWrap: true, // Adatta l'altezza al contenuto
+            width: double.maxFinite,
+            child: _isLoadingAction 
+              ? const Center(child: CircularProgressIndicator()) 
+              : ListView.builder(
+              shrinkWrap: true,
               itemCount: participants.length,
               itemBuilder: (context, index) {
+                // --- DEFINIZIONE CORRETTA ---
+                // Assicurati che il tuo codice locale abbia 'participant'
+                // scritto correttamente qui.
                 final participant = participants[index];
-                final bool isAdmin = participant.role == 'admin';
+                // --- FINE ---
+                final bool isParticipantAdmin = participant.role == 'admin';
+
+                final bool canRemove = isCurrentUserAdmin && 
+                                     participant.userId != widget.currentUserId && 
+                                     !isParticipantAdmin;
+
                 return ListTile(
                   leading: CircleAvatar(
-                    child: Text(
-                      participant.username.isNotEmpty
-                          ? participant.username[0].toUpperCase()
-                          : '?',
-                    ),
+                    child: Text(participant.username.isNotEmpty ? participant.username[0].toUpperCase() : '?'),
                   ),
                   title: Text(participant.username),
                   subtitle: Text(participant.email),
-                  // Mostra un "chip" per il ruolo
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: (isAdmin ? Colors.blue : Colors.grey).withOpacity(
-                        0.1,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Chip Ruolo
+                      Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                         decoration: BoxDecoration(
+                           color: (isParticipantAdmin ? Colors.blue : Colors.grey).withOpacity(0.1),
+                           borderRadius: BorderRadius.circular(8),
+                         ),
+                         child: Text(
+                           participant.role, 
+                           style: TextStyle(
+                             color: (isParticipantAdmin ? Colors.blue : Colors.grey).shade700,
+                             fontWeight: FontWeight.bold,
+                             fontSize: 12,
+                           ),
+                         ),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      participant.role,
-                      style: TextStyle(
-                        color: (isAdmin ? Colors.blue : Colors.grey).shade700,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
+                      // Pulsante Rimuovi (condizionale)
+                      if (canRemove)
+                        IconButton(
+                          icon: Icon(Icons.remove_circle_outline, color: Colors.red[400]),
+                          tooltip: 'Remove ${participant.username}',
+                          onPressed: () => _showDeleteParticipantConfirmation(participant),
+                        )
+                      else
+                        // Spacer per allineare i chip
+                        const SizedBox(width: 48), 
+                    ],
                   ),
                 );
               },
             ),
           ),
           actions: [
-            // Pulsante per invitare NUOVI membri
-            TextButton.icon(
-              icon: const Icon(Icons.person_add_outlined),
-              label: const Text('Invite'),
-              onPressed: () {
-                // Chiudi questo dialog e apri quello di invito
-                Navigator.of(context).pop(); // Chiude il ParticipantsDialog
-                _openInviteDialog(context); // Apre l'InviteMemberDialog
-              },
-            ),
+            // Pulsante Invita (solo per admin)
+            if (isCurrentUserAdmin)
+              TextButton.icon(
+                icon: const Icon(Icons.person_add_outlined),
+                label: const Text('Invite'),
+                onPressed: () {
+                  _openInviteDialog(context); 
+                },
+              ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Close'),
