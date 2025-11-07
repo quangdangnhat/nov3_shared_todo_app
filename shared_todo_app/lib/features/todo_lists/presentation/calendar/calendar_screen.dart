@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_todo_app/core/utils/snackbar_utils.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:shared_todo_app/data/models/task.dart';
 import 'package:shared_todo_app/data/repositories/task_repository.dart';
@@ -49,6 +50,78 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final start = _dayStart(_selectedDay);
     final end = _dayEnd(_selectedDay);
     return _repo.getTasksForCalendar_Future(start, end);
+  }
+
+  void _showEditTaskDialog(Task task) {
+    final formKey = GlobalKey<FormState>();
+    final titleController = TextEditingController(text: task.title);
+    final descController = TextEditingController(text: task.desc);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Task'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a title';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: descController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (Optional)',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  try {
+                    await _repo.updateTask(
+                      taskId: task.id,
+                      title: titleController.text.trim(),
+                      desc: descController.text.trim().isNotEmpty
+                          ? descController.text.trim()
+                          : null,
+                    );
+                    if (mounted) {
+                      Navigator.of(context).pop();
+                      showSuccessSnackBar(context,
+                          message: 'Task updated successfully');
+                      setState(() {}); // ricarica
+                    }
+                  } catch (error) {
+                    if (mounted) {
+                      showErrorSnackBar(context,
+                          message: 'Failed to update task: $error');
+                    }
+                  }
+                }
+              },
+              child: const Text('Save Changes'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -113,6 +186,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 child: Column(
                   children: [
                     TableCalendar<Task>(
+                      headerStyle: const HeaderStyle(
+                        formatButtonVisible: false,
+                      ),
                       firstDay: DateTime.utc(2015, 1, 1),
                       lastDay: DateTime.utc(2035, 12, 31),
                       focusedDay: _focusedDay,
@@ -210,10 +286,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 onTap: () {
                                   // TODO: task detail navigation
                                 },
-                                onEdit: () async {
-                                  // TODO: navigazione alla schermata di edit
-                                  // Dopo l'edit, ricarica con setState(() {});
-                                },
+                                onEdit: () => _showEditTaskDialog(t),
                                 onDelete: () async {
                                   // Conferma eliminazione
                                   final confirm = await showDialog<bool>(
@@ -244,6 +317,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   }
                                 },
                                 onStatusChanged: (newStatus) async {
+                                  await _repo.updateTask(
+                                    taskId: t.id,
+                                    status: newStatus,
+                                  );
                                   setState(() {}); // Ricarica
                                 },
                               );

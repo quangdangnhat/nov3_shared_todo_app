@@ -14,8 +14,8 @@ import 'package:shared_todo_app/data/repositories/participant_repository.dart';
 // REPOSITORY MOCKS
 // ============================================================
 
-/// Mock Auth Repository
-/// 
+/// Mock Auth Repository - Auth operations
+///
 /// Methods to mock:
 /// - signIn(email, password)
 /// - signUp(email, password, username)
@@ -24,8 +24,8 @@ import 'package:shared_todo_app/data/repositories/participant_repository.dart';
 /// - authStateChanges (stream)
 class MockAuthRepository extends Mock implements AuthRepository {}
 
-/// Mock Task Repository
-/// 
+/// Mock Task Repository - Task CRUD + calendar queries
+///
 /// Methods to mock:
 /// - getTasksStream(folderId)
 /// - createTask(folderId, title, desc, priority, status, startDate, dueDate)
@@ -35,8 +35,8 @@ class MockAuthRepository extends Mock implements AuthRepository {}
 /// - getTasksForDay_Future(dayStartInclusive, dayEndExclusive)
 class MockTaskRepository extends Mock implements TaskRepository {}
 
-/// Mock Folder Repository
-/// 
+/// Mock Folder Repository - Folder management with parent/child
+///
 /// Methods to mock:
 /// - getFoldersStream(todoListId, {parentId})
 /// - getRootFolder(todoListId)
@@ -45,8 +45,8 @@ class MockTaskRepository extends Mock implements TaskRepository {}
 /// - deleteFolder(id)
 class MockFolderRepository extends Mock implements FolderRepository {}
 
-/// Mock TodoList Repository
-/// 
+/// Mock TodoList Repository -  TodoList CRUD + leave functionality
+///
 /// Methods to mock:
 /// - getTodoListsStream()
 /// - createTodoList(title, {desc})
@@ -54,16 +54,16 @@ class MockFolderRepository extends Mock implements FolderRepository {}
 /// - leaveTodoList(todoListId)
 class MockTodoListRepository extends Mock implements TodoListRepository {}
 
-/// Mock Invitation Repository
-/// 
+/// Mock Invitation Repository - Invitation system with Edge Functions
+///
 /// Methods to mock:
 /// - inviteUserToList(todoListId, email, role)
 /// - getPendingInvitationsStream()
 /// - respondToInvitation(invitationId, accept)
 class MockInvitationRepository extends Mock implements InvitationRepository {}
 
-/// Mock Participant Repository
-/// 
+/// Mock Participant Repository - Participant listing
+///
 /// Methods to mock:
 /// - getParticipants(todoListId)
 class MockParticipantRepository extends Mock implements ParticipantRepository {}
