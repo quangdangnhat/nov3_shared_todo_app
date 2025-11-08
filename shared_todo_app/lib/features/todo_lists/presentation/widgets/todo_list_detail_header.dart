@@ -65,15 +65,15 @@ class TodoListDetailHeader extends StatelessWidget {
           // Actions
           if (isRootFolder) ...[
             // 1. NUOVO PULSANTE: Invita Utente (apre il form diretto)
-            IconButton(
+            /*IconButton(
               icon: const Icon(Icons.person_add_alt_1_outlined),
-              tooltip: 'Invita Utente',
+              tooltip: 'Invite User',
               onPressed: onInviteTap, // Usa la nuova callback
-            ),
+            ),*/
             // 2. VECCHIO PULSANTE: Gestisci Membri (apre la lista)
             IconButton(
               icon: const Icon(Icons.group_outlined),
-              tooltip: 'Gestisci Membri',
+              tooltip: 'Manage Members',
               onPressed: onManageTap, // Usa la callback originale (rinominata)
             ),
           ],
