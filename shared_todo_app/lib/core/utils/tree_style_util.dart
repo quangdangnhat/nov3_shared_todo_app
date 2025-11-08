@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/tree/node_type.dart';
 
-
 /// Utility class per gestire colori e icone della tree view
 class TreeStyleUtils {
   TreeStyleUtils._();

@@ -12,8 +12,6 @@ import '../../../../../data/services/tree/tree_builder_service.dart';
 import '../../../../../data/services/tree/tree_navigation_service.dart';
 import '../../widgets/tree_view.dart/tree_view_content.dart';
 
-
-
 class FolderTreeViewPage extends StatefulWidget {
   final TodoListRepository todoListRepository;
 
@@ -120,7 +118,8 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
           return TreeViewContent(
             rootNode: snapshot.data!,
             scrollController: _scrollController,
-            onNavigate: (TreeNodeData data) => _navigationService.navigateToItem(context, data),
+            onNavigate: (TreeNodeData data) =>
+                _navigationService.navigateToItem(context, data),
             onToggle: _handleToggle,
           );
         },

@@ -42,8 +42,7 @@ class TreeDataCacheService {
   void clearTasks() => _tasks.clear();
 
   // Debug info
-  int get cacheSize =>
-      _rootFolders.length + _subFolders.length + _tasks.length;
+  int get cacheSize => _rootFolders.length + _subFolders.length + _tasks.length;
 
   Map<String, int> get cacheStats => {
         'rootFolders': _rootFolders.length,

@@ -9,7 +9,6 @@ import '../../models/tree/tree_data_cache_service.dart';
 import '../../models/tree/tree_node_data.dart';
 import '../../models/tree/node_type.dart';
 
-
 /// Service per la costruzione dell'albero delle TodoList/Folders/Tasks
 class TreeBuilderService {
   final FolderRepository _folderRepository;

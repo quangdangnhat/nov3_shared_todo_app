@@ -49,7 +49,7 @@ class TreeNodeCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   if (hasChildren && data.type.canHaveChildren)
                     _buildChildrenBadge(data, theme),
-                  
+
                   // FIX FRECCIA DESTRA: Mostra solo per NodeType.folder
                   if (data.type == NodeType.folder)
                     _buildNavigationButton(theme),
@@ -69,7 +69,7 @@ class TreeNodeCard extends StatelessWidget {
     ThemeData theme,
   ) {
     // Se non ci sono figli, lascia uno spazio vuoto
-    if (!hasChildren) return const SizedBox(width: 32); 
+    if (!hasChildren) return const SizedBox(width: 32);
 
     return Material(
       color: Colors.transparent,
@@ -79,7 +79,9 @@ class TreeNodeCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(4.0), // Area di click
           child: Icon(
-            node.isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+            node.isExpanded
+                ? Icons.keyboard_arrow_down
+                : Icons.keyboard_arrow_right,
             size: 24,
             color: TreeStyleUtils.getIconColor(data.type, theme),
           ),

@@ -294,10 +294,10 @@ class AppTheme {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
         ),
       ),
-      
+
       listTileTheme: ListTileThemeData(
         // Usiamo 'cardColor' che hai già definito per i contenitori
-        tileColor: cardColor, 
+        tileColor: cardColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
@@ -309,8 +309,6 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
-
     );
-    
   }
 }
