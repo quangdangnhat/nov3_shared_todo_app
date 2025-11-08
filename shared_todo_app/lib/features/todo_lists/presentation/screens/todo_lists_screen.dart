@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/screens/tree_view/folder_view_page.dart';
 import '../../../../config/responsive.dart';
 import '../../../../config/router/app_router.dart';
 import '../../../../data/models/todo_list.dart';
@@ -27,6 +28,18 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
   void initState() {
     super.initState();
     _listsStream = _todoListRepo.getTodoListsStream();
+  }
+
+  void showThreeVisualizer() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // 1. Chiamiamo il nuovo widget che conterrà l'albero
+        return FolderTreeViewPage(
+          todoListRepository: _todoListRepo,
+        );
+      },
+    );
   }
 
   void _showCreateListDialog() {
@@ -331,13 +344,25 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                       ),
                 ),
                 const Spacer(),
-
                 // Pulsante Create
                 IconButton(
                   icon: const Icon(Icons.add),
                   tooltip: "Create",
                   onPressed: () {
                     context.go(AppRouter.create); // Usa go invece di pushNamed
+                  },
+                ),
+                const SizedBox(width: 13),
+                IconButton(
+                  icon: const Icon(Icons.account_tree_outlined),
+                  tooltip: "Tree Visualization",
+                  onPressed: () {
+                    // Assicurati che 'visualizer' (il nome/path della rotta)
+                    // e '_todoListRepo' (il repository) siano disponibili qui.
+                    context.push(
+                      AppRouter.visualizer,
+                      extra: _todoListRepo,
+                    );
                   },
                 ),
               ],

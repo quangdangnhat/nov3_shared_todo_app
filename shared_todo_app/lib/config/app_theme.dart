@@ -294,6 +294,23 @@ class AppTheme {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
         ),
       ),
+      
+      listTileTheme: ListTileThemeData(
+        // Usiamo 'cardColor' che hai già definito per i contenitori
+        tileColor: cardColor, 
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+      ),
+
+      dividerTheme: DividerThemeData(
+        // Usiamo un grigio scuro visibile sullo sfondo 'surface'
+        color: Colors.grey[800], // o un altro colore a tua scelta
+        thickness: 1,
+        space: 1,
+      ),
+
     );
+    
   }
 }

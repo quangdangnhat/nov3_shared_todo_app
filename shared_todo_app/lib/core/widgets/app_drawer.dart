@@ -249,8 +249,8 @@ class _AppDrawerState extends State<AppDrawer> {
               title: Text(
                 // Usiamo un operatore ternario per cambiare il testo
                 context.watch<ThemeProvider>().isDarkMode
-                    ? 'Modalità Scura' // Testo se isDarkMode è true
-                    : 'Modalità Chiara', // Testo se isDarkMode è false
+                    ? 'Night Mode' // Testo se isDarkMode è true
+                    : 'Light Mode', // Testo se isDarkMode è false
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

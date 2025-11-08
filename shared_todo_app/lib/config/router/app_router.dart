@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/createPage/create_screen.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/screens/tree_view/folder_view_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/folder.dart';
 import '../../data/models/todo_list.dart';
+import '../../data/repositories/todo_list_repository.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/todo_lists/presentation/calendar/calendar_screen.dart';
@@ -59,6 +61,7 @@ class AppRouter {
   static const String account = '/account';
   static const String create = '/create';
   static const String invitations = '/invitations';
+  static const String visualizer = '/tree_visualizer';
 
   static final _authNotifier = _AuthNotifier();
 
@@ -132,6 +135,27 @@ class AppRouter {
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
                   // Nessuna animazione per transizioni fluide
+                  return child;
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: visualizer,
+            name: visualizer,
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              // 1. Recupera il repository passato come argomento 'extra'
+              final repository = state.extra as TodoListRepository;
+
+              return CustomTransitionPage(
+                key: state.pageKey,
+                // 2. Rimuovi 'const' e passa il repository alla pagina
+                child: FolderTreeViewPage(
+                  todoListRepository: repository,
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  // (La tua transizione personalizzata)
                   return child;
                 },
               );
