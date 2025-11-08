@@ -1,24 +1,34 @@
 import 'package:flutter/material.dart';
-import '../../../../data/repositories/invitation_repository.dart';
 import '../../../../core/utils/snackbar_utils.dart';
+// --- MODIFICA: Rimossi import non più necessari ---
+// import '../../../data/models/participant.dart';
+// import '../../../main.dart'; // per accedere a supabase
+import '../controllers/todo_list_detail_viewmodel.dart';
 
-/// Dialog per invitare un nuovo membro alla lista.
-class InviteMemberDialog extends StatefulWidget {
+/// Un dialogo per invitare nuovi membri.
+class ManageMembersDialog extends StatefulWidget {
+  final TodoListDetailViewModel viewModel;
   final String todoListId;
 
-  const InviteMemberDialog({super.key, required this.todoListId});
+  const ManageMembersDialog({
+    super.key,
+    required this.viewModel,
+    required this.todoListId,
+  });
 
   @override
-  State<InviteMemberDialog> createState() => _InviteMemberDialogState();
+  State<ManageMembersDialog> createState() => _ManageMembersDialogState();
 }
 
-class _InviteMemberDialogState extends State<InviteMemberDialog> {
+class _ManageMembersDialogState extends State<ManageMembersDialog> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _invitationRepo = InvitationRepository();
   final _roles = ['admin', 'collaborator'];
   String _selectedRole = 'collaborator';
-  bool _isLoading = false;
+
+  bool _isInviteLoading = false;
+  // --- MODIFICA: Rimossa mappa _removingStatus ---
+  // final Map<String, bool> _removingStatus = {};
 
   @override
   void dispose() {
@@ -26,24 +36,26 @@ class _InviteMemberDialogState extends State<InviteMemberDialog> {
     super.dispose();
   }
 
-  Future<void> _sendInvite() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
+  /// Gestisce l'invio di un invito
+  Future<void> _onInvitePressed() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    setState(() => _isInviteLoading = true);
     try {
-      await _invitationRepo.inviteUserToList(
-        todoListId: widget.todoListId,
-        email: _emailController.text.trim(),
-        role: _selectedRole,
+      await widget.viewModel.inviteUser(
+        widget.todoListId,
+        _emailController.text.trim(),
+        _selectedRole,
       );
 
-      // Se l'invito ha successo, chiudi il dialog e ritorna 'true'
+      _emailController.clear();
       if (mounted) {
+        showSuccessSnackBar(context, message: 'Invitation sent successfully!');
+        // --- MODIFICA: Chiude il dialog con 'true' per notificare il successo ---
         Navigator.of(context).pop(true);
       }
     } catch (error) {
-      // Se fallisce, mostra l'errore in questo dialog
       if (mounted) {
         showErrorSnackBar(
           context,
@@ -52,16 +64,25 @@ class _InviteMemberDialogState extends State<InviteMemberDialog> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _isInviteLoading = false);
       }
     }
   }
 
+  // --- MODIFICA: Rimossa la funzione _onRemovePressed ---
+  // Future<void> _onRemovePressed(String participantId) async { ... }
+
   @override
   Widget build(BuildContext context) {
+    // --- MODIFICA: Rimosso currentUserId ---
+    // final currentUserId = supabase.auth.currentUser?.id ?? '';
+
     return AlertDialog(
+      // --- MODIFICA: Titolo aggiornato ---
       title: const Text('Invite Member'),
-      content: Form(
+      content:
+          // --- MODIFICA: Rimosso SingleChildScrollView e SizedBox ---
+          Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -85,12 +106,14 @@ class _InviteMemberDialogState extends State<InviteMemberDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedRole,
+              initialValue: _selectedRole,
               decoration: const InputDecoration(labelText: 'Role'),
               items: _roles.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value[0].toUpperCase() + value.substring(1)),
+                  child: Text(
+                    value[0].toUpperCase() + value.substring(1),
+                  ),
                 );
               }).toList(),
               onChanged: (newValue) {
@@ -100,14 +123,20 @@ class _InviteMemberDialogState extends State<InviteMemberDialog> {
           ],
         ),
       ),
+      // --- MODIFICA: Rimossa tutta la sezione "Current members" ---
+      // const SizedBox(height: 24),
+      // const Divider(),
+      // ... (StreamBuilder rimosso) ...
+
       actions: [
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(false),
+          onPressed:
+              _isInviteLoading ? null : () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: _isLoading ? null : _sendInvite,
-          child: _isLoading
+          onPressed: _isInviteLoading ? null : _onInvitePressed,
+          child: _isInviteLoading
               ? const SizedBox(
                   width: 20,
                   height: 20,

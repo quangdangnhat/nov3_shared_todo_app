@@ -1,11 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-// Rimosso import '../../main.dart';
-import '../models/invitation.dart'; // Importa il modello aggiornato
+import '../models/invitation.dart';
 
 /// Repository per gestire inviti e partecipazioni.
 class InvitationRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  // final SupabaseClient _supabase = Supabase.instance.client; // OLD
+  // --- UPDATED: Injectable Client ---
+  final SupabaseClient _supabase;
+  // Constructor with optional client for testing.
+  InvitationRepository({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client;
 
   /// Chiama la Supabase Edge Function 'create-invitation'.
   Future<void> inviteUserToList({
@@ -45,38 +49,37 @@ class InvitationRepository {
   Stream<List<Invitation>> getPendingInvitationsStream() {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
-      return Stream.value(
-        [],
-      ); // Ritorna uno stream vuoto se l'utente non è loggato
+      return Stream.value([]);
     }
 
-    // --- CORREZIONE: Usa asyncMap ---
-    // 1. Crea uno stream SEMPLICE solo per lo stato 'pending'
-    //    La RLS (Policy) si occupa già di filtrare per l'utente loggato.
-    final stream = _supabase
+    // 1. Definiamo la query FILTRATA
+    final baseQuery = _supabase
         .from('invitations')
-        .stream(primaryKey: ['id'])
-        .eq('status', 'pending') // Filtra solo per inviti in sospeso
-        .order('created_at', ascending: false);
-    // --- FINE ---
+        .select() // Inizia la query con select()
+        .eq('status', 'pending')
+        .eq('invited_user_id', userId);
 
-    // 2. Usa asyncMap per "arricchire" i dati
+    // 2. Chiamiamo .select().asStream() su un oggetto che supporta i filtri
+    final stream =
+        baseQuery.order('created_at', ascending: false).select().asStream();
+
+    // 3. Usiamo asyncMap per "arricchire" i dati e filtrare con certezza.
     return stream.asyncMap((invitationDataList) async {
-      // Filtra ulteriormente lato client per sicurezza (se RLS dovesse fallire)
-      final myInvitations = invitationDataList
-          .where((map) => map['invited_user_id'] == userId)
+      // Filtriamo la lista grezza anche per lo stato 'pending' per robustezza.
+      final pendingInvitations = invitationDataList
+          .where((map) => map['status'] == 'pending')
           .toList();
 
-      if (myInvitations.isEmpty) {
-        return <Invitation>[]; // Ritorna lista vuota se non ci sono inviti
+      if (pendingInvitations.isEmpty) {
+        return <Invitation>[];
       }
 
       // Estrai gli ID necessari per le query successive
-      final listIds = myInvitations
+      final listIds = pendingInvitations
           .map((map) => map['todo_list_id'] as String)
           .toSet()
           .toList();
-      final inviterIds = myInvitations
+      final inviterIds = pendingInvitations
           .map((map) => map['invited_by_user_id'] as String)
           .toSet()
           .toList();
@@ -85,20 +88,17 @@ class InvitationRepository {
         return <Invitation>[];
       }
 
-      // 3. Fai query separate per i dati aggiuntivi
-      // --- CORREZIONE: Usa .filter() invece di .in_() ---
+      // 3. Fai query separate per i dati aggiuntivi (JOIN manuale)
       final listTitlesFuture = _supabase
           .from('todo_lists')
           .select('id, title')
-          .filter('id', 'in', listIds); // Corretto
+          .filter('id', 'in', listIds);
 
       final inviterEmailsFuture = _supabase
           .from('users')
           .select('id, email')
-          .filter('id', 'in', inviterIds); // Corretto
-      // --- FINE CORREZIONE ---
+          .filter('id', 'in', inviterIds);
 
-      // Esegui le query in parallelo
       final [listTitlesResponse, inviterEmailsResponse] = await Future.wait([
         listTitlesFuture,
         inviterEmailsFuture,
@@ -115,12 +115,13 @@ class InvitationRepository {
       };
 
       // 5. Combina i dati e costruisci i modelli Invitation
-      return myInvitations.map((invitationMap) {
+      return pendingInvitations.map((invitationMap) {
         final todoListId = invitationMap['todo_list_id'] as String;
         final inviterId = invitationMap['invited_by_user_id'] as String;
 
-        final enrichedMap = {
-          ...invitationMap,
+        // Aggiunto cast esplicito per risolvere il problema dei tipi
+        final Map<String, dynamic> enrichedMap = {
+          ...invitationMap.cast<String, dynamic>(),
           'todo_lists': {'title': listTitles[todoListId] ?? '[Unknown List]'},
           'users': {'email': inviterEmails[inviterId] ?? '[Unknown User]'},
         };

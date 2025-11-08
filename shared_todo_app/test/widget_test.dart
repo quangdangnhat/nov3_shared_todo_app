@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart'; // Import corretto
 import 'package:shared_todo_app/app/my_app.dart';
 import 'package:shared_todo_app/theme_provider.dart'; // Import corretto
+import 'package:shared_todo_app/core/widgets/app_drawer.dart';
+import 'package:shared_todo_app/core/widgets/confirmation_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,16 +20,20 @@ void main() {
     );
   });
 
-  group('Avvio App (Utente Non Autenticato)', () {
+  // ============================================================
+  // GROUP 1: MyApp Tests (Original)
+  // ============================================================
+
+  group('MyApp - Launch App (Unauthenticated User)', () {
     setUp(() async {
       await Supabase.instance.client.auth.signOut();
     });
 
-    testWidgets('L\'app mostra la schermata di Login all\'avvio', (
+    testWidgets('The app shows the login screen on startup', (
       WidgetTester tester,
     ) async {
-      // 1. Esegui: Avvia l'app CON IL PROVIDER
-      // --- ECCO LA CORREZIONE MANCANTE ---
+      // 1. Run: Launch the app WITH THE PROVIDER
+      // --- HERE'S THE MISSING FIX ---
       await tester.pumpWidget(
         ChangeNotifierProvider(
           create: (_) => ThemeProvider(),
@@ -35,7 +41,7 @@ void main() {
         ),
       );
 
-      // 2. Attendi: Aspetta il reindirizzamento
+      // 2. Wait: Wait for the redirection
       await tester.pumpAndSettle();
 
       // 3. Verifica:
@@ -43,6 +49,10 @@ void main() {
       expect(find.text('My To-Do Lists'), findsNothing);
     });
   });
+
+  // ============================================================
+  // GROUP 2: AppDrawer Tests
+  // ============================================================
 
 /*
   group('Avvio App (Utente Autenticato)', () {
