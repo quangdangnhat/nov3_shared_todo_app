@@ -12,3 +12,14 @@ class MockAuthResponse extends Mock implements AuthResponse {}
 class MockUser extends Mock implements User {}
 
 class MockSession extends Mock implements Session {}
+
+/// Mock Postgrest Filter Builder
+class MockPostgrestFilterBuilder extends Mock
+    implements PostgrestFilterBuilder {}
+
+/// Mock Postgrest Builder
+class MockPostgrestBuilder extends Mock implements PostgrestBuilder {}
+
+/// Mock Postgrest Transform Builder
+class MockPostgrestTransformBuilder extends Mock
+    implements PostgrestTransformBuilder {}
