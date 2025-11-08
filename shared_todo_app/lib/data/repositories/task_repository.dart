@@ -3,7 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/task.dart';
 
 class TaskRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  // final SupabaseClient _supabase = Supabase.instance.client;
+  // --- UPDATED: Injectable Client ---
+  final SupabaseClient _supabase;
+  // Constructor with optional client for testing.
+  TaskRepository({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client;
 
   /// Ottiene uno stream dei task all'interno di una specifica cartella.
   Stream<List<Task>> getTasksStream(String folderId) {

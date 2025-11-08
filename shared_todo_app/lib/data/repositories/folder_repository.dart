@@ -3,7 +3,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/folder.dart';
 
 class FolderRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  // final SupabaseClient _supabase = Supabase.instance.client; // OLD
+  // --- UPDATED: Injectable Client ---
+  final SupabaseClient _supabase;
+
+  // Constructor with optional client for testing.
+  FolderRepository({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client;
 
   // --- GET: Stream di folder DENTRO una cartella ---
   Stream<List<Folder>> getFoldersStream(String todoListId, {String? parentId}) {

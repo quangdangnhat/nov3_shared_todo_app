@@ -5,11 +5,17 @@ import '../models/participant.dart';
 
 /// Repository per gestire le operazioni sui partecipanti.
 class ParticipantRepository {
+  // --- UPDATED: Injectable Client ---
+  final SupabaseClient _supabase;
+  // Constructor with optional client for testing.
+  ParticipantRepository({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client;
+
   /// Recupera la lista di tutti i partecipanti per una data todo_list_id.
   /// Fa un join con la tabella 'users' per ottenere username ed email.
   Future<List<Participant>> getParticipants(String todoListId) async {
     try {
-      final response = await supabase
+      final response = await _supabase
           .from('participations')
           .select(
               '*, users(username, email)') // Il JOIN automatico funziona con i Future
@@ -32,7 +38,7 @@ class ParticipantRepository {
   /// Si aggiorna automaticamente quando i dati cambiano.
   Stream<List<Participant>> getParticipantsStream(String todoListId) {
     try {
-      final participationStream = supabase
+      final participationStream = _supabase
           .from('participations')
           .stream(primaryKey: ['todo_list_id', 'user_id']).eq(
               'todo_list_id', todoListId);
@@ -46,7 +52,7 @@ class ParticipantRepository {
             listOfMaps.map((map) => map['user_id'] as String).toList();
 
         // 5. Facciamo una SECONDA query (un Future) per caricare i profili
-        final profileResponse = await supabase
+        final profileResponse = await _supabase
             .from('users')
             .select('id, username, email') // La tabella users ha l'id
             .inFilter(
@@ -90,7 +96,7 @@ class ParticipantRepository {
   Future<void> removeParticipant(
       {required String todoListId, required String userIdToRemove}) async {
     try {
-      await supabase
+      await _supabase
           .from('participations')
           .delete()
           .eq('todo_list_id', todoListId)

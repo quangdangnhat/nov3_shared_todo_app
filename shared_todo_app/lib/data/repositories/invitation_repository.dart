@@ -4,7 +4,12 @@ import '../models/invitation.dart';
 
 /// Repository per gestire inviti e partecipazioni.
 class InvitationRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  // final SupabaseClient _supabase = Supabase.instance.client; // OLD
+  // --- UPDATED: Injectable Client ---
+  final SupabaseClient _supabase;
+  // Constructor with optional client for testing.
+  InvitationRepository({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client;
 
   /// Chiama la Supabase Edge Function 'create-invitation'.
   Future<void> inviteUserToList({

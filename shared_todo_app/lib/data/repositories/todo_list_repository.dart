@@ -2,16 +2,23 @@ import 'package:flutter/foundation.dart';
 import '../../main.dart'; // Per l'istanza 'supabase'
 import '../models/todo_list.dart';
 import 'dart:async'; // Per Completer e Future.wait
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository per gestire le operazioni sulle TodoList.
 class TodoListRepository {
+  // --- UPDATED: Injectable Client ---
+  final SupabaseClient _supabase;
+  // Constructor with optional client for testing.
+  TodoListRepository({SupabaseClient? client})
+      : _supabase = client ?? Supabase.instance.client;
+
   /// Ottiene uno stream delle liste a cui l'utente partecipa,
   /// includendo il ruolo dell'utente per ciascuna lista.
   Stream<List<TodoList>> getTodoListsStream() {
-    final userId = supabase.auth.currentUser!.id;
+    final userId = _supabase.auth.currentUser!.id;
 
     // 1. Ascolta la tabella 'participations' per l'utente corrente
-    final participationStream = supabase
+    final participationStream = _supabase
         .from('participations')
         .stream(primaryKey: ['id'])
         .eq('user_id', userId)
@@ -39,7 +46,7 @@ class TodoListRepository {
       }
 
       // 4. Fai una query per ottenere i *dettagli* delle liste
-      final todoListsData = await supabase
+      final todoListsData = await _supabase
           .from('todo_lists')
           .select()
           .filter('id', 'in', listIds)
@@ -71,7 +78,7 @@ class TodoListRepository {
   Future<void> createTodoList({required String title, String? desc}) async {
     final newRow = {'title': title, 'desc': desc};
     try {
-      await supabase.from('todo_lists').insert(newRow);
+      await _supabase.from('todo_lists').insert(newRow);
     } catch (error) {
       debugPrint('Errore creazione lista: $error');
       rethrow;
@@ -86,7 +93,7 @@ class TodoListRepository {
     String? desc,
   }) async {
     try {
-      await supabase.from('todo_lists').update({
+      await _supabase.from('todo_lists').update({
         'title': title,
         'desc': desc,
         'updated_at': DateTime.now().toIso8601String(),
@@ -103,14 +110,14 @@ class TodoListRepository {
   /// Il trigger ('on_participation_deleted_check_orphans')
   /// pulirà la lista se era l'ultimo partecipante.
   Future<void> leaveTodoList(String todoListId) async {
-    final userId = supabase.auth.currentUser?.id;
+    final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
       throw Exception("Utente non autenticato.");
     }
 
     try {
       // Elimina la riga dalla tabella 'participations'
-      await supabase
+      await _supabase
           .from('participations')
           .delete()
           .eq('todo_list_id', todoListId)
