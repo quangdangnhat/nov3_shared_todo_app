@@ -163,14 +163,13 @@ class _AppDrawerState extends State<AppDrawer> {
           _buildMenuTile(
             context: context,
             icon: Icons.today_rounded,
-            title: 'Main Page',
-            subtitle: 'Tasks of the day',
-            route: '/',
+            title: 'Tasks Recap',
+            route: '/tasks_of_the_day',
             onTap: () {
               if (Scaffold.of(context).isDrawerOpen) {
                 Navigator.of(context).pop();
               }
-              context.go('/');
+              context.go(AppRouter.tasks_day);
             },
           ),
 

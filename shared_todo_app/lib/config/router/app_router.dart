@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/createPage/create_screen.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/screens/today_tasks/today_task.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/tree_view/folder_view_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/folder.dart';
@@ -9,7 +10,7 @@ import '../../data/models/todo_list.dart';
 import '../../data/repositories/todo_list_repository.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
-import '../../features/todo_lists/presentation/calendar/calendar_screen.dart';
+import '../../features/todo_lists/presentation/screens/calendar/calendar_screen.dart';
 
 // Importa le schermate con prefissi per evitare conflitti
 import '../../features/todo_lists/detail.dart/todo_list_detail_screen.dart'
@@ -55,6 +56,7 @@ class AppRouter {
   static const String login = '/login';
   static const String signup = '/signup';
   static const String home = '/';
+  static const String tasks_day = '/today-tasks';
   static const String calendar = '/calendar';
   static const String listDetail = 'listDetail'; // Nome per la navigazione
   static const String folderDetail = 'folderDetail'; // Nome per la navigazione
@@ -115,6 +117,20 @@ class AppRouter {
             },
           ),
 
+          GoRoute(
+            path: tasks_day,
+            name: 'today-tasks',
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const TodayTasksPage(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return child;
+                },
+              );
+            },
+          ),
           // Dettaglio Lista (mostra la root folder)
           GoRoute(
             path: '/list/:listId', // Path assoluto
