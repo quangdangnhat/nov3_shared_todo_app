@@ -50,8 +50,7 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _showChangeUsernameDialog() async {
-    final currentUsername =
-        (_user?.userMetadata?['username'] as String?) ?? '';
+    final currentUsername = (_user?.userMetadata?['username'] as String?) ?? '';
     final controller = TextEditingController(text: currentUsername);
 
     await showDialog(
@@ -129,8 +128,7 @@ class _AccountScreenState extends State<AccountScreen> {
             TextField(
               controller: currentPasswordController,
               obscureText: true,
-              decoration:
-                  const InputDecoration(labelText: 'Current password'),
+              decoration: const InputDecoration(labelText: 'Current password'),
             ),
           ],
         ),
@@ -154,8 +152,7 @@ class _AccountScreenState extends State<AccountScreen> {
               }
 
               try {
-                final currentUser =
-                    Supabase.instance.client.auth.currentUser;
+                final currentUser = Supabase.instance.client.auth.currentUser;
 
                 if (currentUser == null || currentUser.email == null) {
                   throw Exception('No logged in user');
@@ -212,15 +209,13 @@ class _AccountScreenState extends State<AccountScreen> {
             TextField(
               controller: currentPasswordController,
               obscureText: true,
-              decoration:
-                  const InputDecoration(labelText: 'Current password'),
+              decoration: const InputDecoration(labelText: 'Current password'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: newPasswordController,
               obscureText: true,
-              decoration:
-                  const InputDecoration(labelText: 'New password'),
+              decoration: const InputDecoration(labelText: 'New password'),
             ),
             const SizedBox(height: 12),
             TextField(
