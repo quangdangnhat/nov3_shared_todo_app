@@ -41,15 +41,13 @@ class TodoListDetailHeader extends StatelessWidget {
               onPressed: () => Scaffold.of(context).openDrawer(),
               tooltip: 'Menu',
             )
-          else if (!isRootFolder)
+          else // <-- MODIFICA QUI
             IconButton(
               icon: const Icon(Icons.arrow_back),
               tooltip: 'Indietro',
               onPressed: onBackTap,
             ),
-
           if (isRootFolder && isMobile) const SizedBox(width: 8),
-
           // Titolo
           Expanded(
             child: Text(
