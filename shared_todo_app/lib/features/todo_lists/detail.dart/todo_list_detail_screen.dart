@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../config/responsive.dart';
+import '../../../config/router/app_router.dart';
 import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
 import '../../../data/models/task.dart';
 // Importa il ViewModel
+import '../../../data/repositories/folder_repository.dart';
 import '../presentation/controllers/todo_list_detail_viewmodel.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
@@ -292,7 +294,65 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   }
 
   Future<void> _navigateToParent() async {
-    // ... (Logica di navigazione invariata) ...
+    // 1. Controlla se la cartella corrente è la cartella "root"
+    final bool isRootFolder = widget.parentFolder.parentId == null;
+
+    if (!mounted) return;
+
+    if (isRootFolder) {
+      // 2. Se È la root, torna alla schermata Home (elenco delle liste)
+      context.go(AppRouter.home);
+    } else {
+      // 3. Se NON È la root, ha un genitore. Dobbiamo caricarlo.
+      final String parentFolderId = widget.parentFolder.parentId!;
+
+      try {
+        // Inizializza il repository (il costruttore vuoto va bene)
+        final folderRepository = FolderRepository();
+
+        // 4. MODIFICA: Chiamiamo 'getFolder' come nel tuo nuovo repository
+        final Folder parentOfCurrentFolder = await folderRepository.getFolder(
+          parentFolderId,
+        );
+
+        if (!mounted) return;
+
+        // 5. Controlla se il genitore che abbiamo caricato è la root
+        final bool isParentTheRoot = parentOfCurrentFolder.parentId == null;
+
+        if (isParentTheRoot) {
+          // 6a. Se il genitore è la root, naviga alla rotta 'listDetail'
+          context.goNamed(
+            AppRouter.listDetail,
+            pathParameters: {'listId': widget.todoList.id},
+            extra: {
+              'todoList': widget.todoList,
+              'parentFolder': parentOfCurrentFolder,
+            },
+          );
+        } else {
+          // 6b. Se il genitore è un'altra cartella, naviga a 'folderDetail'
+          context.goNamed(
+            AppRouter.folderDetail,
+            pathParameters: {
+              'listId': widget.todoList.id,
+              'folderId': parentOfCurrentFolder.id,
+            },
+            extra: {
+              'todoList': widget.todoList,
+              'parentFolder': parentOfCurrentFolder,
+            },
+          );
+        }
+      } catch (error) {
+        if (mounted) {
+          showErrorSnackBar(
+            context,
+            message: 'Failed to navigate back: $error',
+          );
+        }
+      }
+    }
   }
   // --- FINE FUNZIONI DIALOG ---
 
