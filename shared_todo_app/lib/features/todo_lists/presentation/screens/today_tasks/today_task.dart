@@ -50,7 +50,7 @@ class _TodayTasksPageState extends State<TodayTasksPage> {
     try {
       final dateRange = TaskCategorizer.getSearchRange();
 
-      final allTasks = await _taskRepository.getTasksForCalendar_Future(
+      final allTasks = await _taskRepository.getTasksForCalendar(
         dateRange.start,
         dateRange.end,
       );

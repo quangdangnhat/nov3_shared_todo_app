@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,14 +12,12 @@ import '../../../data/models/task.dart';
 import '../../../data/repositories/folder_repository.dart';
 import '../presentation/controllers/todo_list_detail_viewmodel.dart';
 import '../../../core/utils/snackbar_utils.dart';
-import '../presentation/widgets/folder_list_tile.dart' hide TaskDialog;
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
 import '../presentation/widgets/task_list_tile.dart';
 import '../../../main.dart'; // per accedere a supabase
 import '../presentation/widgets/todo_list_detail_header.dart';
 import '../presentation/widgets/folder_list_section.dart';
-import '../presentation/widgets/task_list_section.dart';
 import '../presentation/widgets/detail_action_buttons.dart';
 import '../presentation/widgets/participants_dialog.dart';
 import '../presentation/widgets/manage_members_dialog.dart'; // Importato per _showInviteFormDialog
@@ -201,7 +201,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     if (!mounted) return;
     showDialog<void>(
       context: context,
-      builder: (BuildContext dialogContext) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Delete Task'),
           content: Text('Are you sure you want to delete "${task.title}"?'),
@@ -213,17 +213,15 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  // 1. Chiama il ViewModel
-                  await _viewModel.deleteTask(task.id);
+                  // Correzione: folderId come primo parametro
+                  await _viewModel.deleteTask(widget.parentFolder.id, task.id);
 
-                  // 2. Gestisce la UI
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
                     showSuccessSnackBar(
                       context,
                       message: 'Task deleted successfully',
                     );
-                    _refreshStreams();
                   }
                 } catch (error) {
                   if (mounted) Navigator.of(dialogContext).pop();
@@ -365,7 +363,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     final bool isFoldersCollapsed = _viewModel.isFoldersCollapsed;
     final bool isTasksCollapsed = _viewModel.isTasksCollapsed;
     final Stream<List<Folder>> foldersStream = _viewModel.foldersStream;
-    final Stream<List<Task>> tasksStream = _viewModel.tasksStream;
+    final Stream<List<Task>> tasksStream =
+        _viewModel.tasksStream(widget.parentFolder.id);
 
     return Container(
       key: ValueKey(
