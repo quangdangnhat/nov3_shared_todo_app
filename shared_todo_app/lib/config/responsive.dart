@@ -52,7 +52,7 @@ class ResponsiveLayout extends StatelessWidget {
   }
   // WHY IS IT USEFULL ? :
   /*
- 
+
 WITHOUT THE HELPER:
 double getFontSize(BuildContext context) {
   if (ResponsiveLayout.isDesktop(context)) {
@@ -88,6 +88,8 @@ Text(
 
     if (width >= desktopBreakpoint) return desktop;
     if (width >= mobileBreakpoint && tablet != null) return tablet!;
+    // Se tablet è nullo, usa mobile per la larghezza del tablet
+    if (width >= mobileBreakpoint && tablet == null) return mobile;
     return mobile;
   }
 }

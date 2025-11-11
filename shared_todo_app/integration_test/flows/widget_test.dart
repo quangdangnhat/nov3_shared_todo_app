@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart'; // Import corretto
 import 'package:shared_todo_app/app/my_app.dart';
 import 'package:shared_todo_app/theme_provider.dart'; // Import corretto
-import 'package:shared_todo_app/core/widgets/app_drawer.dart';
-import 'package:shared_todo_app/core/widgets/confirmation_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import '../../main.dart'; // Per l'istanza 'supabase'
 import '../models/todo_list.dart';
 import 'dart:async'; // Per Completer e Future.wait
 import 'package:supabase_flutter/supabase_flutter.dart';

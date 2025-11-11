@@ -10,7 +10,7 @@ import '../../../../../data/repositories/task_repository.dart';
 import '../../../../../data/repositories/todo_list_repository.dart';
 import '../../../../../data/services/tree/tree_builder_service.dart';
 import '../../../../../data/services/tree/tree_navigation_service.dart';
-import '../../widgets/tree_view.dart/tree_view_content.dart';
+import '../../widgets/tree_view/tree_view_content.dart';
 
 class FolderTreeViewPage extends StatefulWidget {
   final TodoListRepository todoListRepository;
