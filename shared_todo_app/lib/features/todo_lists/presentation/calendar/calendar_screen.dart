@@ -42,14 +42,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Future<List<Task>> _fetchMonthTasks() {
     final start = _monthGridStart(_focusedDay);
     final end = _monthGridEnd(_focusedDay);
-    return _repo.getTasksForCalendar_Future(start, end);
+    return _repo.getTasksForCalendar(start, end);
   }
 
   // ---------- Future for the selected day ----------
   Future<List<Task>> _fetchDayTasks() {
     final start = _dayStart(_selectedDay);
     final end = _dayEnd(_selectedDay);
-    return _repo.getTasksForCalendar_Future(start, end);
+    return _repo.getTasksForCalendar(start, end);
   }
 
   void _showEditTaskDialog(Task task) {
