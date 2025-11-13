@@ -1,0 +1,55 @@
+import 'package:flutter/material.dart';
+import '../../../data/models/daily_tasks/task_category.dart';
+
+/// Helper class per gestire i colori dei task
+class ColorHelper {
+  /// Restituisce il colore associato a una categoria
+  static Color getCategoryColor(TaskCategory category, ThemeData theme) {
+    switch (category) {
+      case TaskCategory.overdue:
+        return theme.colorScheme.error;
+      case TaskCategory.dueToday:
+        return theme.colorScheme.secondary;
+      case TaskCategory.ongoing:
+      case TaskCategory.startingToday:
+        return theme.colorScheme.primary;
+    }
+  }
+
+  /// Restituisce il colore associato alla priorità
+  static Color getPriorityColor(String priority, ThemeData theme) {
+    final p = priority.toLowerCase();
+
+    if (p.contains('alta') || p.contains('high')) {
+      return theme.colorScheme.error;
+    } else if (p.contains('media') || p.contains('medium')) {
+      return theme.colorScheme.secondary;
+    }
+
+    return theme.colorScheme.primary;
+  }
+
+  /// Restituisce il colore associato allo status
+  static Color getStatusColor(String status, ThemeData theme) {
+    final s = status.toLowerCase();
+
+    if (s.contains('completato') || s.contains('done')) {
+      return theme.colorScheme.primary;
+    } else if (s.contains('progresso') || s.contains('progress')) {
+      return theme.colorScheme.secondary;
+    }
+
+    return theme.colorScheme.onSurface.withOpacity(0.6);
+  }
+
+  /// Colore di sfondo per i badge
+  static Color getBadgeBackgroundColor(Color baseColor,
+      {double opacity = 0.2}) {
+    return baseColor.withOpacity(opacity);
+  }
+
+  /// Colore del bordo per i task scaduti
+  static Color getOverdueBorderColor(ThemeData theme) {
+    return theme.colorScheme.error.withOpacity(0.3);
+  }
+}

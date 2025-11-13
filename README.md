@@ -1,1 +1,1 @@
-# nov3_shared_todo_app
+# SHARED_TODO_LIST
