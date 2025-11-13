@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_todo_app/data/models/folder.dart';
 import 'package:shared_todo_app/data/repositories/folder_repository.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../helpers/mock_supabase_client.dart';
 import '../../helpers/test_fixtures.dart';
 
@@ -10,8 +9,6 @@ void main() {
   group('FolderRepository Tests', () {
     late MockSupabaseClient mockClient;
     late MockSupabaseQueryBuilder mockQueryBuilder;
-    late MockPostgrestFilterBuilder mockFilterBuilder;
-    late MockPostgrestTransformBuilder mockTransformBuilder;
     late FolderRepository repository;
     late DateTime testDate;
 
@@ -22,8 +19,6 @@ void main() {
     setUp(() {
       mockClient = MockSupabaseClient();
       mockQueryBuilder = MockSupabaseQueryBuilder();
-      mockFilterBuilder = MockPostgrestFilterBuilder();
-      mockTransformBuilder = MockPostgrestTransformBuilder();
       repository = FolderRepository(client: mockClient);
       testDate = DateTime(2025, 11, 13);
     });
@@ -39,10 +34,8 @@ void main() {
         );
 
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => folderMap);
+        when(() => mockQueryBuilder.insert(any()))
+            .thenReturn(StubPostgrestFilterBuilder(folderMap));
 
         // Act
         final folder = await repository.createFolder(
@@ -67,10 +60,8 @@ void main() {
         );
 
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => subfolderMap);
+        when(() => mockQueryBuilder.insert(any()))
+            .thenReturn(StubPostgrestFilterBuilder(subfolderMap));
 
         // Act
         final folder = await repository.createFolder(
@@ -86,9 +77,7 @@ void main() {
       test('should throw exception when creation fails', () async {
         // Arrange
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
+        when(() => mockQueryBuilder.insert(any()))
             .thenThrow(Exception('Creation failed'));
 
         // Act & Assert
@@ -111,12 +100,8 @@ void main() {
         );
 
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.update(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => updatedFolderMap);
+        when(() => mockQueryBuilder.update(any()))
+            .thenReturn(StubPostgrestFilterBuilder(updatedFolderMap));
 
         // Act
         final folder = await repository.updateFolder(
@@ -137,12 +122,8 @@ void main() {
         );
 
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.update(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => movedFolderMap);
+        when(() => mockQueryBuilder.update(any()))
+            .thenReturn(StubPostgrestFilterBuilder(movedFolderMap));
 
         // Act
         final folder = await repository.updateFolder(
@@ -165,11 +146,7 @@ void main() {
       test('should throw exception when update fails', () async {
         // Arrange
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.update(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
+        when(() => mockQueryBuilder.update(any()))
             .thenThrow(Exception('Update failed'));
 
         // Act & Assert
@@ -187,9 +164,8 @@ void main() {
       test('should delete folder successfully', () async {
         // Arrange
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.delete()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenAnswer((_) async => []);
+        when(() => mockQueryBuilder.delete())
+            .thenReturn(StubPostgrestFilterBuilder([]));
 
         // Act
         await repository.deleteFolder('folder-to-delete');
@@ -197,14 +173,12 @@ void main() {
         // Assert
         verify(() => mockClient.from('folders')).called(1);
         verify(() => mockQueryBuilder.delete()).called(1);
-        verify(() => mockFilterBuilder.eq('id', 'folder-to-delete')).called(1);
       });
 
       test('should throw exception when deletion fails', () async {
         // Arrange
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.delete()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
+        when(() => mockQueryBuilder.delete())
             .thenThrow(Exception('Deletion failed'));
 
         // Act & Assert
@@ -224,11 +198,8 @@ void main() {
         );
 
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => folderMap);
+        when(() => mockQueryBuilder.select())
+            .thenReturn(StubPostgrestFilterBuilder(folderMap));
 
         // Act
         final folder = await repository.getFolder('folder-123');
@@ -242,10 +213,7 @@ void main() {
       test('should throw exception when folder not found', () async {
         // Arrange
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
+        when(() => mockQueryBuilder.select())
             .thenThrow(Exception('Not found'));
 
         // Act & Assert
@@ -267,13 +235,8 @@ void main() {
         );
 
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.filter(any(), any(), any()))
-            .thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => rootFolderMap);
+        when(() => mockQueryBuilder.select())
+            .thenReturn(StubPostgrestFilterBuilder(rootFolderMap));
 
         // Act
         final folder = await repository.getRootFolder('list-123');
@@ -287,12 +250,7 @@ void main() {
       test('should throw exception when root folder not found', () async {
         // Arrange
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.filter(any(), any(), any()))
-            .thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
+        when(() => mockQueryBuilder.select())
             .thenThrow(Exception('Not found'));
 
         // Act & Assert

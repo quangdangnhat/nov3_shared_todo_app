@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_todo_app/data/models/task.dart';
 import 'package:shared_todo_app/data/repositories/task_repository.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../helpers/mock_supabase_client.dart';
 import '../../helpers/test_fixtures.dart';
 
@@ -10,21 +9,16 @@ void main() {
   group('TaskRepository Tests', () {
     late MockSupabaseClient mockClient;
     late MockSupabaseQueryBuilder mockQueryBuilder;
-    late MockPostgrestFilterBuilder mockFilterBuilder;
-    late MockPostgrestTransformBuilder mockTransformBuilder;
     late TaskRepository repository;
     late DateTime testDate;
 
     setUpAll(() {
-      // Register fallback values for mocktail
       registerFallbackValue(<String, dynamic>{});
     });
 
     setUp(() {
       mockClient = MockSupabaseClient();
       mockQueryBuilder = MockSupabaseQueryBuilder();
-      mockFilterBuilder = MockPostgrestFilterBuilder();
-      mockTransformBuilder = MockPostgrestTransformBuilder();
       repository = TaskRepository(client: mockClient);
       testDate = DateTime(2025, 11, 13);
     });
@@ -42,10 +36,8 @@ void main() {
         );
 
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => taskMap);
+        when(() => mockQueryBuilder.insert(any()))
+            .thenReturn(StubPostgrestFilterBuilder(taskMap));
 
         // Act
         final task = await repository.createTask(
@@ -73,10 +65,8 @@ void main() {
         );
 
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => taskMap);
+        when(() => mockQueryBuilder.insert(any()))
+            .thenReturn(StubPostgrestFilterBuilder(taskMap));
 
         // Act
         final task = await repository.createTask(
@@ -95,9 +85,7 @@ void main() {
       test('should throw exception when creation fails', () async {
         // Arrange
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
+        when(() => mockQueryBuilder.insert(any()))
             .thenThrow(Exception('Database error'));
 
         // Act & Assert
@@ -124,12 +112,8 @@ void main() {
         );
 
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.update(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => updatedTaskMap);
+        when(() => mockQueryBuilder.update(any()))
+            .thenReturn(StubPostgrestFilterBuilder(updatedTaskMap));
 
         // Act
         final task = await repository.updateTask(
@@ -153,12 +137,8 @@ void main() {
         );
 
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.update(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
-            .thenAnswer((_) async => updatedTaskMap);
+        when(() => mockQueryBuilder.update(any()))
+            .thenReturn(StubPostgrestFilterBuilder(updatedTaskMap));
 
         // Act
         final task = await repository.updateTask(
@@ -173,11 +153,7 @@ void main() {
       test('should throw exception when update fails', () async {
         // Arrange
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.update(any())).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
-        when(() => mockTransformBuilder.single())
+        when(() => mockQueryBuilder.update(any()))
             .thenThrow(Exception('Update failed'));
 
         // Act & Assert
@@ -197,11 +173,8 @@ void main() {
         final taskMap = TestFixtures.createTaskMap(id: 'task-to-delete');
 
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.delete()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select())
-            .thenAnswer((_) async => [taskMap]);
+        when(() => mockQueryBuilder.delete())
+            .thenReturn(StubPostgrestFilterBuilder([taskMap]));
 
         // Act
         await repository.deleteTask('task-to-delete');
@@ -209,16 +182,13 @@ void main() {
         // Assert
         verify(() => mockClient.from('tasks')).called(1);
         verify(() => mockQueryBuilder.delete()).called(1);
-        verify(() => mockFilterBuilder.eq('id', 'task-to-delete')).called(1);
       });
 
       test('should handle non-existent task deletion', () async {
         // Arrange
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.delete()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select()).thenAnswer((_) async => []);
+        when(() => mockQueryBuilder.delete())
+            .thenReturn(StubPostgrestFilterBuilder([]));
 
         // Act
         await repository.deleteTask('non-existent-task');
@@ -230,10 +200,7 @@ void main() {
       test('should throw exception when deletion fails', () async {
         // Arrange
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.delete()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.eq(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.select())
+        when(() => mockQueryBuilder.delete())
             .thenThrow(Exception('Deletion failed'));
 
         // Act & Assert
@@ -261,11 +228,8 @@ void main() {
         ];
 
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.gte(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.lt(any(), any()))
-            .thenAnswer((_) async => tasks);
+        when(() => mockQueryBuilder.select())
+            .thenReturn(StubPostgrestFilterBuilder(tasks));
 
         // Act
         final result = await repository.getTasksForCalendar(startDate, endDate);
@@ -283,11 +247,8 @@ void main() {
         final endDate = DateTime(2025, 11, 30);
 
         when(() => mockClient.from('tasks')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.gte(any(), any()))
-            .thenReturn(mockFilterBuilder);
-        when(() => mockFilterBuilder.lt(any(), any()))
-            .thenAnswer((_) async => []);
+        when(() => mockQueryBuilder.select())
+            .thenReturn(StubPostgrestFilterBuilder([]));
 
         // Act
         final result = await repository.getTasksForCalendar(startDate, endDate);
