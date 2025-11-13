@@ -22,7 +22,8 @@ class TestFixtures {
       'priority': priority ?? 'High',
       'status': status ?? 'Pending',
       'start_date': startDate?.toIso8601String(),
-      'due_date': (dueDate ?? now.add(const Duration(days: 7))).toIso8601String(),
+      'due_date':
+          (dueDate ?? now.add(const Duration(days: 7))).toIso8601String(),
       'created_at': (createdAt ?? now).toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };

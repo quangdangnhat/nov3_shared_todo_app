@@ -51,7 +51,8 @@ void main() {
       });
 
       test('ongoing should return "Already started, future deadline"', () {
-        expect(TaskCategory.ongoing.subtitle, 'Already started, future deadline');
+        expect(
+            TaskCategory.ongoing.subtitle, 'Already started, future deadline');
       });
 
       test('startingToday should return "New tasks to start"', () {
@@ -274,7 +275,8 @@ void main() {
 
       test('overdue should use warning-related terms', () {
         expect(TaskCategory.overdue.title.toLowerCase(), contains('expir'));
-        expect(TaskCategory.overdue.subtitle.toLowerCase(), contains('attention'));
+        expect(
+            TaskCategory.overdue.subtitle.toLowerCase(), contains('attention'));
       });
     });
 
@@ -291,10 +293,12 @@ void main() {
         // DueToday should come second
         expect(categories[1], TaskCategory.dueToday);
         // Then ongoing and startingToday
-        expect(categories.sublist(2), containsAll([
-          TaskCategory.ongoing,
-          TaskCategory.startingToday,
-        ]));
+        expect(
+            categories.sublist(2),
+            containsAll([
+              TaskCategory.ongoing,
+              TaskCategory.startingToday,
+            ]));
       });
     });
   });

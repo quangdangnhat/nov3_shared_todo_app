@@ -51,7 +51,8 @@ void main() {
             )).called(1);
       });
 
-      test('should throw AuthException when username is already used', () async {
+      test('should throw AuthException when username is already used',
+          () async {
         // Arrange
         final authException = AuthException(
           'Database error saving new user',

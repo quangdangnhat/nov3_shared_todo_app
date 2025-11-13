@@ -125,8 +125,7 @@ void main() {
           ),
           throwsA(
             predicate((e) =>
-                e is Exception &&
-                e.toString().contains('Permission denied')),
+                e is Exception && e.toString().contains('Permission denied')),
           ),
         );
       });

@@ -85,10 +85,12 @@ void main() {
 
         // Assert
         expect(categorized[TaskCategory.startingToday]!.length, 1);
-        expect(categorized[TaskCategory.startingToday]![0].id, 'starting-today-1');
+        expect(
+            categorized[TaskCategory.startingToday]![0].id, 'starting-today-1');
       });
 
-      test('should not categorize tasks without start date and future due date', () {
+      test('should not categorize tasks without start date and future due date',
+          () {
         // Arrange - Task with no start date and future due date
         final tasks = [
           Task.fromMap(TestFixtures.createTaskMap(

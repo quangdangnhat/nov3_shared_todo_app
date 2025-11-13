@@ -17,16 +17,14 @@ class StubPostgrestFilterBuilder extends Fake
   StubPostgrestFilterBuilder(this._returnValue);
 
   @override
-  PostgrestFilterBuilder<PostgrestList> eq(String column, Object value) =>
-      this;
+  PostgrestFilterBuilder<PostgrestList> eq(String column, Object value) => this;
 
   @override
   PostgrestFilterBuilder<PostgrestList> gte(String column, Object value) =>
       this;
 
   @override
-  PostgrestFilterBuilder<PostgrestList> lt(String column, Object value) =>
-      this;
+  PostgrestFilterBuilder<PostgrestList> lt(String column, Object value) => this;
 
   @override
   PostgrestFilterBuilder<PostgrestList> filter(

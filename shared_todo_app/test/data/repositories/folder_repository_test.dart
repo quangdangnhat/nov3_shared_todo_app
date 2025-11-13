@@ -213,8 +213,7 @@ void main() {
       test('should throw exception when folder not found', () async {
         // Arrange
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.select())
-            .thenThrow(Exception('Not found'));
+        when(() => mockQueryBuilder.select()).thenThrow(Exception('Not found'));
 
         // Act & Assert
         expect(
@@ -250,8 +249,7 @@ void main() {
       test('should throw exception when root folder not found', () async {
         // Arrange
         when(() => mockClient.from('folders')).thenReturn(mockQueryBuilder);
-        when(() => mockQueryBuilder.select())
-            .thenThrow(Exception('Not found'));
+        when(() => mockQueryBuilder.select()).thenThrow(Exception('Not found'));
 
         // Act & Assert
         expect(

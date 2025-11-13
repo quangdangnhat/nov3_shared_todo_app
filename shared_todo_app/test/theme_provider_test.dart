@@ -42,7 +42,8 @@ void main() {
         expect(themeProvider.isDarkMode, isFalse);
       });
 
-      test('should stay in light mode when toggled with false multiple times', () {
+      test('should stay in light mode when toggled with false multiple times',
+          () {
         // Act
         themeProvider.toggleTheme(false);
         themeProvider.toggleTheme(false);
@@ -53,7 +54,8 @@ void main() {
         expect(themeProvider.isDarkMode, isFalse);
       });
 
-      test('should stay in dark mode when toggled with true multiple times', () {
+      test('should stay in dark mode when toggled with true multiple times',
+          () {
         // Act
         themeProvider.toggleTheme(true);
         themeProvider.toggleTheme(true);
@@ -166,11 +168,13 @@ void main() {
       test('isDarkMode should be consistent with currentThemeMode', () {
         // Light mode
         themeProvider.toggleTheme(false);
-        expect(themeProvider.isDarkMode, themeProvider.currentThemeMode == ThemeMode.dark);
+        expect(themeProvider.isDarkMode,
+            themeProvider.currentThemeMode == ThemeMode.dark);
 
         // Dark mode
         themeProvider.toggleTheme(true);
-        expect(themeProvider.isDarkMode, themeProvider.currentThemeMode == ThemeMode.dark);
+        expect(themeProvider.isDarkMode,
+            themeProvider.currentThemeMode == ThemeMode.dark);
       });
     });
 

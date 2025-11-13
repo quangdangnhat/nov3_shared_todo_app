@@ -89,9 +89,8 @@ void main() {
       });
 
       test('should be usable in collections', () {
-        final navigableTypes = NodeType.values
-            .where((type) => type.isNavigable)
-            .toList();
+        final navigableTypes =
+            NodeType.values.where((type) => type.isNavigable).toList();
 
         expect(navigableTypes.length, 2);
         expect(navigableTypes, contains(NodeType.todoList));

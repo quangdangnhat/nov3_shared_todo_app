@@ -11,8 +11,10 @@ void main() {
       test('should contain all expected filter types', () {
         expect(TaskFilterType.values, contains(TaskFilterType.createdAtNewest));
         expect(TaskFilterType.values, contains(TaskFilterType.createdAtOldest));
-        expect(TaskFilterType.values, contains(TaskFilterType.priorityHighToLow));
-        expect(TaskFilterType.values, contains(TaskFilterType.priorityLowToHigh));
+        expect(
+            TaskFilterType.values, contains(TaskFilterType.priorityHighToLow));
+        expect(
+            TaskFilterType.values, contains(TaskFilterType.priorityLowToHigh));
         expect(TaskFilterType.values, contains(TaskFilterType.alphabeticalAZ));
         expect(TaskFilterType.values, contains(TaskFilterType.alphabeticalZA));
       });
@@ -28,11 +30,13 @@ void main() {
       });
 
       test('priorityHighToLow should have correct display name', () {
-        expect(TaskFilterType.priorityHighToLow.displayName, 'Priority: High → Low');
+        expect(TaskFilterType.priorityHighToLow.displayName,
+            'Priority: High → Low');
       });
 
       test('priorityLowToHigh should have correct display name', () {
-        expect(TaskFilterType.priorityLowToHigh.displayName, 'Priority: Low → High');
+        expect(TaskFilterType.priorityLowToHigh.displayName,
+            'Priority: Low → High');
       });
 
       test('alphabeticalAZ should have correct display name', () {
@@ -221,9 +225,8 @@ void main() {
       });
 
       test('should be able to map values', () {
-        final displayNames = TaskFilterType.values
-            .map((f) => f.displayName)
-            .toList();
+        final displayNames =
+            TaskFilterType.values.map((f) => f.displayName).toList();
 
         expect(displayNames.length, 6);
         expect(displayNames, contains('Newest First'));
@@ -233,17 +236,15 @@ void main() {
 
     group('Consistency', () {
       test('all display names should be unique', () {
-        final displayNames = TaskFilterType.values
-            .map((f) => f.displayName)
-            .toSet();
+        final displayNames =
+            TaskFilterType.values.map((f) => f.displayName).toSet();
 
         expect(displayNames.length, TaskFilterType.values.length);
       });
 
       test('all descriptions should be unique', () {
-        final descriptions = TaskFilterType.values
-            .map((f) => f.description)
-            .toSet();
+        final descriptions =
+            TaskFilterType.values.map((f) => f.description).toSet();
 
         expect(descriptions.length, TaskFilterType.values.length);
       });
