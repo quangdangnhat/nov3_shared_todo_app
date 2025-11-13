@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_todo_app/core/enums/task_category.dart';
+import 'package:shared_todo_app/data/models/daily_tasks/task_category.dart';
 import 'package:shared_todo_app/core/utils/daily_tasks/task_categorizer.dart';
 import 'package:shared_todo_app/data/models/task.dart';
 import '../../../helpers/test_fixtures.dart';

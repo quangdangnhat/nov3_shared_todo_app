@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_todo_app/core/enums/task_category.dart';
+import 'package:shared_todo_app/data/models/daily_tasks/task_category.dart';
 import 'package:shared_todo_app/core/utils/tasks_color.dart';
 
 void main() {
