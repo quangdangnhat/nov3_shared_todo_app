@@ -122,9 +122,9 @@ void main() {
         final result = await service.buildTreeFromLists([testTodoList]);
 
         // Assert
-        expect(result.children.length, 1);
-        expect(result.children.first.data?.id, 'list-123');
-        expect(result.children.first.data?.name, 'Test List');
+        expect(result.childrenAsList.length, 1);
+        expect(result.childrenAsList.first.data?.id, 'list-123');
+        expect(result.childrenAsList.first.data?.name, 'Test List');
       });
 
       test('should handle multiple TodoLists', () async {
@@ -152,7 +152,7 @@ void main() {
         final result = await service.buildTreeFromLists([testTodoList, todoList2]);
 
         // Assert
-        expect(result.children.length, 2);
+        expect(result.childrenAsList.length, 2);
       });
 
       test('should continue building tree if one TodoList fails', () async {
@@ -180,8 +180,8 @@ void main() {
         final result = await service.buildTreeFromLists([testTodoList, todoList2]);
 
         // Assert - Should have only the second list
-        expect(result.children.length, 1);
-        expect(result.children.first.data?.id, 'list-456');
+        expect(result.childrenAsList.length, 1);
+        expect(result.childrenAsList.first.data?.id, 'list-456');
       });
 
       test('should return empty tree for empty list', () async {
@@ -189,7 +189,7 @@ void main() {
         final result = await service.buildTreeFromLists([]);
 
         // Assert
-        expect(result.children.length, 0);
+        expect(result.childrenAsList.length, 0);
       });
     });
 
@@ -226,8 +226,8 @@ void main() {
         final result = await service.buildTodoListNode(testTodoList);
 
         // Assert
-        expect(result.children.length, 1);
-        expect(result.children.first.data?.id, 'root-folder-123');
+        expect(result.childrenAsList.length, 1);
+        expect(result.childrenAsList.first.data?.id, 'root-folder-123');
       });
 
       test('should throw error if root folder fails to load', () async {
@@ -280,7 +280,7 @@ void main() {
         );
 
         // Assert
-        final taskNodes = result.children.where((node) =>
+        final taskNodes = result.childrenAsList.where((node) =>
           node.data?.type == NodeType.task
         ).toList();
         expect(taskNodes.length, 1);
@@ -304,7 +304,7 @@ void main() {
         );
 
         // Assert
-        final folderNodes = result.children.where((node) =>
+        final folderNodes = result.childrenAsList.where((node) =>
           node.data?.type == NodeType.folder
         ).toList();
         expect(folderNodes.length, 1);
@@ -330,7 +330,7 @@ void main() {
         );
 
         // Assert
-        expect(result.children.length, 2); // 1 task + 1 subfolder
+        expect(result.childrenAsList.length, 2); // 1 task + 1 subfolder
       });
 
       test('should continue if subfolder construction fails', () async {
@@ -358,8 +358,8 @@ void main() {
         );
 
         // Assert - Should have only the second subfolder
-        expect(result.children.length, 1);
-        expect(result.children.first.data?.id, 'sub-folder-789');
+        expect(result.childrenAsList.length, 1);
+        expect(result.childrenAsList.first.data?.id, 'sub-folder-789');
       });
     });
 
@@ -494,7 +494,7 @@ void main() {
         );
 
         expect(result, isNotNull);
-        expect(result.children.length, 0);
+        expect(result.childrenAsList.length, 0);
       });
 
       test('should handle empty task list', () async {
@@ -512,7 +512,7 @@ void main() {
         );
 
         // Assert
-        expect(result.children.length, 0);
+        expect(result.childrenAsList.length, 0);
       });
 
       test('should handle empty subfolder list', () async {
@@ -530,7 +530,7 @@ void main() {
         );
 
         // Assert
-        expect(result.children.length, 0);
+        expect(result.childrenAsList.length, 0);
       });
     });
 
@@ -560,9 +560,9 @@ void main() {
         );
 
         // Assert
-        expect(result.children.length, 1);
-        expect(result.children.first.children.length, 1);
-        expect(result.children.first.children.first.data?.id, 'folder-level-2');
+        expect(result.childrenAsList.length, 1);
+        expect(result.childrenAsList.first.childrenAsList.length, 1);
+        expect(result.childrenAsList.first.childrenAsList.first.data?.id, 'folder-level-2');
       });
 
       test('should handle multiple tasks in folder', () async {
@@ -589,8 +589,8 @@ void main() {
         );
 
         // Assert
-        expect(result.children.length, 3);
-        expect(result.children.every((node) => node.data?.type == NodeType.task), isTrue);
+        expect(result.childrenAsList.length, 3);
+        expect(result.childrenAsList.every((node) => node.data?.type == NodeType.task), isTrue);
       });
 
       test('should handle multiple subfolders in folder', () async {
@@ -623,8 +623,8 @@ void main() {
         );
 
         // Assert
-        expect(result.children.length, 3);
-        expect(result.children.every((node) => node.data?.type == NodeType.folder), isTrue);
+        expect(result.childrenAsList.length, 3);
+        expect(result.childrenAsList.every((node) => node.data?.type == NodeType.folder), isTrue);
       });
     });
   });
