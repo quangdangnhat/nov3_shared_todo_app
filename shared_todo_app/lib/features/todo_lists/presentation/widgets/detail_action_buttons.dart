@@ -25,7 +25,7 @@ class DetailActionButtons extends StatelessWidget {
     // Se l'utente non è un 'admin', non mostrare nulla
     if (currentUserRole != 'admin') {
       // Ritorna un widget vuoto che non occupa spazio
-      return const SizedBox.shrink(); 
+      return const SizedBox.shrink();
     }
     // --- FINE ---
 

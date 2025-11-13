@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../data/models/folder.dart'; 
-import '../../../../core/utils/date_format_util.dart'; 
+import '../../../../data/models/folder.dart';
+import '../../../../core/utils/date_format_util.dart';
 
 /// Un widget che visualizza una singola cartella in stile ListTile.
 class FolderListTile extends StatelessWidget {

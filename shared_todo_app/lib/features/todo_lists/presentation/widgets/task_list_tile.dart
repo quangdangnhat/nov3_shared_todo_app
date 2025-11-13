@@ -142,7 +142,6 @@ class TaskListTile extends StatelessWidget {
                   ),
                 ),
 
-
                 // Menu 3 puntini a destra
                 if (isAdmin)
                   PopupMenuButton<String>(
@@ -181,8 +180,6 @@ class TaskListTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Wrap(
