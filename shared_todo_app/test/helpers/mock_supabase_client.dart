@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -36,11 +38,11 @@ class StubPostgrestFilterBuilder extends Fake
       StubPostgrestTransformBuilder(_returnValue);
 
   @override
-  Future<PostgrestList> then<R>(
-    FutureOr<R> Function(PostgrestList value) onValue, {
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestList value) onValue, {
     Function? onError,
   }) async {
-    return _returnValue as PostgrestList;
+    return onValue(_returnValue as PostgrestList);
   }
 }
 
@@ -56,11 +58,11 @@ class StubPostgrestTransformBuilder extends Fake
       StubPostgrestTransformBuilderMap(_returnValue);
 
   @override
-  Future<PostgrestList> then<R>(
-    FutureOr<R> Function(PostgrestList value) onValue, {
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestList value) onValue, {
     Function? onError,
   }) async {
-    return _returnValue as PostgrestList;
+    return onValue(_returnValue as PostgrestList);
   }
 }
 
@@ -72,11 +74,11 @@ class StubPostgrestTransformBuilderMap extends Fake
   StubPostgrestTransformBuilderMap(this._returnValue);
 
   @override
-  Future<PostgrestMap> then<R>(
-    FutureOr<R> Function(PostgrestMap value) onValue, {
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestMap value) onValue, {
     Function? onError,
   }) async {
-    return _returnValue as PostgrestMap;
+    return onValue(_returnValue as PostgrestMap);
   }
 }
 
