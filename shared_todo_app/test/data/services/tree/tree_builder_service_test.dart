@@ -124,8 +124,8 @@ void main() {
 
         // Assert
         expect(result.childrenAsList.length, 1);
-        expect(result.childrenAsList.first.data?.id, 'list-123');
-        expect(result.childrenAsList.first.data?.name, 'Test List');
+        expect((result.childrenAsList.first as TreeNode<TreeNodeData>).data?.id, 'list-123');
+        expect((result.childrenAsList.first as TreeNode<TreeNodeData>).data?.name, 'Test List');
       });
 
       test('should handle multiple TodoLists', () async {
@@ -182,7 +182,7 @@ void main() {
 
         // Assert - Should have only the second list
         expect(result.childrenAsList.length, 1);
-        expect(result.childrenAsList.first.data?.id, 'list-456');
+        expect((result.childrenAsList.first as TreeNode<TreeNodeData>).data?.id, 'list-456');
       });
 
       test('should return empty tree for empty list', () async {
@@ -228,7 +228,7 @@ void main() {
 
         // Assert
         expect(result.childrenAsList.length, 1);
-        expect(result.childrenAsList.first.data?.id, 'root-folder-123');
+        expect((result.childrenAsList.first as TreeNode<TreeNodeData>).data?.id, 'root-folder-123');
       });
 
       test('should throw error if root folder fails to load', () async {
@@ -282,10 +282,10 @@ void main() {
 
         // Assert
         final taskNodes = result.childrenAsList.where((node) =>
-          node.data?.type == NodeType.task
+          (node as TreeNode<TreeNodeData>).data?.type == NodeType.task
         ).toList();
         expect(taskNodes.length, 1);
-        expect(taskNodes.first.data?.id, 'task-789');
+        expect((taskNodes.first as TreeNode<TreeNodeData>).data?.id, 'task-789');
       });
 
       test('should add sub folders recursively', () async {
@@ -306,10 +306,10 @@ void main() {
 
         // Assert
         final folderNodes = result.childrenAsList.where((node) =>
-          node.data?.type == NodeType.folder
+          (node as TreeNode<TreeNodeData>).data?.type == NodeType.folder
         ).toList();
         expect(folderNodes.length, 1);
-        expect(folderNodes.first.data?.id, 'sub-folder-456');
+        expect((folderNodes.first as TreeNode<TreeNodeData>).data?.id, 'sub-folder-456');
       });
 
       test('should handle folders with both tasks and subfolders', () async {
@@ -360,7 +360,7 @@ void main() {
 
         // Assert - Should have only the second subfolder
         expect(result.childrenAsList.length, 1);
-        expect(result.childrenAsList.first.data?.id, 'sub-folder-789');
+        expect((result.childrenAsList.first as TreeNode<TreeNodeData>).data?.id, 'sub-folder-789');
       });
     });
 
@@ -562,8 +562,8 @@ void main() {
 
         // Assert
         expect(result.childrenAsList.length, 1);
-        expect(result.childrenAsList.first.childrenAsList.length, 1);
-        expect(result.childrenAsList.first.childrenAsList.first.data?.id, 'folder-level-2');
+        expect((result.childrenAsList.first as TreeNode<TreeNodeData>).childrenAsList.length, 1);
+        expect(((result.childrenAsList.first as TreeNode<TreeNodeData>).childrenAsList.first as TreeNode<TreeNodeData>).data?.id, 'folder-level-2');
       });
 
       test('should handle multiple tasks in folder', () async {
@@ -591,7 +591,7 @@ void main() {
 
         // Assert
         expect(result.childrenAsList.length, 3);
-        expect(result.childrenAsList.every((node) => node.data?.type == NodeType.task), isTrue);
+        expect(result.childrenAsList.every((node) => (node as TreeNode<TreeNodeData>).data?.type == NodeType.task), isTrue);
       });
 
       test('should handle multiple subfolders in folder', () async {
@@ -625,7 +625,7 @@ void main() {
 
         // Assert
         expect(result.childrenAsList.length, 3);
-        expect(result.childrenAsList.every((node) => node.data?.type == NodeType.folder), isTrue);
+        expect(result.childrenAsList.every((node) => (node as TreeNode<TreeNodeData>).data?.type == NodeType.folder), isTrue);
       });
     });
   });
