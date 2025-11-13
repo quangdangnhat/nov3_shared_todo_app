@@ -395,6 +395,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                       FolderListSection(
                         isCollapsed: isFoldersCollapsed,
                         stream: foldersStream,
+                        currentUserRole: _viewModel.currentUserRole,
                         onToggleCollapse: _viewModel.toggleFoldersCollapse,
                         onFolderTap: (folder) {
                           context.go(
@@ -411,7 +412,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         onDelete: (folder) => _showDeleteFolderDialog(folder),
                       ),
 
-                      // === 4. TASK LIST HEADER (MODIFICATO) ===
+                      // === 4. TASK LIST HEADER ===
                       // Aggiunto il filtro
                       SliverToBoxAdapter(
                         child: Padding(
@@ -457,7 +458,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         ),
                       ),
 
-                      // === 5. TASK LIST WIDGET (MODIFICATO) ===
+                      // === 5. TASK LIST WIDGET ===
                       // Applicato il TaskSorter
                       StreamBuilder<List<Task>>(
                         stream: tasksStream,
@@ -485,7 +486,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                           final tasks = snapshot.data ?? [];
                           final sortedTasks =
                               TaskSorter.sortTasks(tasks, _selectedTaskFilter);
-                          // --- FINE ---
 
                           if (sortedTasks.isEmpty) {
                             return SliverToBoxAdapter(
@@ -512,6 +512,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                                       horizontal: 16.0),
                                   child: TaskListTile(
                                     task: task,
+                                    currentUserRole: _viewModel.currentUserRole,
                                     onTap: () {
                                       /* TODO: Navigare al dettaglio task */
                                     },
@@ -543,9 +544,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                   bottom: 16,
                   right: 16,
                   child: DetailActionButtons(
-                    isMobile: isMobile,
                     onNewFolder: () => _openFolderDialog(),
                     onNewTask: () => _openTaskDialog(),
+                    isMobile: isMobile,
+                    currentUserRole: _viewModel.currentUserRole,
                   ),
                 ),
               ],
