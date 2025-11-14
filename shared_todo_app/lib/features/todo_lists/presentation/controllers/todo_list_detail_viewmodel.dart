@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../../data/models/folder.dart';

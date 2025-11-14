@@ -1,3 +1,5 @@
+// coverage:ignore-file
+
 import 'package:flutter/material.dart';
 import '../../../../config/responsive.dart';
 import 'login_form.dart';

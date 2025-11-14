@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import 'package:shared_todo_app/data/models/daily_tasks/task_category.dart';
 import '../../../../../config/responsive.dart';

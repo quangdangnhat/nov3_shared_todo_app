@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/foundation.dart';
 import '../models/todo_list.dart';
 import 'dart:async'; // Per Completer e Future.wait

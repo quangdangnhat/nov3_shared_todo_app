@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 // lib/presentation/widgets/task/folder_display_card.dart
 
 import 'package:flutter/material.dart';

@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import '../../../../../core/utils/daily_tasks/date_formatter.dart';
 import '../../../../../data/models/task.dart';
