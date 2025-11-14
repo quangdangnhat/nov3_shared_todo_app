@@ -19,7 +19,7 @@ void main() {
       mockAuthRepository = MockAuthRepository();
       controller = LoginController(authRepository: mockAuthRepository);
       mockContext = MockBuildContext();
-      
+
       // Mock context.mounted to return true by default
       when(() => mockContext.mounted).thenReturn(true);
     });
@@ -53,11 +53,11 @@ void main() {
         // Arrange
         const email = 'test@example.com';
         const password = 'password123';
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -68,20 +68,20 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: email.trim(),
-          password: password.trim(),
-        )).called(1);
+              email: email.trim(),
+              password: password.trim(),
+            )).called(1);
         expect(controller.isLoading, false);
       });
 
       test('should set isLoading to true during sign in', () async {
         // Arrange
         bool wasLoadingTrue = false;
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async {
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async {
           wasLoadingTrue = controller.isLoading;
           return Future.value();
         });
@@ -101,9 +101,9 @@ void main() {
       test('should set isLoading to false after successful sign in', () async {
         // Arrange
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -120,11 +120,11 @@ void main() {
         // Arrange
         int notifyCount = 0;
         controller.addListener(() => notifyCount++);
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -141,11 +141,11 @@ void main() {
         // Arrange
         const emailWithSpaces = '  test@example.com  ';
         const trimmedEmail = 'test@example.com';
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -156,20 +156,20 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: trimmedEmail,
-          password: any(named: 'password'),
-        )).called(1);
+              email: trimmedEmail,
+              password: any(named: 'password'),
+            )).called(1);
       });
 
       test('should trim password before signing in', () async {
         // Arrange
         const passwordWithSpaces = '  password123  ';
         const trimmedPassword = 'password123';
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -180,9 +180,9 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: trimmedPassword,
-        )).called(1);
+              email: any(named: 'email'),
+              password: trimmedPassword,
+            )).called(1);
       });
 
       // test('should handle AuthException and set isLoading to false', () async {
@@ -225,9 +225,9 @@ void main() {
         // Arrange
         when(() => mockContext.mounted).thenReturn(false);
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenThrow(AuthException('Invalid credentials'));
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenThrow(AuthException('Invalid credentials'));
 
         // Act
         await controller.signIn(
@@ -243,9 +243,9 @@ void main() {
       test('should handle empty email', () async {
         // Arrange
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -256,17 +256,17 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: '',
-          password: any(named: 'password'),
-        )).called(1);
+              email: '',
+              password: any(named: 'password'),
+            )).called(1);
       });
 
       test('should handle empty password', () async {
         // Arrange
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -277,19 +277,19 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: '',
-        )).called(1);
+              email: any(named: 'email'),
+              password: '',
+            )).called(1);
       });
 
       test('should handle very long email', () async {
         // Arrange
         final longEmail = '${'a' * 100}@example.com';
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -300,19 +300,19 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: longEmail,
-          password: any(named: 'password'),
-        )).called(1);
+              email: longEmail,
+              password: any(named: 'password'),
+            )).called(1);
       });
 
       test('should handle very long password', () async {
         // Arrange
         final longPassword = 'p' * 200;
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -323,19 +323,19 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: longPassword,
-        )).called(1);
+              email: any(named: 'email'),
+              password: longPassword,
+            )).called(1);
       });
 
       test('should handle special characters in email', () async {
         // Arrange
         const specialEmail = 'test+tag@sub-domain.example.com';
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -346,19 +346,19 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: specialEmail,
-          password: any(named: 'password'),
-        )).called(1);
+              email: specialEmail,
+              password: any(named: 'password'),
+            )).called(1);
       });
 
       test('should handle special characters in password', () async {
         // Arrange
         const specialPassword = 'P@ss!w0rd#123';
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -369,19 +369,19 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: specialPassword,
-        )).called(1);
+              email: any(named: 'email'),
+              password: specialPassword,
+            )).called(1);
       });
 
       test('should handle unicode characters in email', () async {
         // Arrange
         const unicodeEmail = 'user@例え.jp';
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -392,9 +392,9 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: unicodeEmail,
-          password: any(named: 'password'),
-        )).called(1);
+              email: unicodeEmail,
+              password: any(named: 'password'),
+            )).called(1);
       });
     });
 
@@ -512,9 +512,9 @@ void main() {
       test('should handle multiple sign in attempts sequentially', () async {
         // Arrange
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -535,9 +535,9 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).called(3);
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).called(3);
         expect(controller.isLoading, false);
       });
 
@@ -576,9 +576,9 @@ void main() {
       test('should maintain correct state after successful sign in', () async {
         // Arrange
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -675,9 +675,9 @@ void main() {
       test('should handle null-like strings in email', () async {
         // Arrange
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -688,17 +688,17 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: 'null',
-          password: any(named: 'password'),
-        )).called(1);
+              email: 'null',
+              password: any(named: 'password'),
+            )).called(1);
       });
 
       test('should handle whitespace-only email after trim', () async {
         // Arrange
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -709,17 +709,17 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: '',
-          password: any(named: 'password'),
-        )).called(1);
+              email: '',
+              password: any(named: 'password'),
+            )).called(1);
       });
 
       test('should handle whitespace-only password after trim', () async {
         // Arrange
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -730,19 +730,19 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: '',
-        )).called(1);
+              email: any(named: 'email'),
+              password: '',
+            )).called(1);
       });
 
       test('should handle newlines in email', () async {
         // Arrange
         const emailWithNewline = 'test\n@example.com';
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -753,19 +753,19 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: emailWithNewline,
-          password: any(named: 'password'),
-        )).called(1);
+              email: emailWithNewline,
+              password: any(named: 'password'),
+            )).called(1);
       });
 
       test('should handle tabs in password', () async {
         // Arrange
         const passwordWithTab = 'pass\tword';
-        
+
         when(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: any(named: 'password'),
-        )).thenAnswer((_) async => Future.value());
+              email: any(named: 'email'),
+              password: any(named: 'password'),
+            )).thenAnswer((_) async => Future.value());
 
         // Act
         await controller.signIn(
@@ -776,9 +776,9 @@ void main() {
 
         // Assert
         verify(() => mockAuthRepository.signIn(
-          email: any(named: 'email'),
-          password: passwordWithTab,
-        )).called(1);
+              email: any(named: 'email'),
+              password: passwordWithTab,
+            )).called(1);
       });
     });
   });

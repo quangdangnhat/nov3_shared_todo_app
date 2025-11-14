@@ -8,6 +8,7 @@ import 'package:shared_todo_app/features/todo_lists/presentation/controllers/fol
 
 // Mock classes
 class MockTodoListRepository extends Mock implements TodoListRepository {}
+
 class MockFolderRepository extends Mock implements FolderRepository {}
 
 void main() {
@@ -160,7 +161,8 @@ void main() {
     });
 
     group('Select TodoList', () {
-      test('should select TodoList and load root folder successfully', () async {
+      test('should select TodoList and load root folder successfully',
+          () async {
         // Arrange
         final todoList = TodoList(
           id: 'list-1',
@@ -197,7 +199,8 @@ void main() {
         expect(controller.isLoading, false);
       });
 
-      test('should set isLoading to true then false during selection', () async {
+      test('should set isLoading to true then false during selection',
+          () async {
         // Arrange
         final todoList = TodoList(
           id: 'list-1',
@@ -342,8 +345,6 @@ void main() {
     });
 
     group('Create Folder', () {
-      
-
       test('should throw exception when no todo list selected', () async {
         // Act & Assert
         expect(
@@ -433,14 +434,11 @@ void main() {
           throwsA(isA<Exception>()),
         );
       });
-
-      
-
-      
     });
 
     group('Can Create Folder', () {
-      test('should return true when list is selected and name is not empty', () async {
+      test('should return true when list is selected and name is not empty',
+          () async {
         // Arrange
         final todoList = TodoList(
           id: 'list-1',

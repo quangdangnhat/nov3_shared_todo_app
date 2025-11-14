@@ -11,7 +11,9 @@ import 'package:shared_todo_app/features/todo_lists/presentation/widgets/create/
 
 // Mock classes
 class MockTodoListRepository extends Mock implements TodoListRepository {}
+
 class MockFolderRepository extends Mock implements FolderRepository {}
+
 class MockTaskRepository extends Mock implements TaskRepository {}
 
 void main() {
@@ -238,7 +240,8 @@ void main() {
     });
 
     group('Select TodoList', () {
-      test('should select TodoList and load root folder successfully', () async {
+      test('should select TodoList and load root folder successfully',
+          () async {
         // Arrange
         final todoList = TodoList(
           id: 'list-1',
@@ -281,7 +284,8 @@ void main() {
         verify(() => mockFolderRepo.getRootFolder('list-1')).called(1);
       });
 
-      test('should set isLoading to true then false during selection', () async {
+      test('should set isLoading to true then false during selection',
+          () async {
         // Arrange
         final todoList = TodoList(
           id: 'list-1',
@@ -320,7 +324,8 @@ void main() {
         expect(controller.isLoading, false);
       });
 
-      test('should reset previous folder selection when selecting new list', () async {
+      test('should reset previous folder selection when selecting new list',
+          () async {
         // Arrange
         final todoList = TodoList(
           id: 'list-1',
@@ -691,7 +696,6 @@ void main() {
     });
 
     group('Create Task', () {
-
       test('should throw exception when no folder selected', () async {
         // Act & Assert
         expect(
@@ -781,12 +785,11 @@ void main() {
           throwsA(isA<Exception>()),
         );
       });
-
-   
     });
 
     group('Can Create Task', () {
-      test('should return true when folder is selected and title is not empty', () async {
+      test('should return true when folder is selected and title is not empty',
+          () async {
         // Arrange
         final todoList = TodoList(
           id: 'list-1',

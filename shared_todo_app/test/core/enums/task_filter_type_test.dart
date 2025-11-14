@@ -13,11 +13,13 @@ void main() {
       });
 
       test('priorityHighToLow should have correct display name', () {
-        expect(TaskFilterType.priorityHighToLow.displayName, 'Priority: High → Low');
+        expect(TaskFilterType.priorityHighToLow.displayName,
+            'Priority: High → Low');
       });
 
       test('priorityLowToHigh should have correct display name', () {
-        expect(TaskFilterType.priorityLowToHigh.displayName, 'Priority: Low → High');
+        expect(TaskFilterType.priorityLowToHigh.displayName,
+            'Priority: Low → High');
       });
 
       test('alphabeticalAZ should have correct display name', () {
@@ -31,32 +33,32 @@ void main() {
 
     group('Descriptions', () {
       test('createdAtNewest should have correct description', () {
-        expect(TaskFilterType.createdAtNewest.description, 
+        expect(TaskFilterType.createdAtNewest.description,
             'Sort by creation date (newest first)');
       });
 
       test('createdAtOldest should have correct description', () {
-        expect(TaskFilterType.createdAtOldest.description, 
+        expect(TaskFilterType.createdAtOldest.description,
             'Sort by creation date (oldest first)');
       });
 
       test('priorityHighToLow should have correct description', () {
-        expect(TaskFilterType.priorityHighToLow.description, 
+        expect(TaskFilterType.priorityHighToLow.description,
             'Sort by priority (High, Medium, Low)');
       });
 
       test('priorityLowToHigh should have correct description', () {
-        expect(TaskFilterType.priorityLowToHigh.description, 
+        expect(TaskFilterType.priorityLowToHigh.description,
             'Sort by priority (Low, Medium, High)');
       });
 
       test('alphabeticalAZ should have correct description', () {
-        expect(TaskFilterType.alphabeticalAZ.description, 
+        expect(TaskFilterType.alphabeticalAZ.description,
             'Sort alphabetically (A to Z)');
       });
 
       test('alphabeticalZA should have correct description', () {
-        expect(TaskFilterType.alphabeticalZA.description, 
+        expect(TaskFilterType.alphabeticalZA.description,
             'Sort alphabetically (Z to A)');
       });
     });
@@ -69,8 +71,10 @@ void main() {
       test('should contain all filter types', () {
         expect(TaskFilterType.values, contains(TaskFilterType.createdAtNewest));
         expect(TaskFilterType.values, contains(TaskFilterType.createdAtOldest));
-        expect(TaskFilterType.values, contains(TaskFilterType.priorityHighToLow));
-        expect(TaskFilterType.values, contains(TaskFilterType.priorityLowToHigh));
+        expect(
+            TaskFilterType.values, contains(TaskFilterType.priorityHighToLow));
+        expect(
+            TaskFilterType.values, contains(TaskFilterType.priorityLowToHigh));
         expect(TaskFilterType.values, contains(TaskFilterType.alphabeticalAZ));
         expect(TaskFilterType.values, contains(TaskFilterType.alphabeticalZA));
       });

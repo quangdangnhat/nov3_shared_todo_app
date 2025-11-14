@@ -11,8 +11,11 @@ import 'package:shared_todo_app/features/todo_lists/presentation/controllers/tod
 
 // Mock classes
 class MockFolderRepository extends Mock implements FolderRepository {}
+
 class MockTaskRepository extends Mock implements TaskRepository {}
+
 class MockInvitationRepository extends Mock implements InvitationRepository {}
+
 class MockParticipantRepository extends Mock implements ParticipantRepository {}
 
 void main() {
