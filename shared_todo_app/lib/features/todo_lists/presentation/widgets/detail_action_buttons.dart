@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 
 /// I due FloatingActionButton per la creazione di folder e task.

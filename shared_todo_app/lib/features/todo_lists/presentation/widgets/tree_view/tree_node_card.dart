@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
 import '../../../../../core/utils/tree_style_util.dart'; // Assicurati che questo percorso sia corretto

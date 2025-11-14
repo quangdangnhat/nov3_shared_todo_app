@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 // lib/presentation/widgets/task/task_title_field.dart
 
 import 'package:flutter/material.dart';

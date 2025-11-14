@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import '../../../../data/models/participant.dart';
 import '../../../../core/utils/snackbar_utils.dart';

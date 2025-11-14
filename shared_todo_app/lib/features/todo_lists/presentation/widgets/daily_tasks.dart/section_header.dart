@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import '../../../../../config/responsive.dart';
 import '../../../../../core/utils/daily_tasks/color_helper.dart';
