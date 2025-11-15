@@ -1,39 +1,28 @@
-// coverage:ignore-file
-
-// consider testing later
-
+import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../models/todo_list.dart';
-import 'dart:async'; // Per Completer e Future.wait
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/todo_list.dart';
 
-/// Repository per gestire le operazioni sulle TodoList.
 class TodoListRepository {
-  // --- UPDATED: Injectable Client ---
   final SupabaseClient _supabase;
-  // Constructor with optional client for testing.
+
   TodoListRepository({SupabaseClient? client})
       : _supabase = client ?? Supabase.instance.client;
 
-  /// Ottiene uno stream delle liste a cui l'utente partecipa,
-  /// includendo il ruolo dell'utente per ciascuna lista.
   Stream<List<TodoList>> getTodoListsStream() {
     final userId = _supabase.auth.currentUser!.id;
 
-    // 1. Ascolta la tabella 'participations' per l'utente corrente
     final participationStream = _supabase
         .from('participations')
         .stream(primaryKey: ['id'])
         .eq('user_id', userId)
         .order('created_at', ascending: false);
 
-    // 2. Trasforma lo stream di partecipazioni in uno stream di liste
     return participationStream.asyncMap((participationMaps) async {
       if (participationMaps.isEmpty) {
         return <TodoList>[];
       }
 
-      // 3. Estrai gli ID delle liste e mappa il ruolo per ogni ID
       final Map<String, String> listIdToRoleMap = {};
       for (var map in participationMaps) {
         final listId = (map['todo_list_id'] ?? map['todoListId']) as String?;
@@ -48,36 +37,76 @@ class TodoListRepository {
         return <TodoList>[];
       }
 
-      // 4. Fai una query per ottenere i *dettagli* delle liste
+      // FIXED: Query 'todo_lists' and get member count via select.
       final todoListsData = await _supabase
           .from('todo_lists')
-          .select()
+          .select('*, participations(count)')
           .filter('id', 'in', listIds)
           .order('created_at', ascending: false);
 
-      // 5. Combina i dati: aggiungi il ruolo salvato a ogni oggetto TodoList
-      return todoListsData.map((listMap) {
+      final lists = List<Map<String, dynamic>>.from(todoListsData as List);
+
+      return lists.map((listMap) {
         final listId = listMap['id'] as String;
-        final role = listIdToRoleMap[listId] ?? 'Unknown'; // Fallback
+        final role = listIdToRoleMap[listId] ?? 'Unknown';
 
-        // --- CORREZIONE ---
-        // Aggiungi il ruolo alla mappa prima di passarla al costruttore.
-        // Il modello TodoList.fromMap si aspetta di trovarlo lì.
-        final enrichedMap = {
-          ...listMap, // Copia i dati della lista (id, title, desc, ecc.)
-          'role': role, // Aggiungi il ruolo
-        };
+        // FIXED: Extract member count from nested 'participations' list.
+        final participations = listMap['participations'] as List;
+        final memberCount =
+            participations.isNotEmpty ? participations[0]['count'] as int : 0;
 
-        // Ora fromMap(map) funzionerà
+        final enrichedMap = Map<String, dynamic>.from(listMap);
+        enrichedMap['role'] = role;
+        enrichedMap['member_count'] = memberCount;
+        enrichedMap.remove('participations'); // Clean up before passing to fromMap
+
         return TodoList.fromMap(enrichedMap);
-        // --- FINE CORREZIONE ---
       }).toList();
     });
   }
 
-  /// Crea una nuova todo_list.
-  /// (Il trigger 'on_todolist_created_add_admin_participation'
-  /// aggiungerà automaticamente il creatore come 'admin' in 'participations')
+  Future<TodoList> getTodoListById(String listId) async {
+    try {
+      final userId = _supabase.auth.currentUser!.id;
+
+      // FIXED: Query 'todo_lists' and get member count via select.
+      final listFuture = _supabase
+          .from('todo_lists')
+          .select('*, participations(count)')
+          .eq('id', listId)
+          .single();
+
+      final participationFuture = _supabase
+          .from('participations')
+          .select('role')
+          .eq('todo_list_id', listId)
+          .eq('user_id', userId)
+          .single();
+
+      final results = await Future.wait([listFuture, participationFuture]);
+
+      final listMap = results[0] as Map<String, dynamic>;
+      final participationMap = results[1] as Map<String, dynamic>;
+
+      // FIXED: Extract member count.
+      final participations = listMap['participations'] as List;
+      final memberCount =
+          participations.isNotEmpty ? participations[0]['count'] as int : 0;
+
+      final enrichedMap = {
+        ...listMap,
+        'role': participationMap['role'] ?? 'Unknown',
+        'member_count': memberCount
+      };
+      enrichedMap.remove('participations'); // Clean up
+
+      return TodoList.fromMap(enrichedMap);
+    } catch (error) {
+      debugPrint('Error fetching todo list by id: $error');
+      throw Exception('Could not fetch list details: $error');
+    }
+  }
+
   Future<void> createTodoList({required String title, String? desc}) async {
     final newRow = {'title': title, 'desc': desc};
     try {
@@ -88,8 +117,6 @@ class TodoListRepository {
     }
   }
 
-  /// Aggiorna una todo_list (titolo/descrizione).
-  /// (La policy RLS assicura che solo gli 'admin' possano farlo).
   Future<void> updateTodoList({
     required String listId,
     required String title,
@@ -107,11 +134,6 @@ class TodoListRepository {
     }
   }
 
-  /// Rimuove la partecipazione dell'utente corrente da una lista.
-  /// La policy RLS ('Allow users to delete (leave) their own participation')
-  /// assicura che l'utente possa solo eliminare se stesso.
-  /// Il trigger ('on_participation_deleted_check_orphans')
-  /// pulirà la lista se era l'ultimo partecipante.
   Future<void> leaveTodoList(String todoListId) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
@@ -119,15 +141,38 @@ class TodoListRepository {
     }
 
     try {
-      // Elimina la riga dalla tabella 'participations'
       await _supabase
           .from('participations')
           .delete()
           .eq('todo_list_id', todoListId)
-          .eq('user_id', userId); // Filtro esplicito
+          .eq('user_id', userId);
     } catch (error) {
       debugPrint('Errore abbandonando la lista: $error');
       rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> searchTasksAndGetPath(
+      String searchTerm) async {
+    try {
+      final response = await _supabase.rpc(
+        'search_tasks_with_path',
+        params: {
+          'search_term': searchTerm,
+        },
+      );
+
+      if (response is List) {
+        return List<Map<String, dynamic>>.from(response);
+      } else {
+        throw Exception('Invalid response format from RPC: expected a List');
+      }
+    } on PostgrestException catch (e) {
+      debugPrint('Errore RPC search_tasks_with_path: ${e.message}');
+      throw Exception('Database error while searching tasks: ${e.message}');
+    } catch (e) {
+      debugPrint('Errore imprevisto in searchTasksAndGetPath: $e');
+      throw Exception('An unexpected error occurred while searching tasks: $e');
     }
   }
 }

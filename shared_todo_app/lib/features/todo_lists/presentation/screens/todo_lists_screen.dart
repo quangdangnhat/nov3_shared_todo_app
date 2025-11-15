@@ -1,10 +1,9 @@
-// coverage:ignore-file
-
-// consider testing later
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_todo_app/features/todo_lists/presentation/screens/tree_view/folder_view_page.dart';
+import 'package:shared_todo_app/data/models/task.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/search_result_tile.dart';
 import '../../../../config/responsive.dart';
 import '../../../../config/router/app_router.dart';
 import '../../../../data/models/todo_list.dart';
@@ -14,8 +13,8 @@ import '../widgets/todo_list_tile.dart';
 import '../../../../data/models/folder.dart';
 import '../../../../data/repositories/folder_repository.dart';
 
-/// Schermata principale che mostra l'elenco delle TodoList dell'utente.
-/// NOTA: La sidebar è gestita da MainLayout tramite ShellRoute
+enum ListFilter { all, personal, shared }
+
 class TodoListsScreen extends StatefulWidget {
   const TodoListsScreen({super.key});
 
@@ -27,23 +26,68 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
   final TodoListRepository _todoListRepo = TodoListRepository();
   final FolderRepository _folderRepo = FolderRepository();
   late Stream<List<TodoList>> _listsStream;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  ListFilter _currentFilter = ListFilter.all;
+
+  // --- Search State ---
+  bool _isSearching = false;
+  List<Map<String, dynamic>> _searchResults = [];
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _listsStream = _todoListRepo.getTodoListsStream();
+    _searchController.addListener(_onSearchChanged);
   }
 
-  void showThreeVisualizer() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        // 1. Chiamiamo il nuovo widget che conterrà l'albero
-        return FolderTreeViewPage(
-          todoListRepository: _todoListRepo,
-        );
-      },
-    );
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      final query = _searchController.text;
+      if (query.trim().isEmpty && _searchQuery.isNotEmpty) {
+        setState(() {
+          _searchQuery = '';
+          _searchResults = [];
+          _isSearching = false;
+        });
+      } else if (query.trim().length > 2) {
+        _performSearch(query);
+      }
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
+    setState(() {
+      _isSearching = true;
+      _searchQuery = query;
+    });
+    try {
+      final results = await _todoListRepo.searchTasksAndGetPath(query);
+      setState(() {
+        _searchResults = results;
+      });
+    } catch (e) {
+      if (mounted) {
+        showErrorSnackBar(context,
+            message: "Error searching tasks: ${e.toString()}");
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
+    }
   }
 
   void _showCreateListDialog() {
@@ -56,7 +100,6 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Create New List'),
-          // --- CODICE RIPRISTINATO ---
           content: Form(
             key: formKey,
             child: Column(
@@ -83,7 +126,6 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
               ],
             ),
           ),
-          // --- FINE ---
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -216,7 +258,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                 Navigator.of(context).pop();
                 _handleDeleteList(list.id);
               },
-              child: const Text('Leave'), // Testo aggiornato
+              child: const Text('Leave'),
             ),
           ],
         );
@@ -230,7 +272,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('You have left the list.'), // Messaggio aggiornato
+            content: Text('You have left the list.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -245,10 +287,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     }
   }
 
-  // In: todo_lists_screen.dart
-
   Future<void> _onSelectedList(TodoList list) async {
-    // 1. Mostra il dialog di caricamento
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -256,24 +295,13 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     );
 
     try {
-      // 2. Esegui la logica asincrona
       final Folder rootFolder = await _folderRepo.getRootFolder(list.id);
 
-      // 3. Controlla se il widget è ancora valido
       if (!mounted) return;
 
-      // --- INIZIO MODIFICA ---
-
-      // 4. Chiudi il dialog.
-      //    Usiamo 'rootNavigator: true' per essere sicuri
-      //    di chiudere il dialog che vive sul Navigator principale.
       Navigator.of(context, rootNavigator: true).pop();
 
-      // 5. Schedula la navigazione per DOPO che questo frame è stato completato.
-      //    Questo dà al Navigator il tempo di finire il 'pop()' e sbloccarsi
-      //    prima di ricevere il comando 'goNamed()'.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // 6. Ricontrolla 'mounted' perché questo è un callback asincrono
         if (mounted) {
           context.goNamed(
             AppRouter.listDetail,
@@ -282,15 +310,13 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
           );
         }
       });
-      // --- FINE MODIFICA ---
     } on Exception catch (e) {
       if (mounted) {
-        // Anche qui, usa rootNavigator: true per sicurezza
         Navigator.of(context, rootNavigator: true).pop();
         showErrorSnackBar(
           context,
           message:
-              'Could not load list details: ${e.toString().replaceFirst("Exception: ", "")}',
+          'Could not load list details: ${e.toString().replaceFirst("Exception: ", "")}',
         );
       }
     } catch (error) {
@@ -304,17 +330,52 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
     }
   }
 
+  Future<void> _navigateToTask(Map<String, dynamic> taskData) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final String listId = taskData['list_id'];
+
+      final TodoList todoList = await _todoListRepo.getTodoListById(listId);
+      final Folder rootFolder = await _folderRepo.getRootFolder(listId);
+
+      final Task task = Task.fromMap(taskData);
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+
+      context.goNamed(
+        AppRouter.listDetail,
+        pathParameters: {'listId': listId},
+        extra: {
+          'todoList': todoList,
+          'parentFolder': rootFolder,
+          'taskToShow': task,
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        showErrorSnackBar(
+          context,
+          message: 'Could not navigate to task: ${e.toString()}',
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = ResponsiveLayout.isMobile(context);
 
-    // --- MODIFICA INIZIA QUI ---
-    // Aggiunto Container opaco per prevenire glitch di rendering
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
-          // Header personalizzato che sostituisce l'AppBar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -330,7 +391,6 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
             ),
             child: Row(
               children: [
-                // Hamburger menu SOLO su mobile
                 if (isMobile) ...[
                   IconButton(
                     icon: const Icon(Icons.menu),
@@ -339,105 +399,287 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                   ),
                   const SizedBox(width: 8),
                 ],
-
-                // Titolo
                 Text(
                   'My To-Do Lists',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Spacer(),
-                // Pulsante Create
                 IconButton(
                   icon: const Icon(Icons.add),
                   tooltip: "Create",
                   onPressed: () {
-                    context.go(AppRouter.create); // Usa go invece di pushNamed
-                  },
-                ),
-                const SizedBox(width: 13),
-                IconButton(
-                  icon: const Icon(Icons.account_tree_outlined),
-                  tooltip: "Tree Visualization",
-                  onPressed: () {
-                    // Assicurati che 'visualizer' (il nome/path della rotta)
-                    // e '_todoListRepo' (il repository) siano disponibili qui.
-                    context.push(
-                      AppRouter.visualizer,
-                      extra: _todoListRepo,
-                    );
+                    context.go(AppRouter.create);
                   },
                 ),
               ],
             ),
           ),
 
-          // Contenuto principale (StreamBuilder)
-          Expanded(
-            child: Stack(
-              children: [
-                StreamBuilder<List<TodoList>>(
-                  stream: _listsStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (snapshot.hasError) {
-                      debugPrint('Errore StreamBuilder: ${snapshot.error}');
-                      debugPrint('Stack trace: ${snapshot.stackTrace}');
-                      return Center(
-                        child: Text('Error loading lists: ${snapshot.error}'),
-                      );
-                    }
-
-                    final lists = snapshot.data;
-
-                    if (lists == null || lists.isEmpty) {
-                      return _buildEmptyState();
-                    }
-
-                    return _buildList(lists);
-                  },
-                ),
-
-                // FloatingActionButton posizionato manualmente
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: FloatingActionButton(
-                    onPressed: _showCreateListDialog,
-                    tooltip: 'Create List',
-                    child: const Icon(Icons.add),
+          // BARRA DI RICERCA MIGLIORATA
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
+                ],
+              ),
+              child: TextField(
+                controller: _searchController,
+                style: Theme.of(context).textTheme.bodyLarge,
+                decoration: InputDecoration(
+                  hintText: 'Search tasks...',
+                  hintStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    size: 24,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                    icon: Icon(
+                      Icons.clear_rounded,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                    },
+                  )
+                      : null,
                 ),
-              ],
+              ),
             ),
+          ),
+
+          Expanded(
+            child: _searchQuery.isEmpty
+                ? _buildListsView()
+                : _buildSearchResults(),
           ),
         ],
       ),
     );
-    // --- MODIFICA FINISCE QUI ---
+  }
+
+  Widget _buildSearchResults() {
+    if (_isSearching) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_searchResults.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.search_off, size: 80, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              'No tasks found for "$_searchQuery"',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: _searchResults.length,
+      separatorBuilder: (context, index) => Divider(
+        height: 1,
+        indent: 16,
+        endIndent: 16,
+        color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.2),
+      ),
+      itemBuilder: (context, index) {
+        final result = _searchResults[index];
+
+        return SearchResultTile(
+          taskTitle: result['title'] ?? 'No Title',
+          listName: result['list_name'] ?? 'Unknown List',
+          folderPath: result['folder_path'] ?? 'No Folder',
+          onTap: () => _navigateToTask(result),
+        );
+      },
+    );
+  }
+
+  Widget _buildListsView() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final filters = {
+      'All': ListFilter.all,
+      'Personal': ListFilter.personal,
+      'Shared': ListFilter.shared
+    };
+
+    return Column(
+      children: [
+        // FILTRI MIGLIORATI
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: filters.entries.map((entry) {
+                final label = entry.key;
+                final filter = entry.value;
+                final isSelected = _currentFilter == filter;
+
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _currentFilter = filter;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? colorScheme.primaryContainer
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: isSelected
+                            ? [
+                          BoxShadow(
+                            color: colorScheme.primary.withOpacity(0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                            : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                            color: isSelected
+                                ? colorScheme.onPrimaryContainer
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+
+        Expanded(
+          child: Stack(
+            children: [
+              StreamBuilder<List<TodoList>>(
+                stream: _listsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text('Error loading lists: ${snapshot.error}'),
+                    );
+                  }
+
+                  final lists = snapshot.data;
+
+                  if (lists == null || lists.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  var filteredLists = lists;
+
+                  if (_currentFilter == ListFilter.personal) {
+                    filteredLists = lists
+                        .where((list) =>
+                    list.role == 'admin' && list.memberCount == 1)
+                        .toList();
+                  } else if (_currentFilter == ListFilter.shared) {
+                    filteredLists = lists
+                        .where((list) =>
+                    !(list.role == 'admin' && list.memberCount == 1))
+                        .toList();
+                  }
+
+                  if (filteredLists.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Text(
+                          "No lists in this category",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return _buildList(filteredLists);
+                },
+              ),
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: FloatingActionButton(
+                  onPressed: _showCreateListDialog,
+                  tooltip: 'Create List',
+                  child: const Icon(Icons.add),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildEmptyState() {
-    // --- CODICE RIPRISTINATO ---
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24.0),
-        child: Text(
-          "You don't have any lists yet. Create one!",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18, color: Colors.grey),
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.list_alt_outlined, size: 80, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            const Text(
+              "You don't have any lists yet. Create one!",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+          ],
         ),
       ),
     );
-    // --- FINE ---
   }
 
   Widget _buildList(List<TodoList> lists) {
-    // Accetta List<TodoList> (non nullo)
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       itemCount: lists.length,
