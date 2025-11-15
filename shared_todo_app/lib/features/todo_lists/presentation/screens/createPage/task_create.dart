@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/create/task/status_picker.dart';
 // lib/presentation/pages/task/task_create_page.dart

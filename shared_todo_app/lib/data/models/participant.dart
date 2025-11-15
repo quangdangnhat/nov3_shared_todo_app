@@ -29,4 +29,15 @@ class Participant {
       email: (userData['email'] as String?) ?? 'Unknown Email',
     );
   }
+
+  /// Costruttore "empty" per fallback sicuro
+  factory Participant.empty() {
+    return Participant(
+      userId: '',
+      todoListId: '',
+      role: 'collaborator', // ruolo di default
+      username: 'Unknown User',
+      email: 'Unknown Email',
+    );
+  }
 }

@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AccountService {

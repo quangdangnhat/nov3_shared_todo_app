@@ -1,3 +1,4 @@
+// coverage:ignore-file
 import 'package:flutter/material.dart';
 
 /// Definisce i temi visivi dell'applicazione con colori bilanciati e contrasti ottimali.

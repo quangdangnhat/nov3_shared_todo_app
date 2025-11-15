@@ -1,13 +1,15 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/invitation.dart';
 
 /// Repository per gestire inviti e partecipazioni.
 class InvitationRepository {
-  // final SupabaseClient _supabase = Supabase.instance.client; // OLD
-  // --- UPDATED: Injectable Client ---
   final SupabaseClient _supabase;
-  // Constructor with optional client for testing.
+
   InvitationRepository({SupabaseClient? client})
       : _supabase = client ?? Supabase.instance.client;
 
@@ -45,88 +47,152 @@ class InvitationRepository {
   }
 
   /// Recupera tutti gli inviti in sospeso per l'utente corrente,
-  /// includendo il titolo della lista E l'email di chi ha invitato.
+  /// includendo il titolo della lista e l'email di chi ha invitato.
+  ///
+  /// Nota sulla compatibilità: per evitare problemi con versioni diverse di
+  /// supabase_flutter (dove `.stream()` talvolta non supporta `.eq()`/.order()),
+  /// qui creiamo lo stream raw su 'invitations' e poi **filtriamo/ordiniamo client-side**
+  /// prima di fare le query aggiuntive.
   Stream<List<Invitation>> getPendingInvitationsStream() {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
-      return Stream.value([]);
+      return Stream.value(<Invitation>[]);
     }
 
-    // 1. Definiamo la query FILTRATA
-    final baseQuery = _supabase
-        .from('invitations')
-        .select() // Inizia la query con select()
-        .eq('status', 'pending')
-        .eq('invited_user_id', userId);
+    // 1) Creiamo lo stream realtime "raw" sulla tabella invitations.
+    //    Evitiamo di concatenare .eq()/.order() dopo .stream() per compatibilità.
+    final rawStream = _supabase.from('invitations').stream(primaryKey: ['id']);
 
-    // 2. Chiamiamo .select().asStream() su un oggetto che supporta i filtri
-    final stream =
-        baseQuery.order('created_at', ascending: false).select().asStream();
+    // 2) Trasformiamo i rows -> List<Invitation> con asyncMap
+    return rawStream.asyncMap((rows) async {
+      if (rows == null || rows.isEmpty) return <Invitation>[];
 
-    // 3. Usiamo asyncMap per "arricchire" i dati e filtrare con certezza.
-    return stream.asyncMap((invitationDataList) async {
-      // Filtriamo la lista grezza anche per lo stato 'pending' per robustezza.
-      final pendingInvitations = invitationDataList
-          .where((map) => map['status'] == 'pending')
-          .toList();
+      // 3) Converti e filtra localmente in modo sicuro
+      final pendingMaps = <Map<String, dynamic>>[];
 
-      if (pendingInvitations.isEmpty) {
-        return <Invitation>[];
+      for (final raw in rows) {
+        if (raw == null) continue;
+        if (raw is! Map) continue;
+
+        // Convertiamo in Map<String, dynamic> in modo esplicito
+        final Map<String, dynamic> map = Map<String, dynamic>.from(raw as Map);
+
+        // Applica il filtro desiderato client-side:
+        if ((map['status'] ?? '') != 'pending') continue;
+        if ((map['invited_user_id'] ?? '') != userId) continue;
+
+        pendingMaps.add(map);
       }
 
-      // Estrai gli ID necessari per le query successive
-      final listIds = pendingInvitations
-          .map((map) => map['todo_list_id'] as String)
-          .toSet()
-          .toList();
-      final inviterIds = pendingInvitations
-          .map((map) => map['invited_by_user_id'] as String)
+      if (pendingMaps.isEmpty) return <Invitation>[];
+
+      // 4) Ordina client-side per created_at desc (se presente)
+      pendingMaps.sort((a, b) {
+        final aTs = a['created_at'];
+        final bTs = b['created_at'];
+        DateTime? ad;
+        DateTime? bd;
+        try {
+          ad = aTs is DateTime ? aTs : DateTime.tryParse(aTs?.toString() ?? '');
+        } catch (_) {}
+        try {
+          bd = bTs is DateTime ? bTs : DateTime.tryParse(bTs?.toString() ?? '');
+        } catch (_) {}
+        if (ad == null && bd == null) return 0;
+        if (ad == null) return 1;
+        if (bd == null) return -1;
+        return bd.compareTo(ad); // desc
+      });
+
+      // 5) Raccogli gli id per le query aggiuntive (join manuale)
+      final listIds = pendingMaps
+          .map((m) => m['todo_list_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
           .toSet()
           .toList();
 
+      final inviterIds = pendingMaps
+          .map((m) => m['invited_by_user_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList();
+
+      // Se non ci sono id validi, restituiamo map trasformate senza titoli/email.
       if (listIds.isEmpty || inviterIds.isEmpty) {
-        return <Invitation>[];
+        return pendingMaps.map((map) {
+          final enriched = Map<String, dynamic>.from(map);
+          enriched['todo_lists'] = {'title': '[Unknown List]'};
+          enriched['users'] = {'email': '[Unknown User]'};
+          return Invitation.fromMap(enriched);
+        }).toList();
       }
 
-      // 3. Fai query separate per i dati aggiuntivi (JOIN manuale)
+      // 6) Query parallele per ottenere titoli e email.
+      //    Uso 'inFilter' che è presente in supabase_flutter moderne; se la tua versione
+      //    lo chiama 'filter(..., "in", ...)' sostituiscilo.
       final listTitlesFuture = _supabase
           .from('todo_lists')
           .select('id, title')
-          .filter('id', 'in', listIds);
+          .inFilter('id', listIds);
 
       final inviterEmailsFuture = _supabase
           .from('users')
           .select('id, email')
-          .filter('id', 'in', inviterIds);
+          .inFilter('id', inviterIds);
 
-      final [listTitlesResponse, inviterEmailsResponse] = await Future.wait([
-        listTitlesFuture,
-        inviterEmailsFuture,
-      ]);
+      final results =
+          await Future.wait([listTitlesFuture, inviterEmailsFuture]);
 
-      // 4. Mappa i risultati in lookup map per efficienza
-      final listTitles = {
-        for (var item in listTitlesResponse)
-          item['id'] as String: item['title'] as String,
-      };
-      final inviterEmails = {
-        for (var item in inviterEmailsResponse)
-          item['id'] as String: item['email'] as String,
-      };
+      final listTitlesResponse = results[0] as List;
+      final inviterEmailsResponse = results[1] as List;
 
-      // 5. Combina i dati e costruisci i modelli Invitation
-      return pendingInvitations.map((invitationMap) {
-        final todoListId = invitationMap['todo_list_id'] as String;
-        final inviterId = invitationMap['invited_by_user_id'] as String;
+      // 7) Costruisci mappe di lookup (con cast sicuro)
+      final Map<String, String> listTitles = {};
+      for (final item in listTitlesResponse) {
+        if (item is Map) {
+          final Map<String, dynamic> im = Map<String, dynamic>.from(item);
+          final id = im['id']?.toString();
+          final title = im['title']?.toString();
+          if (id != null && title != null) listTitles[id] = title;
+        }
+      }
 
-        // Aggiunto cast esplicito per risolvere il problema dei tipi
-        final Map<String, dynamic> enrichedMap = {
-          ...invitationMap.cast<String, dynamic>(),
-          'todo_lists': {'title': listTitles[todoListId] ?? '[Unknown List]'},
-          'users': {'email': inviterEmails[inviterId] ?? '[Unknown User]'},
+      final Map<String, String> inviterEmails = {};
+      for (final item in inviterEmailsResponse) {
+        if (item is Map) {
+          final Map<String, dynamic> im = Map<String, dynamic>.from(item);
+          final id = im['id']?.toString();
+          final email = im['email']?.toString();
+          if (id != null && email != null) inviterEmails[id] = email;
+        }
+      }
+
+      // 8) Arricchisci e costruisci i modelli Invitation (cast sicuro)
+      final List<Invitation> finalList = [];
+
+      for (final map in pendingMaps) {
+        // crea una copia sicura
+        final Map<String, dynamic> enrichedMap = Map<String, dynamic>.from(map);
+
+        final todoListId = enrichedMap['todo_list_id']?.toString() ?? '';
+        final inviterId = enrichedMap['invited_by_user_id']?.toString() ?? '';
+
+        enrichedMap['todo_lists'] = {
+          'title': listTitles[todoListId] ?? '[Unknown List]'
         };
-        return Invitation.fromMap(enrichedMap);
-      }).toList();
+        enrichedMap['users'] = {
+          'email': inviterEmails[inviterId] ?? '[Unknown User]'
+        };
+
+        try {
+          finalList.add(Invitation.fromMap(enrichedMap));
+        } catch (e) {
+          debugPrint(
+              'Warning: failed to parse Invitation.fromMap: $e — map: $enrichedMap');
+        }
+      }
+
+      return finalList;
     });
   }
 

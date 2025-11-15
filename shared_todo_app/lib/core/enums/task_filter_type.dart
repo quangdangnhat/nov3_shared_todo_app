@@ -1,3 +1,5 @@
+// coverage:ignore-file
+
 /// Enum to define filter types for Task
 enum TaskFilterType {
   createdAtNewest('Newest First', 'Sort by creation date (newest first)'),

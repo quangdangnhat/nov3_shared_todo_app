@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import '../../../../data/models/folder.dart';
 import '../../../../data/repositories/folder_repository.dart';

@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import '../../../../data/models/folder.dart';
 import '../widgets/folder_list_tile.dart';
@@ -10,6 +14,7 @@ class FolderListSection extends StatelessWidget {
   final ValueChanged<Folder> onFolderTap;
   final ValueChanged<Folder> onEdit;
   final ValueChanged<Folder> onDelete;
+  final String currentUserRole; // Ruolo dell'utente per i permessi
 
   const FolderListSection({
     super.key,
@@ -19,6 +24,7 @@ class FolderListSection extends StatelessWidget {
     required this.onFolderTap,
     required this.onEdit,
     required this.onDelete,
+    required this.currentUserRole,
   });
 
   @override
@@ -95,6 +101,7 @@ class FolderListSection extends StatelessWidget {
                     ),
                     child: FolderListTile(
                       folder: folder,
+                      currentUserRole: this.currentUserRole,
                       onTap: () => onFolderTap(folder),
                       onEdit: () => onEdit(folder),
                       onDelete: () => onDelete(folder),

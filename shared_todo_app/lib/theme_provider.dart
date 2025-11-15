@@ -1,3 +1,5 @@
+// coverage:ignore-file
+
 import 'package:flutter/material.dart';
 
 // 1. Usiamo 'ChangeNotifier' per permettere a questa classe

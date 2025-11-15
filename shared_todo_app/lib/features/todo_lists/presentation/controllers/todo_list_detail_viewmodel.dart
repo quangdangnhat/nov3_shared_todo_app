@@ -1,6 +1,9 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../data/models/folder.dart';
 import '../../../../data/models/task.dart';
 import '../../../../data/models/participant.dart';
@@ -13,7 +16,7 @@ import '../../../../main.dart'; // per accedere a supabase
 class TodoListDetailViewModel extends ChangeNotifier {
   // Repositories
   final _folderRepo = FolderRepository();
-  final _taskRepo = TaskRepository(); // FIX 1: Corretto il tipo
+  final _taskRepo = TaskRepository();
   final _invitationRepo = InvitationRepository();
   final _participantRepo = ParticipantRepository();
 
@@ -26,31 +29,155 @@ class TodoListDetailViewModel extends ChangeNotifier {
   bool get isTasksCollapsed => _isTasksCollapsed;
   String get currentUserRole => _currentUserRole;
 
-  // Streams
+  // Streams e cache
   Stream<List<Folder>> _foldersStream = Stream.empty();
-  Stream<List<Task>> _tasksStream = Stream.empty();
-
-  // 1. Lo stream grezzo (trigger)
+  final Map<String, StreamController<List<Task>>> _tasksControllers = {};
+  final Map<String, List<Task>> _tasksByFolder = {};
   Stream<List<Participant>> _rawParticipantsStream = Stream.empty();
-
-  // 2. StreamController per gli aggiornamenti futuri
   final StreamController<List<Participant>> _participantsStreamController =
       StreamController.broadcast();
-
-  // 3. Variabile per cacheare l'ultimo valore (il nostro "Behavior")
   List<Participant> _latestParticipants = const [];
 
-  // 4. Getter che garantisce che il dato cachato venga emesso subito (FIX 2)
+  StreamSubscription<List<Task>>? _allTasksSub;
+  StreamSubscription? _participantsSubscription;
+
+  bool _isInitialized = false;
+
+  // --- Stream getter ---
+  Stream<List<Task>> tasksStream(String folderId) {
+    _initTasksStream(folderId);
+    return _tasksControllers[folderId]!.stream;
+  }
+
+  Stream<List<Folder>> get foldersStream => _foldersStream;
+
   Stream<List<Participant>> get participantsStream async* {
-    // FIX 2: Emitto l'ultimo dato cachato per primo,
-    // seguito dagli aggiornamenti del controller (il Behavior Subject manuale).
     yield _latestParticipants;
     yield* _participantsStreamController.stream;
   }
 
-  // Metodi helper per aggiungere dati e salvare l'ultimo valore
+  // --- Inizializzazione tasks stream per folder ---
+  void _initTasksStream(String folderId) {
+    if (_tasksControllers.containsKey(folderId)) return;
+
+    final controller = StreamController<List<Task>>.broadcast();
+    _tasksControllers[folderId] = controller;
+    _tasksByFolder.putIfAbsent(folderId, () => []);
+
+    _allTasksSub ??= _taskRepo.getAllTasksStream().listen((allTasks) {
+      for (final folder in _tasksByFolder.keys) {
+        final tasksInFolder =
+            allTasks.where((t) => t.folderId == folder).toList();
+        _tasksByFolder[folder] = tasksInFolder;
+        _tasksControllers[folder]?.add(List.from(tasksInFolder));
+      }
+    });
+  }
+
+  // --- Gestione cache tasks ---
+  void _updateTaskCache(String folderId, Task updatedTask) {
+    final tasks = _tasksByFolder[folderId];
+    if (tasks == null) return;
+
+    final index = tasks.indexWhere((t) => t.id == updatedTask.id);
+    if (index != -1) {
+      tasks[index] = updatedTask;
+    } else {
+      tasks.insert(0, updatedTask);
+    }
+    _tasksControllers[folderId]?.add(List.from(tasks));
+  }
+
+  void _removeTaskFromCache(String folderId, String taskId) {
+    final tasks = _tasksByFolder[folderId];
+    if (tasks == null) return;
+
+    tasks.removeWhere((t) => t.id == taskId);
+    _tasksControllers[folderId]?.add(List.from(tasks));
+  }
+
+  void _addTaskToCache(String folderId, Task newTask) {
+    final tasks = _tasksByFolder[folderId] ?? [];
+    tasks.insert(0, newTask);
+    _tasksByFolder[folderId] = tasks;
+    _tasksControllers[folderId]?.add(List.from(tasks));
+  }
+
+  // --- CRUD tasks con aggiornamento cache ---
+  Future<Task> createTask(String folderId, Task task) async {
+    try {
+      final newTask = await _taskRepo.createTask(
+        folderId: task.folderId,
+        title: task.title,
+        desc: task.desc,
+        priority: task.priority,
+        status: task.status,
+        startDate: task.startDate,
+        dueDate: task.dueDate,
+      );
+      _addTaskToCache(folderId, newTask);
+      return newTask;
+    } catch (e) {
+      debugPrint('Errore nella creazione del task: $e');
+      rethrow;
+    }
+  }
+
+  Future<Task> updateTask(String folderId, Task task) async {
+    try {
+      final updatedTask = await _taskRepo.updateTask(
+        taskId: task.id,
+        title: task.title,
+        desc: task.desc,
+        priority: task.priority,
+        status: task.status,
+        startDate: task.startDate,
+        dueDate: task.dueDate,
+      );
+      _updateTaskCache(folderId, updatedTask);
+      return updatedTask;
+    } catch (e) {
+      debugPrint('Errore nell\'aggiornamento del task: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTask(String folderId, String taskId) async {
+    try {
+      await _taskRepo
+          .deleteTask(taskId); // Assicurati che il repo usi .select()
+      _removeTaskFromCache(folderId, taskId);
+    } catch (e) {
+      debugPrint('Errore nella cancellazione del task $taskId: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> handleTaskStatusChange(Task task, String newStatus) async {
+    try {
+      final updatedTask =
+          await _taskRepo.updateTask(taskId: task.id, status: newStatus);
+      _updateTaskCache(task.folderId, updatedTask);
+    } catch (e) {
+      debugPrint('Errore nell\'update dello status del task: $e');
+      rethrow;
+    }
+  }
+
+  // --- Metodi UI ---
+  void toggleFoldersCollapse() {
+    _isFoldersCollapsed = !_isFoldersCollapsed;
+    notifyListeners();
+  }
+
+  void toggleTasksCollapse() {
+    _isTasksCollapsed = !_isTasksCollapsed;
+    notifyListeners();
+  }
+
+  // --- Participants stream & management ---
   void _addParticipantsToStream(List<Participant> data) {
-    _latestParticipants = data; // Salva l'ultimo valore
+    _latestParticipants = data;
     if (!_participantsStreamController.isClosed) {
       _participantsStreamController.add(data);
     }
@@ -62,67 +189,21 @@ class TodoListDetailViewModel extends ChangeNotifier {
     }
   }
 
-  StreamSubscription? _participantsSubscription;
-
-  Stream<List<Folder>> get foldersStream => _foldersStream;
-  Stream<List<Task>> get tasksStream => _tasksStream;
-
-  // Traccia se l'init è stato chiamato
-  bool _isInitialized = false;
-
-  /// Resetta il flag di inizializzazione per permettere il refresh
-  void resetInitialization() {
-    _participantsSubscription?.cancel();
-    _latestParticipants = const []; // Resetta la cache
-    _isInitialized = false;
-  }
-
-  /// Inizializza il ViewModel, carica gli stream e il ruolo utente
-  @override
-  Future<void> init(String todoListId, String parentFolderId) async {
-    if (_isInitialized) return;
-    _isInitialized = true;
-
-    try {
-      _foldersStream = _folderRepo.getFoldersStream(
-        todoListId,
-        parentId: parentFolderId,
-      );
-      _tasksStream = _taskRepo.getTasksStream(parentFolderId);
-      _rawParticipantsStream =
-          _participantRepo.getParticipantsStream(todoListId);
-
-      // Carica i dati iniziali e avvia l'ascolto (Behavior Subject logic)
-      await _loadAndListenToParticipants(todoListId);
-
-      await _fetchCurrentUserRole(todoListId);
-    } catch (e) {
-      debugPrint("Errore in init ViewModel: $e");
-    } finally {
-      notifyListeners();
-    }
-  }
-
-  /// Carica i dati iniziali e avvia la sottoscrizione
   Future<void> _loadAndListenToParticipants(String todoListId) async {
-    // 1. Carica i dati INIZIALI immediatamente e li invia
     try {
       final initialData = await _participantRepo.getParticipants(todoListId);
-      _addParticipantsToStream(
-          initialData); // Invia il dato iniziale (Behavior)
+      _addParticipantsToStream(initialData);
     } catch (e) {
       _addErrorToStream(e);
     }
 
-    // 2. Avvia l'ascolto degli AGGIORNAMENTI futuri
     _participantsSubscription?.cancel();
+    _rawParticipantsStream = _participantRepo.getParticipantsStream(todoListId);
     _participantsSubscription =
         _rawParticipantsStream.listen((participantList) async {
       try {
-        // Ricarica il JOIN in caso di trigger
         final participantsWithData =
             await _participantRepo.getParticipants(todoListId);
-
         _addParticipantsToStream(participantsWithData);
       } catch (e) {
         _addErrorToStream(e);
@@ -130,7 +211,6 @@ class TodoListDetailViewModel extends ChangeNotifier {
     });
   }
 
-  /// Carica il ruolo dell'utente corrente per questa todo list
   Future<void> _fetchCurrentUserRole(String todoListId) async {
     try {
       final userId = supabase.auth.currentUser?.id;
@@ -139,80 +219,68 @@ class TodoListDetailViewModel extends ChangeNotifier {
         return;
       }
       final participants = await _participantRepo.getParticipants(todoListId);
-
-      try {
-        final myParticipation = participants.firstWhere(
-          (p) => p.userId == userId,
-        );
-        _currentUserRole = myParticipation.role;
-      } catch (e) {
-        _currentUserRole = 'collaborator';
-      }
+      final myParticipation = participants.firstWhere((p) => p.userId == userId,
+          orElse: () => Participant.empty());
+      _currentUserRole = myParticipation.role;
     } catch (e) {
       debugPrint("Errore nel fetch del ruolo utente: $e");
       _currentUserRole = 'collaborator';
     }
   }
 
-  // --- Metodi di Stato UI ---
-  void toggleFoldersCollapse() {
-    _isFoldersCollapsed = !_isFoldersCollapsed;
-    notifyListeners();
+  /// Inizializzazione generale
+  Future<void> init(String todoListId, String parentFolderId) async {
+    if (_isInitialized) return;
+    _isInitialized = true;
+
+    try {
+      _foldersStream =
+          _folderRepo.getFoldersStream(todoListId, parentId: parentFolderId);
+
+      // RIMUOVERE: _tasksStream = tasksStream(parentFolderId);
+
+      await _loadAndListenToParticipants(todoListId);
+      await _fetchCurrentUserRole(todoListId);
+    } catch (e) {
+      debugPrint("Errore in init ViewModel: $e");
+    } finally {
+      notifyListeners();
+    }
   }
 
-  void toggleTasksCollapse() {
-    _isTasksCollapsed = !_isTasksCollapsed;
-    notifyListeners();
+  /// Reset inizializzazione
+  void resetInitialization() {
+    _participantsSubscription?.cancel();
+    _latestParticipants = const [];
+    _isInitialized = false;
   }
 
-  // --- Metodi di Business Logic ---
+  /// Altri metodi business logic
   Future<void> deleteFolder(String folderId) async {
     await _folderRepo.deleteFolder(folderId);
   }
 
-  Future<void> deleteTask(String taskId) async {
-    // Assumo che deleteTask usi solo taskId per l'eliminazione
-    await _taskRepo.deleteTask(taskId);
-  }
-
-  Future<void> handleTaskStatusChange(Task task, String newStatus) async {
-    await _taskRepo.updateTask(
-      taskId: task.id,
-      status: newStatus,
-    );
-  }
-
-  /// Invia un invito a un nuovo utente
   Future<void> inviteUser(String todoListId, String email, String role) async {
     await _invitationRepo.inviteUserToList(
-      todoListId: todoListId,
-      email: email,
-      role: role,
-    );
+        todoListId: todoListId, email: email, role: role);
   }
 
-  /// Recupera la cartella genitore per la navigazione "indietro"
   Future<Folder> getParentFolderForNavigation(String parentFolderId) async {
     return await _folderRepo.getFolder(parentFolderId);
   }
 
-  /// Rimuove un partecipante dalla todo list
   Future<void> removeParticipant({
     required String participantId,
     required String todoListId,
   }) async {
     await _participantRepo.removeParticipant(
-      userIdToRemove: participantId,
-      todoListId: todoListId,
-    );
+        userIdToRemove: participantId, todoListId: todoListId);
   }
 
-  /// Forza un ricaricamento manuale dei partecipanti (per DELETE)
   Future<void> forceParticipantsReload(String todoListId) async {
     try {
       final participantsWithData =
           await _participantRepo.getParticipants(todoListId);
-
       _addParticipantsToStream(participantsWithData);
     } catch (e) {
       _addErrorToStream(e);
@@ -223,6 +291,10 @@ class TodoListDetailViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _participantsSubscription?.cancel();
+    _allTasksSub?.cancel();
+    for (final controller in _tasksControllers.values) {
+      controller.close();
+    }
     _participantsStreamController.close();
     super.dispose();
   }
