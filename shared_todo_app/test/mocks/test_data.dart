@@ -4,35 +4,20 @@ import 'package:shared_todo_app/data/models/todo_list.dart';
 import 'package:shared_todo_app/data/models/invitation.dart';
 import 'package:shared_todo_app/data/models/participant.dart';
 
-/// Test Data Generator
-///
-/// Provides factory methods to create test data with smart defaults.
-/// All methods support customization via optional parameters.
 class TestData {
-  // ============================================================
-  // COMMON TEST DATA
-  // ============================================================
-
-  /// Test user IDs
   static const String testUserId = 'test-user-123';
   static const String testUserId2 = 'test-user-456';
 
-  /// Test user details
   static const String testUserEmail = 'test@example.com';
   static const String testUsername = 'testuser';
   static const String testUserEmail2 = 'test2@example.com';
   static const String testUsername2 = 'testuser2';
 
-  /// Common test dates
   static DateTime get now => DateTime.now();
   static DateTime get yesterday =>
       DateTime.now().subtract(const Duration(days: 1));
   static DateTime get tomorrow => DateTime.now().add(const Duration(days: 1));
   static DateTime get nextWeek => DateTime.now().add(const Duration(days: 7));
-
-  // ============================================================
-  // TASK FIXTURES
-  // ============================================================
 
   static Task createTask({
     String? id,
@@ -60,7 +45,6 @@ class TestData {
     );
   }
 
-  /// Creates multiple tasks
   static List<Task> createTasks(
     int count, {
     String? folderId,
@@ -79,7 +63,6 @@ class TestData {
     );
   }
 
-  /// Creates a high priority task
   static Task createHighPriorityTask({String? id, String? folderId}) {
     return createTask(
       id: id ?? 'task-high-priority',
@@ -91,7 +74,6 @@ class TestData {
     );
   }
 
-  /// Creates an overdue task
   static Task createOverdueTask({String? id, String? folderId}) {
     return createTask(
       id: id ?? 'task-overdue',
@@ -103,7 +85,6 @@ class TestData {
     );
   }
 
-  /// Creates a completed task
   static Task createCompletedTask({String? id, String? folderId}) {
     return createTask(
       id: id ?? 'task-completed',
@@ -113,10 +94,6 @@ class TestData {
       folderId: folderId,
     );
   }
-
-  // ============================================================
-  // FOLDER FIXTURES
-  // ============================================================
 
   static Folder createFolder({
     String? id,
@@ -136,8 +113,6 @@ class TestData {
     );
   }
 
-  /// Creates multiple folders
-
   static List<Folder> createFolders(int count, {String? todoListId}) {
     return List.generate(
       count,
@@ -149,7 +124,6 @@ class TestData {
     );
   }
 
-  /// Creates a root folder
   static Folder createRootFolder({String? id, String? todoListId}) {
     return createFolder(
       id: id ?? 'folder-root',
@@ -159,7 +133,6 @@ class TestData {
     );
   }
 
-  /// Creates a subfolder
   static Folder createSubfolder({
     String? id,
     String? parentId,
@@ -173,15 +146,12 @@ class TestData {
     );
   }
 
-  // ============================================================
-  // TODO LIST FIXTURES
-  // ============================================================
-
   static TodoList createTodoList({
     String? id,
     String? title,
     String? desc,
     String? role,
+    int? memberCount, // <-- Aggiunto
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -190,12 +160,11 @@ class TestData {
       title: title ?? 'Test Todo List',
       desc: desc ?? 'Test todo list description',
       role: role ?? 'admin',
+      memberCount: memberCount ?? 1, // <-- Aggiunto
       createdAt: createdAt ?? now,
       updatedAt: updatedAt,
     );
   }
-
-  /// Creates multiple todo lists
 
   static List<TodoList> createTodoLists(int count, {String? role}) {
     return List.generate(
@@ -204,31 +173,28 @@ class TestData {
         id: 'todo-list-${index + 1}',
         title: 'Todo List ${index + 1}',
         role: role ?? (index == 0 ? 'admin' : 'collaborator'),
+        memberCount: index == 0 ? 1 : 2, // Esempio logico
       ),
     );
   }
 
-  /// Creates an admin-owned todo list
-  static TodoList createAdminTodoList({String? id}) {
+  static TodoList createAdminTodoList({String? id, int memberCount = 1}) {
     return createTodoList(
       id: id ?? 'todo-list-admin',
       title: 'Admin Todo List',
       role: 'admin',
+      memberCount: memberCount,
     );
   }
 
-  /// Creates a shared todo list
-  static TodoList createSharedTodoList({String? id}) {
+  static TodoList createSharedTodoList({String? id, int memberCount = 2}) {
     return createTodoList(
       id: id ?? 'todo-list-shared',
       title: 'Shared Todo List',
       role: 'collaborator',
+      memberCount: memberCount,
     );
   }
-
-  // ============================================================
-  // INVITATION FIXTURES
-  // ============================================================
 
   static Invitation createInvitation({
     String? id,
@@ -254,8 +220,6 @@ class TestData {
     );
   }
 
-  /// Creates multiple invitations
-
   static List<Invitation> createInvitations(int count, {String? status}) {
     return List.generate(
       count,
@@ -268,7 +232,6 @@ class TestData {
     );
   }
 
-  /// Creates a pending invitation
   static Invitation createPendingInvitation({String? id}) {
     return createInvitation(
       id: id ?? 'invitation-pending',
@@ -276,7 +239,6 @@ class TestData {
     );
   }
 
-  /// Creates an accepted invitation
   static Invitation createAcceptedInvitation({String? id}) {
     return createInvitation(
       id: id ?? 'invitation-accepted',
@@ -284,17 +246,12 @@ class TestData {
     );
   }
 
-  /// Creates a rejected invitation
   static Invitation createRejectedInvitation({String? id}) {
     return createInvitation(
       id: id ?? 'invitation-rejected',
       status: 'rejected',
     );
   }
-
-  // ============================================================
-  // PARTICIPANT FIXTURES
-  // ============================================================
 
   static Participant createParticipant({
     String? userId,
@@ -312,8 +269,6 @@ class TestData {
     );
   }
 
-  /// Creates multiple participants
-
   static List<Participant> createParticipants(
     int count, {
     String? todoListId,
@@ -330,7 +285,6 @@ class TestData {
     );
   }
 
-  /// Creates an admin participant
   static Participant createAdminParticipant({
     String? userId,
     String? todoListId,
@@ -344,7 +298,7 @@ class TestData {
     );
   }
 
-  /// Creates a collaborator participant
+
   static Participant createCollaboratorParticipant({
     String? userId,
     String? todoListId,
@@ -358,12 +312,8 @@ class TestData {
     );
   }
 
-  // ============================================================
-  // COMPLEX FIXTURES (Multiple Related Objects)
-  // ============================================================
-
   static Map<String, dynamic> createCompleteTodoListData() {
-    final todoList = createTodoList();
+    final todoList = createTodoList(memberCount: 2);
     final folders = createFolders(3, todoListId: todoList.id);
     final tasks = createTasks(5, folderId: folders.first.id);
     final participants = createParticipants(2, todoListId: todoList.id);
@@ -376,8 +326,6 @@ class TestData {
     };
   }
 
-  /// Creates a folder with tasks
-
   static Map<String, dynamic> createFolderWithTasks({int taskCount = 5}) {
     final folder = createFolder();
     final tasks = createTasks(taskCount, folderId: folder.id);
@@ -387,8 +335,6 @@ class TestData {
       'tasks': tasks,
     };
   }
-
-  /// Creates a todo list with pending invitations
 
   static Map<String, dynamic> createTodoListWithInvitations({
     int invitationCount = 3,
