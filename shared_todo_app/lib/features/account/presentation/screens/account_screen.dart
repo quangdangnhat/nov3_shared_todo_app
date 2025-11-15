@@ -492,8 +492,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, true),
-                      style:
-                          TextButton.styleFrom(foregroundColor: Colors.red),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
                       child: const Text('Delete'),
                     ),
                   ],
@@ -545,4 +544,3 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 }
-
