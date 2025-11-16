@@ -413,6 +413,13 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                     context.go(AppRouter.create);
                   },
                 ),
+                IconButton(
+                  icon: const Icon(Icons.account_tree_outlined),
+                  tooltip: "Tree View",
+                  onPressed: () {
+                    context.go(AppRouter.visualizer, extra: _todoListRepo);
+                  },
+                ),
               ],
             ),
           ),

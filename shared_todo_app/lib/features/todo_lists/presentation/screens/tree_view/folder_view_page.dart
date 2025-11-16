@@ -1,9 +1,7 @@
-// coverage:ignore-file
-
-// consider testing later
-
 import 'package:flutter/material.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
+import 'package:go_router/go_router.dart'; // <-- IMPORT AGGIUNTO
+import 'package:shared_todo_app/config/router/app_router.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import '../../../../../core/widgets/error_state_widget.dart';
 import '../../../../../core/widgets/loading_state_widget.dart';
@@ -82,6 +80,17 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // <-- MODIFICA: Utilizzo di goNamed
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Home',
+          onPressed: () {
+            // goNamed naviga alla rotta 'home' (che hai definito come '/')
+            // go_router gestirà lo stack di navigazione in base alla tua configurazione
+            // (ad esempio, se questa è una sub-route, tornerà alla home).
+            context.goNamed(AppRouter.home);
+          },
+        ),
         title: const Text('Tree Visulization'),
         actions: [
           IconButton(

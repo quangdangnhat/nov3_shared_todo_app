@@ -1,6 +1,6 @@
 // coverage:ignore-file
-
 // consider testing later
+import 'dart:async';
 
 import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:flutter/foundation.dart';
