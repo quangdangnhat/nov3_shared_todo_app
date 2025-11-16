@@ -58,8 +58,10 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _treeBuilder.dispose();
     super.dispose();
   }
+
 
   Stream<TreeNode<TreeNodeData>> _buildTreeStream() {
     return widget.todoListRepository
