@@ -15,6 +15,9 @@ class _AccountScreenState extends State<AccountScreen> {
   final _accountService = AccountService();
   User? _user;
 
+  // ✅ Override locale dell'email per aggiornare subito la UI
+  String? _overrideEmail;
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +28,11 @@ class _AccountScreenState extends State<AccountScreen> {
     final res = await Supabase.instance.client.auth.getUser();
     setState(() {
       _user = res.user;
+      // Se l'utente viene ricaricato (es. dopo riapertura schermata),
+      // aggiorniamo anche l'override se l'email è cambiata.
+      if (_user?.email != null) {
+        _overrideEmail = _user!.email;
+      }
     });
   }
 
@@ -113,24 +121,40 @@ class _AccountScreenState extends State<AccountScreen> {
     final newEmailController = TextEditingController();
     final currentPasswordController = TextEditingController();
 
+    // 👁️ visibilità password (solo per questo dialog)
+    final passwordVisible = ValueNotifier<bool>(false);
+
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Edit email'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: newEmailController,
-              decoration: const InputDecoration(labelText: 'New email'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: currentPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Current password'),
-            ),
-          ],
+        content: ValueListenableBuilder<bool>(
+          valueListenable: passwordVisible,
+          builder: (context, isVisible, __) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: newEmailController,
+                decoration: const InputDecoration(labelText: 'New email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: currentPasswordController,
+                obscureText: !isVisible,
+                decoration: InputDecoration(
+                  labelText: 'Current password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isVisible ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      passwordVisible.value = !isVisible;
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -166,6 +190,13 @@ class _AccountScreenState extends State<AccountScreen> {
                 await _accountService.updateEmail(newEmail);
                 await _loadUser();
 
+                // ✅ Aggiorniamo subito la UI con la nuova email
+                if (mounted) {
+                  setState(() {
+                    _overrideEmail = newEmail;
+                  });
+                }
+
                 if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -199,6 +230,11 @@ class _AccountScreenState extends State<AccountScreen> {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
 
+    // 👁️ visibilità password per i 3 campi
+    final currentPasswordVisible = ValueNotifier<bool>(false);
+    final newPasswordVisible = ValueNotifier<bool>(false);
+    final confirmPasswordVisible = ValueNotifier<bool>(false);
+
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -206,23 +242,61 @@ class _AccountScreenState extends State<AccountScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: currentPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Current password'),
+            ValueListenableBuilder<bool>(
+              valueListenable: currentPasswordVisible,
+              builder: (context, isVisible, __) => TextField(
+                controller: currentPasswordController,
+                obscureText: !isVisible,
+                decoration: InputDecoration(
+                  labelText: 'Current password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isVisible ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      currentPasswordVisible.value = !isVisible;
+                    },
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: newPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'New password'),
+            ValueListenableBuilder<bool>(
+              valueListenable: newPasswordVisible,
+              builder: (context, isVisible, __) => TextField(
+                controller: newPasswordController,
+                obscureText: !isVisible,
+                decoration: InputDecoration(
+                  labelText: 'New password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isVisible ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      newPasswordVisible.value = !isVisible;
+                    },
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: confirmPasswordController,
-              obscureText: true,
-              decoration:
-                  const InputDecoration(labelText: 'Confirm new password'),
+            ValueListenableBuilder<bool>(
+              valueListenable: confirmPasswordVisible,
+              builder: (context, isVisible, __) => TextField(
+                controller: confirmPasswordController,
+                obscureText: !isVisible,
+                decoration: InputDecoration(
+                  labelText: 'Confirm new password',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isVisible ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      confirmPasswordVisible.value = !isVisible;
+                    },
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -265,11 +339,7 @@ class _AccountScreenState extends State<AccountScreen> {
               if (!confirm) return;
 
               try {
-                await Supabase.instance.client.auth.signInWithPassword(
-                  email: user.email!,
-                  password: currentPassword,
-                );
-
+                // ✅ NESSUN re-login qui: usiamo solo la sessione corrente
                 await _accountService.updatePassword(newPassword);
 
                 if (!context.mounted) return;
@@ -296,7 +366,10 @@ class _AccountScreenState extends State<AccountScreen> {
     final user = _user ?? Supabase.instance.client.auth.currentUser;
     final username =
         (user?.userMetadata?['username'] as String?) ?? 'Unknown user';
-    final email = user?.email ?? '—';
+
+    // ✅ Usiamo l'override se presente, altrimenti la mail dell'user
+    final email = _overrideEmail ?? user?.email ?? '—';
+
     final initial = username.isNotEmpty ? username[0].toUpperCase() : '?';
 
     return Scaffold(
@@ -404,6 +477,7 @@ class _AccountScreenState extends State<AccountScreen> {
             icon: const Icon(Icons.delete_forever),
             label: const Text('Delete Account'),
             onPressed: () async {
+              // 🔒 Conferma prima
               final ok = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
@@ -424,14 +498,42 @@ class _AccountScreenState extends State<AccountScreen> {
                   ],
                 ),
               );
+
               if (ok != true) return;
-              if (context.mounted) {
+
+              try {
+                final supabase = Supabase.instance.client;
+
+                // ☁️ Chiamiamo la Edge Function `delete-user`
+                final response = await supabase.functions.invoke(
+                  'delete-user',
+                  method: HttpMethod.post,
+                  body: {}, // non servono parametri
+                );
+
+                if (response.status != 200) {
+                  throw Exception('Delete function error: ${response.data}');
+                }
+
+                // 🚪 Logout dopo la cancellazione
+                await supabase.auth.signOut();
+
+                if (!context.mounted) return;
+
+                // 🔁 Torni alla schermata di login
+                context.goNamed(AppRouter.login);
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text(
-                      'Account deletion: backend logic to be implemented',
-                    ),
-                    backgroundColor: Colors.orange,
+                    content: Text('Account deleted successfully'),
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error while deleting account: $e'),
+                    backgroundColor: Colors.red,
                   ),
                 );
               }

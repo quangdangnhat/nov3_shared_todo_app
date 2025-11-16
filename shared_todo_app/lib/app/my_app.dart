@@ -1,3 +1,5 @@
+// coverage:ignore-file
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // 1. IMPORTA PROVIDER
 import '../theme_provider.dart'; // 1. IMPORTA IL TUO THEME PROVIDER

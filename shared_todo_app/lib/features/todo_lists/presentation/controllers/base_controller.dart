@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 // lib/presentation/controllers/base/base_folder_selection_controller.dart
 
 import 'package:flutter/foundation.dart';

@@ -4,7 +4,8 @@ class TodoList {
   final String? desc;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final String role; // <-- NUOVA PROPRIETÀ
+  final String role;
+  final int memberCount; // Aggiunto per il conteggio dei membri
 
   TodoList({
     required this.id,
@@ -12,28 +13,33 @@ class TodoList {
     this.desc,
     required this.createdAt,
     this.updatedAt,
-    required this.role, // <-- AGGIUNTO AL COSTRUTTORE
+    required this.role,
+    required this.memberCount, // Aggiunto al costruttore
   });
 
-  // Factory 'fromMap' (o fromJson)
-  // Reso robusto per gestire sia snake_case che camelCase
   factory TodoList.fromMap(Map<String, dynamic> map) {
-    // Gestione sicura per 'updated_at' che può essere nullo
     final uaValue = map['updated_at'] ?? map['updatedAt'];
 
+    // Esegui il parsing di member_count, gestendo il caso in cui sia nullo o non un intero
+    final memberCountValue = map['member_count'];
+    int memberCount = 0; // Default a 0
+    if (memberCountValue is int) {
+      memberCount = memberCountValue;
+    } else if (memberCountValue is String) {
+      memberCount = int.tryParse(memberCountValue) ?? 0;
+    }
+
     return TodoList(
-      id: map['id'], // Ora questo funziona (String -> String)
+      id: map['id'],
       title: map['title'],
       desc: map['desc'],
-      // Controlla entrambi i formati per 'created_at'
       createdAt: DateTime.parse(map['created_at'] ?? map['createdAt']),
       updatedAt: uaValue != null ? DateTime.parse(uaValue) : null,
-      role: map['role'] ?? 'Unknown', // <-- AGGIUNTO PER IL RUOLO
+      role: map['role'] ?? 'Unknown',
+      memberCount: memberCount, // Assegna il valore processato
     );
   }
 
-  // Metodo 'toMap' (o toJson)
-  // Quando invii i dati, Supabase preferisce snake_case
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -41,7 +47,6 @@ class TodoList {
       'desc': desc,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
-      // Nota: non inviamo il 'role' quando creiamo/aggiorniamo una lista
     };
   }
 }

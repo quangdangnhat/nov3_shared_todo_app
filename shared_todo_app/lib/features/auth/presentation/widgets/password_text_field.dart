@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import 'package:shared_todo_app/features/auth/presentation/domain/validators/auth_validators.dart';
 

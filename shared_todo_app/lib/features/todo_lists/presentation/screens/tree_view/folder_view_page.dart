@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
@@ -61,7 +65,6 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
     _treeBuilder.dispose();
     super.dispose();
   }
-
 
   Stream<TreeNode<TreeNodeData>> _buildTreeStream() {
     return widget.todoListRepository

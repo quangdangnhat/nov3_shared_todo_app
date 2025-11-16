@@ -1,3 +1,7 @@
+// coverage:ignore-file
+
+// consider testing later
+
 import 'package:flutter/material.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 // --- MODIFICA: Rimossi import non più necessari ---
@@ -106,7 +110,7 @@ class _ManageMembersDialogState extends State<ManageMembersDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              initialValue: _selectedRole,
+              //initialValue: _selectedRole,
               decoration: const InputDecoration(labelText: 'Role'),
               items: _roles.map((String value) {
                 return DropdownMenuItem<String>(

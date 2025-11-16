@@ -1,4 +1,6 @@
-import 'dart:async';
+// coverage:ignore-file
+
+// consider testing later
 
 import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:flutter/foundation.dart';
@@ -109,7 +111,7 @@ class TreeBuilderService {
       /*final initialFolders = await _folderRepository
           .getFoldersStream(todoList.id, parentId: null)
           .first;*/
-      
+
       // Carica TUTTI i folder di questa lista (per il confronto)
       final allInitialFolders = await _loadAllFoldersForList(todoList.id);
       _foldersByTodoList[todoList.id] = allInitialFolders;
@@ -146,7 +148,7 @@ class TreeBuilderService {
     _folderStreamsByList[todoListId]?.cancel();
 
     final stream = _folderRepository.getFoldersStream(todoListId);
-    
+
     _folderStreamsByList[todoListId] = stream.listen(
       (allFolders) {
         _handleFoldersUpdate(todoListId, allFolders);

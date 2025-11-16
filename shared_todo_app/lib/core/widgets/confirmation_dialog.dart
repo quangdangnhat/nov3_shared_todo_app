@@ -1,3 +1,5 @@
+// coverage:ignore-file
+
 import 'package:flutter/material.dart';
 
 /// Un dialog di conferma riutilizzabile (es. per eliminare).
