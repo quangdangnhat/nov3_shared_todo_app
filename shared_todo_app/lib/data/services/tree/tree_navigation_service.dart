@@ -24,10 +24,10 @@ class TreeNavigationService {
 
     switch (data.type) {
       case NodeType.todoList:
-        //if (data.todoList != null) {
-        //navigateToList(context, data.todoList!);
-        //}
-        break;
+      //if (data.todoList != null) {
+      //navigateToList(context, data.todoList!);
+      //}
+      //break;
       case NodeType.folder:
         if (data.folder != null && data.todoList != null) {
           navigateToFolder(context, data.todoList!, data.folder!);

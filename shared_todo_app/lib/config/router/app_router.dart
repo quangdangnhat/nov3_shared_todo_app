@@ -260,22 +260,22 @@ class AppRouter {
               );
             },
           ),
-        ],
-      ),
-      // Account/Profile
-      GoRoute(
-        path: account,
-        name: account,
-        pageBuilder: (context, state) {
-          return CustomTransitionPage(
-            key: state.pageKey,
-            child: const AccountScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return child;
+          // Account/Profile
+          GoRoute(
+            path: account,
+            name: account,
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const AccountScreen(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return child;
+                },
+              );
             },
-          );
-        },
+          ),
+        ],
       ),
     ],
 
