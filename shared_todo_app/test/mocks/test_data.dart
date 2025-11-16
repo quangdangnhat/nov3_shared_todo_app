@@ -298,7 +298,6 @@ class TestData {
     );
   }
 
-
   static Participant createCollaboratorParticipant({
     String? userId,
     String? todoListId,

@@ -15,7 +15,6 @@ import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/todo_lists/presentation/screens/calendar/calendar_screen.dart';
 import '../../features/account/presentation/screens/email_change_success_screen.dart';
 
-
 // Importa le schermate con prefissi per evitare conflitti
 import '../../features/todo_lists/detail.dart/todo_list_detail_screen.dart'
     as detail_screen;
@@ -71,7 +70,7 @@ class AppRouter {
 
   static final _authNotifier = _AuthNotifier();
   static const String emailChangeSuccess = '/email-change-success';
-  
+
   /// L'istanza del router GoRouter configurata per l'app.
   static final GoRouter router = GoRouter(
     initialLocation: home,
@@ -95,9 +94,9 @@ class AppRouter {
         },
       ),
       GoRoute(
-            name: AppRouter.emailChangeSuccess,
-            path: AppRouter.emailChangeSuccess,
-            builder: (context, state) => const EmailChangeSuccessScreen(),
+        name: AppRouter.emailChangeSuccess,
+        path: AppRouter.emailChangeSuccess,
+        builder: (context, state) => const EmailChangeSuccessScreen(),
       ),
 
       // ========================================

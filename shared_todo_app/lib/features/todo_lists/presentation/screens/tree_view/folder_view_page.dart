@@ -91,7 +91,7 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
             context.goNamed(AppRouter.home);
           },
         ),
-        title: const Text('Tree Visulization'),
+        title: const Text('Tree Visualization'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
