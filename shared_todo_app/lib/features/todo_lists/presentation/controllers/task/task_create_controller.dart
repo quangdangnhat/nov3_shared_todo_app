@@ -168,18 +168,18 @@ class TaskCreateController extends BaseFolderSelectionController {
 //INIZIO
     String status = "To Do";
     if (_selectedStatus.toString().split('.').last == 'inProgress') {
-       status = "In Progress";
+      status = "In Progress";
     }
     if (_selectedStatus.toString().split('.').last == 'done') {
-       status = "Done";
+      status = "Done";
     }
-// FINE 
+// FINE
     return await _taskRepo.createTask(
       folderId: _selectedFolder!.id,
       title: title.trim(),
       desc: description?.trim(),
       priority: _selectedPriority,
-      status: status, 
+      status: status,
       startDate: startDate,
       dueDate: _selectedDueDate,
     );

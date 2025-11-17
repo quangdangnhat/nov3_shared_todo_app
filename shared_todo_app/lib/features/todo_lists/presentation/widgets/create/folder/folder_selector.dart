@@ -95,7 +95,9 @@ class _FolderSelectorState extends State<FolderSelector> {
                     : theme.colorScheme.onSurface.withOpacity(0.15),
               ),
               borderRadius: BorderRadius.circular(borderRadius),
-              color: isEnabled ? null : theme.colorScheme.onSurface.withOpacity(0.05),
+              color: isEnabled
+                  ? null
+                  : theme.colorScheme.onSurface.withOpacity(0.05),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -110,7 +112,8 @@ class _FolderSelectorState extends State<FolderSelector> {
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onSurface.withOpacity(0.3),
                       ),
-                      SizedBox(width: ResponsiveLayout.responsive<double>(
+                      SizedBox(
+                          width: ResponsiveLayout.responsive<double>(
                         context,
                         mobile: 8,
                         tablet: 10,
@@ -120,14 +123,17 @@ class _FolderSelectorState extends State<FolderSelector> {
                         child: Text(
                           isLoading
                               ? 'Loading...'
-                              : widget.controller.selectedFolder?.title ?? 'Select folder',
+                              : widget.controller.selectedFolder?.title ??
+                                  'Select folder',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontSize: fontSize,
                             color: widget.controller.selectedFolder != null
                                 ? theme.colorScheme.onSurface
                                 : isEnabled
-                                    ? theme.colorScheme.onSurface.withOpacity(0.5)
-                                    : theme.colorScheme.onSurface.withOpacity(0.3),
+                                    ? theme.colorScheme.onSurface
+                                        .withOpacity(0.5)
+                                    : theme.colorScheme.onSurface
+                                        .withOpacity(0.3),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

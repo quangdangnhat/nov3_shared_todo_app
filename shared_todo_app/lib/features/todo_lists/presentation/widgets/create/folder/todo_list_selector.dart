@@ -107,7 +107,8 @@ class _TodoListSelectorState extends State<TodoListSelector> {
                         size: iconSize,
                         color: theme.colorScheme.primary,
                       ),
-                      SizedBox(width: ResponsiveLayout.responsive<double>(
+                      SizedBox(
+                          width: ResponsiveLayout.responsive<double>(
                         context,
                         mobile: 8,
                         tablet: 10,
@@ -306,9 +307,11 @@ class _TodoListDialogState extends State<_TodoListDialog> {
                                 tablet: 56,
                                 desktop: 64,
                               ),
-                              color: theme.colorScheme.onSurface.withOpacity(0.3),
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.3),
                             ),
-                            SizedBox(height: ResponsiveLayout.responsive<double>(
+                            SizedBox(
+                                height: ResponsiveLayout.responsive<double>(
                               context,
                               mobile: 8,
                               tablet: 10,
@@ -317,7 +320,8 @@ class _TodoListDialogState extends State<_TodoListDialog> {
                             Text(
                               'No lists found',
                               style: theme.textTheme.bodyLarge?.copyWith(
-                                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.6),
                               ),
                             ),
                           ],
@@ -344,7 +348,8 @@ class _TodoListDialogState extends State<_TodoListDialog> {
                           ),
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(borderRadius * 0.75),
+                          borderRadius:
+                              BorderRadius.circular(borderRadius * 0.75),
                         ),
                         onTap: () {
                           Navigator.of(context).pop(list);
