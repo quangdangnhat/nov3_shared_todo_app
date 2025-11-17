@@ -137,6 +137,7 @@ void main() {
             role: 'admin',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
+            memberCount: 1,
           ),
           TodoList(
             id: '2',
@@ -145,6 +146,7 @@ void main() {
             role: 'admin',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
+            memberCount: 1,
           ),
         ];
 
@@ -165,6 +167,7 @@ void main() {
             role: 'admin',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
+            memberCount: 1,
           ),
           TodoList(
             id: '2',
@@ -173,6 +176,7 @@ void main() {
             role: 'admin',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
+            memberCount: 1,
           ),
         ];
         controller.updateSearchQuery('shop');
@@ -195,6 +199,7 @@ void main() {
             role: 'admin',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
+            memberCount: 1,
           ),
         ];
         controller.updateSearchQuery('SHOP');
@@ -216,6 +221,7 @@ void main() {
             role: 'admin',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
+            memberCount: 1,
           ),
         ];
         controller.updateSearchQuery('nonexistent');
@@ -250,6 +256,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final rootFolder = Folder(
           id: 'folder-root',
@@ -294,6 +301,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final rootFolder = Folder(
           id: 'folder-root',
@@ -334,6 +342,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final rootFolder = Folder(
           id: 'folder-root',
@@ -370,6 +379,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
 
         when(() => mockFolderRepo.getRootFolder('list-1'))
@@ -398,6 +408,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
 
         when(() => mockFolderRepo.getRootFolder('list-1'))
@@ -426,6 +437,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final rootFolder = Folder(
           id: 'folder-root',
@@ -474,6 +486,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final folder = Folder(
           id: 'folder-1',
@@ -719,6 +732,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final folder = Folder(
           id: 'folder-1',
@@ -760,6 +774,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final folder = Folder(
           id: 'folder-1',
@@ -798,6 +813,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final folder = Folder(
           id: 'folder-1',
@@ -841,6 +857,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final folder = Folder(
           id: 'folder-1',
@@ -876,6 +893,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final folder = Folder(
           id: 'folder-1',
@@ -913,6 +931,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final folder = Folder(
           id: 'folder-1',
@@ -1002,6 +1021,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final folder1 = Folder(
           id: 'folder-1',
@@ -1070,6 +1090,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
         final folder = Folder(
           id: 'folder-1',
@@ -1114,6 +1135,7 @@ void main() {
           role: 'admin',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          memberCount: 1,
         );
 
         when(() => mockFolderRepo.getRootFolder('list-1'))

@@ -316,7 +316,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
         showErrorSnackBar(
           context,
           message:
-          'Could not load list details: ${e.toString().replaceFirst("Exception: ", "")}',
+              'Could not load list details: ${e.toString().replaceFirst("Exception: ", "")}',
         );
       }
     } catch (error) {
@@ -402,8 +402,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                 Text(
                   'My To-Do Lists',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const Spacer(),
                 IconButton(
@@ -426,7 +426,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
+                    color:
+                        Theme.of(context).colorScheme.shadow.withOpacity(0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -452,14 +453,15 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                   ),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                    icon: Icon(
-                      Icons.clear_rounded,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    onPressed: () {
-                      _searchController.clear();
-                    },
-                  )
+                          icon: Icon(
+                            Icons.clear_rounded,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                          },
+                        )
                       : null,
                 ),
               ),
@@ -563,12 +565,12 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: isSelected
                             ? [
-                          BoxShadow(
-                            color: colorScheme.primary.withOpacity(0.15),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
+                                BoxShadow(
+                                  color: colorScheme.primary.withOpacity(0.15),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
                             : null,
                       ),
                       child: Center(
@@ -576,7 +578,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                           label,
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w500,
                             color: isSelected
                                 ? colorScheme.onPrimaryContainer
                                 : colorScheme.onSurfaceVariant,
@@ -618,12 +621,12 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                   if (_currentFilter == ListFilter.personal) {
                     filteredLists = lists
                         .where((list) =>
-                    list.role == 'admin' && list.memberCount == 1)
+                            list.role == 'admin' && list.memberCount == 1)
                         .toList();
                   } else if (_currentFilter == ListFilter.shared) {
                     filteredLists = lists
                         .where((list) =>
-                    !(list.role == 'admin' && list.memberCount == 1))
+                            !(list.role == 'admin' && list.memberCount == 1))
                         .toList();
                   }
 

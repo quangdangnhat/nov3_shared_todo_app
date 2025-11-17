@@ -103,14 +103,16 @@ class SearchResultTile extends StatelessWidget {
                           Icon(
                             Icons.folder_outlined,
                             size: 16,
-                            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                            color:
+                                colorScheme.onSurfaceVariant.withOpacity(0.6),
                           ),
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
                               folderPath,
                               style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                                color: colorScheme.onSurfaceVariant
+                                    .withOpacity(0.8),
                                 fontSize: 12,
                               ),
                               maxLines: 1,

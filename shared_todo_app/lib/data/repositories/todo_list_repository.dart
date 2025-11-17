@@ -58,7 +58,8 @@ class TodoListRepository {
         final enrichedMap = Map<String, dynamic>.from(listMap);
         enrichedMap['role'] = role;
         enrichedMap['member_count'] = memberCount;
-        enrichedMap.remove('participations'); // Clean up before passing to fromMap
+        enrichedMap
+            .remove('participations'); // Clean up before passing to fromMap
 
         return TodoList.fromMap(enrichedMap);
       }).toList();
