@@ -354,6 +354,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     }
                                   }
                                 },
+                                onStatusChanged: (String value) {},
                               );
                             },
                           );

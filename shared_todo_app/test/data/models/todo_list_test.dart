@@ -376,13 +376,13 @@ void main() {
     test('should create todo list with constructor directly', () {
       // Arrange & Act
       final todoList = TodoList(
-        id: 'direct-123',
-        title: 'Direct List',
-        desc: 'Created directly',
-        role: 'admin',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+          id: 'direct-123',
+          title: 'Direct List',
+          desc: 'Created directly',
+          role: 'admin',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          memberCount: 1);
 
       // Assert
       expect(todoList.id, 'direct-123');
@@ -397,11 +397,11 @@ void main() {
         () {
       // Arrange & Act
       final todoList = TodoList(
-        id: 'minimal-123',
-        title: 'Minimal List',
-        role: 'collaborator',
-        createdAt: DateTime.now(),
-      );
+          id: 'minimal-123',
+          title: 'Minimal List',
+          role: 'collaborator',
+          createdAt: DateTime.now(),
+          memberCount: 1);
 
       // Assert
       expect(todoList.id, 'minimal-123');
