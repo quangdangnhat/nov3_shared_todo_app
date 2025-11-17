@@ -3,6 +3,7 @@
 // consider testing later
 
 import 'package:flutter/material.dart';
+import '../../../../../../config/responsive.dart';
 import '../../../../../../data/models/todo_list.dart';
 import '../../../controllers/base_controller.dart';
 
@@ -46,17 +47,54 @@ class _TodoListSelectorState extends State<TodoListSelector> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final borderRadius = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 12,
+      tablet: 14,
+      desktop: 16,
+    );
+    final iconSize = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 18,
+      tablet: 20,
+      desktop: 22,
+    );
+    final fontSize = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 14,
+      tablet: 15,
+      desktop: 16,
+    );
+    final horizontalPadding = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 12,
+      tablet: 14,
+      desktop: 16,
+    );
+    final verticalPadding = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 12,
+      tablet: 14,
+      desktop: 16,
+    );
+
     return StreamBuilder<List<TodoList>>(
       stream: widget.controller.listsStream,
       builder: (context, snapshot) {
         return InkWell(
           onTap: _showTodoListDialog,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(borderRadius),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: verticalPadding,
+            ),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: theme.colorScheme.onSurface.withOpacity(0.3),
+              ),
+              borderRadius: BorderRadius.circular(borderRadius),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -64,17 +102,26 @@ class _TodoListSelectorState extends State<TodoListSelector> {
                 Expanded(
                   child: Row(
                     children: [
-                      const Icon(Icons.list_alt, size: 18),
-                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.list_alt,
+                        size: iconSize,
+                        color: theme.colorScheme.primary,
+                      ),
+                      SizedBox(width: ResponsiveLayout.responsive<double>(
+                        context,
+                        mobile: 8,
+                        tablet: 10,
+                        desktop: 12,
+                      )),
                       Flexible(
                         child: Text(
                           widget.controller.selectedTodoList?.title ??
                               'Select a list',
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: fontSize,
                             color: widget.controller.selectedTodoList != null
-                                ? Colors.white
-                                : Colors.grey,
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.onSurface.withOpacity(0.5),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -82,7 +129,11 @@ class _TodoListSelectorState extends State<TodoListSelector> {
                     ],
                   ),
                 ),
-                const Icon(Icons.arrow_drop_down, size: 24),
+                Icon(
+                  Icons.arrow_drop_down,
+                  size: iconSize + 6,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                ),
               ],
             ),
           ),
@@ -111,30 +162,99 @@ class _TodoListDialog extends StatefulWidget {
 class _TodoListDialogState extends State<_TodoListDialog> {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final borderRadius = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 12,
+      tablet: 16,
+      desktop: 20,
+    );
+    final maxHeightFactor = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 0.6,
+      tablet: 0.65,
+      desktop: 0.7,
+    );
+    final maxWidthFactor = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 0.9,
+      tablet: 0.7,
+      desktop: 0.5,
+    );
+    final iconSize = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 20,
+      tablet: 22,
+      desktop: 24,
+    );
+    final fontSize = ResponsiveLayout.responsive<double>(
+      context,
+      mobile: 14,
+      tablet: 15,
+      desktop: 16,
+    );
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+      backgroundColor: theme.dialogTheme.backgroundColor,
       child: Container(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.6,
-          maxWidth: MediaQuery.of(context).size.width * 0.8,
+          maxHeight: MediaQuery.of(context).size.height * maxHeightFactor,
+          maxWidth: MediaQuery.of(context).size.width * maxWidthFactor,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header con campo di ricerca
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(ResponsiveLayout.responsive<double>(
+                context,
+                mobile: 16,
+                tablet: 18,
+                desktop: 20,
+              )),
               child: TextField(
                 controller: widget.searchController,
+                style: theme.textTheme.bodyMedium,
                 decoration: InputDecoration(
                   hintText: 'Search lists...',
-                  prefixIcon: const Icon(Icons.search, size: 20),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  hintStyle: theme.inputDecorationTheme.hintStyle,
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: iconSize,
+                    color: theme.colorScheme.primary,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(borderRadius * 0.67),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(borderRadius * 0.67),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(borderRadius * 0.67),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.secondary,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: ResponsiveLayout.responsive<double>(
+                      context,
+                      mobile: 16,
+                      tablet: 18,
+                      desktop: 20,
+                    ),
+                    vertical: ResponsiveLayout.responsive<double>(
+                      context,
+                      mobile: 12,
+                      tablet: 14,
+                      desktop: 16,
+                    ),
                   ),
                 ),
                 onChanged: (value) {
@@ -146,7 +266,11 @@ class _TodoListDialogState extends State<_TodoListDialog> {
               ),
             ),
 
-            const Divider(height: 1),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: theme.dividerTheme.color,
+            ),
 
             // Lista delle TodoList
             Flexible(
@@ -154,10 +278,12 @@ class _TodoListDialogState extends State<_TodoListDialog> {
                 stream: widget.controller.listsStream,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
+                    return Center(
                       child: Padding(
-                        padding: EdgeInsets.all(20),
-                        child: CircularProgressIndicator(),
+                        padding: const EdgeInsets.all(20),
+                        child: CircularProgressIndicator(
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
                     );
                   }
@@ -174,15 +300,24 @@ class _TodoListDialogState extends State<_TodoListDialog> {
                           children: [
                             Icon(
                               Icons.search_off,
-                              size: 48,
-                              color: Colors.grey[400],
+                              size: ResponsiveLayout.responsive<double>(
+                                context,
+                                mobile: 48,
+                                tablet: 56,
+                                desktop: 64,
+                              ),
+                              color: theme.colorScheme.onSurface.withOpacity(0.3),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: ResponsiveLayout.responsive<double>(
+                              context,
+                              mobile: 8,
+                              tablet: 10,
+                              desktop: 12,
+                            )),
                             Text(
                               'No lists found',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurface.withOpacity(0.6),
                               ),
                             ),
                           ],
@@ -197,10 +332,19 @@ class _TodoListDialogState extends State<_TodoListDialog> {
                     itemBuilder: (context, index) {
                       final list = filteredLists[index];
                       return ListTile(
-                        leading: const Icon(Icons.list_alt, size: 20),
+                        leading: Icon(
+                          Icons.list_alt,
+                          size: iconSize,
+                          color: theme.colorScheme.primary,
+                        ),
                         title: Text(
                           list.title,
-                          style: const TextStyle(fontSize: 14),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontSize: fontSize,
+                          ),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(borderRadius * 0.75),
                         ),
                         onTap: () {
                           Navigator.of(context).pop(list);

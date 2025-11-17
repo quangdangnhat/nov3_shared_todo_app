@@ -16,7 +16,7 @@ class StatusSelector extends StatelessWidget {
     required this.onStatusChanged,
   });
 
-  String _getStatusLabel(TaskStatus status) {
+  static String _getStatusLabel(TaskStatus status) {
     switch (status) {
       case TaskStatus.toDo:
         return 'To Do';

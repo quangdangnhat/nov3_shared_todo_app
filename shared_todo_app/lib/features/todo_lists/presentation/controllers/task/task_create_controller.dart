@@ -164,13 +164,22 @@ class TaskCreateController extends BaseFolderSelectionController {
     if (title.trim().isEmpty) {
       throw Exception('Task title cannot be empty');
     }
-
+// da modificare: crea il metodo statico nella classe status_picker !!
+//INIZIO
+    String status = "To Do";
+    if (_selectedStatus.toString().split('.').last == 'inProgress') {
+       status = "In Progress";
+    }
+    if (_selectedStatus.toString().split('.').last == 'done') {
+       status = "Done";
+    }
+// FINE 
     return await _taskRepo.createTask(
       folderId: _selectedFolder!.id,
       title: title.trim(),
       desc: description?.trim(),
       priority: _selectedPriority,
-      status: _selectedStatus.toString(),
+      status: status, 
       startDate: startDate,
       dueDate: _selectedDueDate,
     );

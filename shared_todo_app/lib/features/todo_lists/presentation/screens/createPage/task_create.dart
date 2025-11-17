@@ -86,7 +86,7 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error creating task: $e')));
+        ).showSnackBar(SnackBar(content: Text('Collaborators can\'t create tasks')));
       }
     }
   }

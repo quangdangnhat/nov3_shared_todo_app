@@ -86,7 +86,7 @@ class _FolderCreatePageState extends State<FolderCreatePage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Folder error')));
+        ).showSnackBar(const SnackBar(content: Text('Collaborators can\'t create folders')));
       }
     }
   }
