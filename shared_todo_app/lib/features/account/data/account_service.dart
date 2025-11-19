@@ -13,6 +13,17 @@ class AccountService {
       redirectUrl = '$origin/#/login';
     }
 
+    // da provare
+    /*
+    if (kIsWeb) {
+      // esempio: http://localhost:5173/#/login
+      final origin = Uri.base.origin;
+      redirectUrl = '$origin${AppRouter.login}';
+    } else {
+      redirectUrl = 'io.supabase.flutter://login';
+    }
+    */
+
     await supabase.auth.updateUser(
       UserAttributes(email: newEmail),
       emailRedirectTo: redirectUrl,
