@@ -30,16 +30,11 @@ class EmptyTasksState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Nessun Task per Oggi',
+              'No pending tasks. Start creating!',
               style: theme.textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            Text(
-              'Non ci sono task in scadenza oggi.\nSei in regola! 🎉',
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
           ],
         ),
       ),
@@ -77,7 +72,7 @@ class FilteredEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Nessun Task Visibile',
+              'No tasks',
               style: theme.textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),

@@ -234,7 +234,7 @@ class AppRouter {
             pageBuilder: (BuildContext context, GoRouterState state) {
               return CustomTransitionPage(
                 key: state.pageKey,
-                child: const InvitationsScreen(),
+                child: const InvitationsNotificationButton(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
                   return child;

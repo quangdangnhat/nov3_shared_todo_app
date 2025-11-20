@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_todo_app/core/widgets/app_drawer.dart';
 import 'package:shared_todo_app/data/models/daily_tasks/task_category.dart';
+import 'package:shared_todo_app/features/invitations/presentation/screens/invitation_screen.dart';
 import '../../../../../config/responsive.dart';
 import '../../../../../core/utils/daily_tasks/date_formatter.dart';
 import '../../../../../core/utils/daily_tasks/task_categorizer.dart';
@@ -155,6 +156,7 @@ class _TodayTasksPageState extends State<TodayTasksPage> {
           onPressed: _loadTodayTasks,
           tooltip: 'Aggiorna',
         ),
+        const InvitationsNotificationButton(),
         if (!isMobile) const SizedBox(width: 8),
       ],
     );

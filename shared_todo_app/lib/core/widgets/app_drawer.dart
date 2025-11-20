@@ -205,7 +205,7 @@ class _AppDrawerState extends State<AppDrawer> {
             },
           ),
 
-          // My Invitations
+          /* My Invitations
           _buildMenuTile(
             context: context,
             icon: Icons.mail_rounded,
@@ -217,7 +217,7 @@ class _AppDrawerState extends State<AppDrawer> {
               }
               context.go(AppRouter.invitations);
             },
-          ),
+          ),*/
 
           _buildDivider(),
 

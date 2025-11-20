@@ -1,262 +1,325 @@
 // coverage:ignore-file
 
-// consider testing later
-
 import 'package:flutter/material.dart';
-import '../../../../config/responsive.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../data/models/invitation.dart';
 import '../../../../data/repositories/invitation_repository.dart';
 
-/// Schermata che mostra gli inviti in sospeso per l'utente corrente.
-class InvitationsScreen extends StatefulWidget {
-  const InvitationsScreen({super.key});
+/// Widget bottone campanella + Logica Dialog
+class InvitationsNotificationButton extends StatelessWidget {
+  const InvitationsNotificationButton({super.key});
 
   @override
-  State<InvitationsScreen> createState() => _InvitationsScreenState();
-}
+  Widget build(BuildContext context) {
+    // Usiamo un'istanza del repo. Assicurati che il tuo repo gestisca bene lo stream.
+    // Se il repo è un Singleton, questo va bene.
+    final InvitationRepository invitationRepo = InvitationRepository();
 
-class _InvitationsScreenState extends State<InvitationsScreen> {
-  final InvitationRepository _invitationRepo = InvitationRepository();
+    return StreamBuilder<List<Invitation>>(
+      stream: invitationRepo.getPendingInvitationsStream(),
+      builder: (context, snapshot) {
+        final invitations = snapshot.data ?? [];
+        final count = invitations.length;
 
-  late Stream<List<Invitation>> _invitationsStream;
-
-  // Set per tenere traccia degli inviti in corso di elaborazione
-  final Set<String> _loadingInvitations = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _invitationsStream = _invitationRepo.getPendingInvitationsStream();
+        return IconButton(
+          tooltip: 'Notifications',
+          icon: Badge(
+            label: count > 0 ? Text('$count') : null,
+            isLabelVisible: count > 0,
+            backgroundColor: Theme.of(context).colorScheme.error,
+            child: Icon(
+              count > 0 ? Icons.notifications_active : Icons.notifications_outlined,
+            ),
+          ),
+          onPressed: () {
+            _showModernInvitationsDialog(context);
+          },
+        );
+      },
+    );
   }
 
-  /// Gestisce la risposta (accetta o rifiuta) a un invito.
+  void _showModernInvitationsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        insetPadding: const EdgeInsets.all(20),
+        elevation: 10,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        child: const InvitationsPanel(),
+      ),
+    );
+  }
+}
+
+/// Contenuto del Dialog
+class InvitationsPanel extends StatefulWidget {
+  const InvitationsPanel({super.key});
+
+  @override
+  State<InvitationsPanel> createState() => _InvitationsPanelState();
+}
+
+class _InvitationsPanelState extends State<InvitationsPanel> {
+  final InvitationRepository _invitationRepo = InvitationRepository();
+  
+  // Set per tracciare quali inviti stanno caricando (spinner)
+  final Set<String> _loadingInvitations = {};
+  
+  // NUOVO: Set per nascondere immediatamente gli inviti gestiti con successo
+  // Questo garantisce il refresh istantaneo della UI anche se lo Stream ritarda
+  final Set<String> _processedInvitationsIds = {};
+
   Future<void> _handleResponse(Invitation invitation, bool accept) async {
-    // Impedisci doppi click
     if (_loadingInvitations.contains(invitation.id)) return;
 
-    if (mounted) {
-      setState(() {
-        _loadingInvitations.add(invitation.id);
-      });
-    }
+    setState(() => _loadingInvitations.add(invitation.id));
 
     try {
+      // 1. Eseguiamo l'operazione SQL
       await _invitationRepo.respondToInvitation(invitation.id, accept);
 
       if (mounted) {
         showSuccessSnackBar(
           context,
-          message:
-              'Invitation ${accept ? 'accepted' : 'declined'} successfully',
+          message: 'Invitation ${accept ? 'accepted' : 'declined'}',
         );
-      }
 
-      // Forza il refresh dello stream
-      if (mounted) {
+        // 2. CRUCIALE: Aggiorniamo immediatamente la UI locale
+        // Aggiungiamo l'ID alla lista dei "processati" così sparisce subito dalla lista visibile
         setState(() {
-          _invitationsStream = _invitationRepo.getPendingInvitationsStream();
+          _processedInvitationsIds.add(invitation.id);
         });
+
+        // Opzionale: Se abbiamo gestito tutto, chiudiamo il dialog dopo un istante
+        // Nota: Lo facciamo dentro il builder controllando la lunghezza della lista filtrata
       }
     } catch (error) {
       if (mounted) {
         showErrorSnackBar(
           context,
-          message:
-              'Failed to respond: ${error.toString().replaceFirst("Exception: ", "")}',
+          message: 'Error: ${error.toString().replaceFirst("Exception: ", "")}',
         );
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _loadingInvitations.remove(invitation.id);
-        });
+        setState(() => _loadingInvitations.remove(invitation.id));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = ResponsiveLayout.isMobile(context);
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    return Column(
-      children: [
-        // Header personalizzato che sostituisce l'AppBar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(
-                  context,
-                ).colorScheme.outlineVariant.withOpacity(0.5),
-                width: 1,
-              ),
+    return StreamBuilder<List<Invitation>>(
+      stream: _invitationRepo.getPendingInvitationsStream(),
+      builder: (context, snapshot) {
+        // Se lo stream sta caricando inizialmente
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+           return const SizedBox(
+             height: 200, 
+             child: Center(child: CircularProgressIndicator())
+           );
+        }
+
+        // Prendiamo i dati grezzi dallo stream
+        final rawInvitations = snapshot.data ?? [];
+
+        // 3. FILTRO REALTIME:
+        // Mostriamo solo gli inviti che arrivano dallo stream MENO quelli che abbiamo 
+        // appena processato con successo in questa sessione del dialog.
+        final visibleInvitations = rawInvitations
+            .where((inv) => !_processedInvitationsIds.contains(inv.id))
+            .toList();
+
+        // Auto-chiusura soft: se non c'è nulla da mostrare ed abbiamo processato qualcosa
+        if (visibleInvitations.isEmpty && _processedInvitationsIds.isNotEmpty) {
+           // Usiamo un post frame callback per non chiudere durante il build
+           WidgetsBinding.instance.addPostFrameCallback((_) {
+             if (mounted && Navigator.canPop(context)) {
+               Navigator.pop(context);
+             }
+           });
+        }
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: screenHeight * 0.6,
+            maxWidth: 400,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Icon(Icons.mail_outline, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Invitations',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
+                const Divider(height: 1),
+                
+                // Lista
+                Flexible(
+                  child: visibleInvitations.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(24),
+                          shrinkWrap: true,
+                          itemCount: visibleInvitations.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final invitation = visibleInvitations[index];
+                            return _InvitationCard(
+                              key: ValueKey(invitation.id),
+                              invitation: invitation,
+                              isLoading: _loadingInvitations.contains(invitation.id),
+                              onAccept: () => _handleResponse(invitation, true),
+                              onDecline: () => _handleResponse(invitation, false),
+                            );
+                          },
+                        ),
+                ),
+              ],
             ),
           ),
-          child: Row(
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Padding(
+      padding: EdgeInsets.all(32.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.done_all, size: 48, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'No pending invitations',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InvitationCard extends StatelessWidget {
+  final Invitation invitation;
+  final bool isLoading;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  const _InvitationCard({
+    super.key, 
+    required this.invitation,
+    required this.isLoading,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              // Hamburger menu SOLO su mobile
-              if (isMobile) ...[
-                IconButton(
-                  icon: const Icon(Icons.menu),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                  tooltip: 'Menu',
+              Expanded(
+                child: Text(
+                  invitation.todoListTitle ?? 'Unknown List',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(width: 8),
-              ],
-              // Titolo
-              Text(
-                'My Invitations',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  invitation.role,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-
-        // Contenuto principale
-        Expanded(
-          child: StreamBuilder<List<Invitation>>(
-            stream: _invitationsStream,
-            builder: (context, snapshot) {
-              // Stato di caricamento
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              // Stato di errore
-              if (snapshot.hasError) {
-                debugPrint('Error loading invitations: ${snapshot.error}');
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text('Error loading invitations: ${snapshot.error}'),
-                  ),
-                );
-              }
-
-              final invitations = snapshot.data;
-
-              // Stato vuoto
-              if (invitations == null || invitations.isEmpty) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Text(
-                      "You have no pending invitations.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  ),
-                );
-              }
-
-              // Lista degli inviti
-              return ListView.builder(
-                padding: const EdgeInsets.all(16.0),
-                itemCount: invitations.length,
-                itemBuilder: (context, index) {
-                  final invitation = invitations[index];
-                  final bool isLoading = _loadingInvitations.contains(
-                    invitation.id,
-                  );
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12.0),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Invitation to join list:',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(color: Colors.grey),
-                          ),
-                          Text(
-                            invitation.todoListTitle ?? '[List Name Not Found]',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text.rich(
-                            TextSpan(
-                              text: 'Invited by: ',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: invitation.invitedByUserEmail ??
-                                      '[Unknown User]',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.color,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text.rich(
-                            TextSpan(
-                              text: 'As: ',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: invitation.role,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.color,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Pulsanti di Azione
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              if (isLoading)
-                                const CircularProgressIndicator()
-                              else ...[
-                                TextButton(
-                                  onPressed: () =>
-                                      _handleResponse(invitation, false),
-                                  child: const Text('Decline'),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: () =>
-                                      _handleResponse(invitation, true),
-                                  child: const Text('Accept'),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+          const SizedBox(height: 8),
+          Text(
+            'Invited by: ${invitation.invitedByUserEmail ?? 'Unknown'}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          if (isLoading)
+            const Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onDecline,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.error,
+                      side: BorderSide(color: colorScheme.error.withOpacity(0.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 0),
+                    ),
+                    child: const Text('Decline'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: onAccept,
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 0),
+                    ),
+                    child: const Text('Accept'),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }
