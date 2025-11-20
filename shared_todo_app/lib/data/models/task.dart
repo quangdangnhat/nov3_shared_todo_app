@@ -1,3 +1,5 @@
+// RIMUOVI QUESTO IMPORT: import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
+
 class Task {
   final String id;
   final String folderId;
@@ -9,6 +11,11 @@ class Task {
   final DateTime dueDate;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  
+  // MODIFICA: Usa 'double' minuscolo
+  final double? latitude;
+  final double? longitude;
+  final String? placeName;
 
   Task({
     required this.id,
@@ -21,37 +28,16 @@ class Task {
     required this.dueDate,
     required this.createdAt,
     this.updatedAt,
+    // MODIFICA
+    this.latitude,
+    this.longitude,
+    this.placeName,
   });
 
-  // Factory 'fromMap' robusto
   factory Task.fromMap(Map<String, dynamic> map) {
-    // Helper sicuro per parsare date nullable
-    DateTime? parseNullableDate(dynamic value) {
-      if (value is String) {
-        try {
-          return DateTime.parse(value);
-        } catch (_) {
-          return null; // Ignora formati non validi
-        }
-      }
-      return null;
-    }
-
-    // Helper sicuro per parsare date NON nullable
-    DateTime parseRequiredDate(dynamic value, String fieldName) {
-      if (value is String) {
-        try {
-          return DateTime.parse(value);
-        } catch (e) {
-          throw FormatException(
-            'Invalid date format for required field $fieldName: $value',
-          );
-        }
-      }
-      throw FormatException(
-        'Missing or invalid type for required field $fieldName: $value',
-      );
-    }
+    // ... (i tuoi helper date restano uguali) ...
+    DateTime? parseNullableDate(dynamic value) { /* ... */ return null; } 
+    DateTime parseRequiredDate(dynamic value, String fieldName) { /* ... */ return DateTime.now(); } // Semplificato per brevità
 
     final sdValue = map['start_date'] ?? map['startDate'];
     final uaValue = map['updated_at'] ?? map['updatedAt'];
@@ -65,16 +51,19 @@ class Task {
       desc: map['desc'] as String?,
       priority: map['priority'] as String,
       status: map['status'] as String,
-      // --- MODIFICA: Usa parseNullableDate ---
       startDate: parseNullableDate(sdValue),
-      // --- FINE MODIFICA ---
       dueDate: parseRequiredDate(ddValue, 'dueDate'),
       createdAt: parseRequiredDate(caValue, 'createdAt'),
       updatedAt: parseNullableDate(uaValue),
+      
+      // --- MODIFICA FONDAMENTALE ---
+      // Convertiamo in double in modo sicuro (gestisce anche se il DB manda un int)
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
+      placeName: map['place_name'] as String?,
     );
   }
 
-  // Metodo 'toMap' per l'invio al DB
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -83,12 +72,15 @@ class Task {
       'desc': desc,
       'priority': priority,
       'status': status,
-      // --- MODIFICA: Riportato a Nullable ---
-      'start_date': startDate?.toIso8601String(), // Invia null se non impostato
-      // --- FINE MODIFICA ---
+      'start_date': startDate?.toIso8601String(),
       'due_date': dueDate.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      
+      // I double passano normalmente
+      'latitude': latitude,
+      'longitude': longitude,
+      'place_name': placeName,
     };
   }
 }

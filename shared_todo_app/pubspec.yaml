@@ -16,7 +16,18 @@ dependencies:
   url_launcher: ^6.2.0
   go_router: ^16.3.0
   intl: ^0.20.2
+
+#Visualizzazione ad albero (TodoList - Folder - Task)
   animated_tree_view: ^2.3.0
+
+#librerie per la gestione della mappa !
+  google_maps_flutter: ^2.14.0
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+#Alternativa:
+  flutter_map: ^8.2.2            # <-- AGGIUNGI QUESTO (Motore mappa)
+  latlong2: ^0.9.1
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

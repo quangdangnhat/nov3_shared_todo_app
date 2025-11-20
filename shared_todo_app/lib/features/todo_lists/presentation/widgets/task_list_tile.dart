@@ -4,6 +4,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_todo_app/data/repositories/task_repository.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
 import '../../../../data/models/task.dart';
 
 /// Un widget per visualizzare una singola riga di Task in una lista.
@@ -27,7 +29,7 @@ class TaskListTile extends StatelessWidget {
   });
 
   // Helper per ottenere un colore in base alla priorità
-  Color _getPriorityColor(String priority) {
+  /*Color _getPriorityColor(String priority) {
     switch (priority) {
       case 'High':
         return Colors.red.shade300;
@@ -37,7 +39,7 @@ class TaskListTile extends StatelessWidget {
       default:
         return Colors.green.shade300;
     }
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +158,18 @@ class TaskListTile extends StatelessWidget {
                         onEdit();
                       } else if (value == 'delete') {
                         onDelete();
+                        // ... dentro il tuo onSelected del PopupMenuButton
+                      } else if (value == 'add place') {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return MapDialog(
+                              taskId: task.id, // Passa l'ID del task corrente
+                              taskRepository:
+                                  TaskRepository(), // O la tua istanza del repository (es. context.read<TaskRepository>())
+                            );
+                          },
+                        );
                       }
                     },
                     itemBuilder: (context) => [
@@ -176,6 +190,18 @@ class TaskListTile extends StatelessWidget {
                             Icon(Icons.delete, size: 20, color: Colors.red),
                             SizedBox(width: 8),
                             Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'add place',
+                        child: Row(
+                          children: [
+                            Icon(Icons.add_location_alt_outlined,
+                                size: 20, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Add place',
+                                style: TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),
