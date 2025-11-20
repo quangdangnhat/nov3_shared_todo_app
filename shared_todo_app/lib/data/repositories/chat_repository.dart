@@ -48,7 +48,7 @@ class ChatRepository {
 
     final message = {
       'content': content,
-      'userId': user.id,                       // necessario
+      'userId': user.id, // necessario
       'username': user.userMetadata?['username'] ?? 'User',
     };
 

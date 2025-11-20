@@ -21,7 +21,9 @@ class ChatMessage {
       content: map['content'] ?? '',
       userId: map['userId'] ?? map['user_id'] ?? '',
       todoListId: map['todoListId'] ?? map['todo_list_id'] ?? '',
-      createdAt: DateTime.tryParse(map['createdAt'] ?? map['created_at'] ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(map['createdAt'] ?? map['created_at'] ?? '') ??
+              DateTime.now(),
       username: map['username'] ?? 'User',
     );
   }

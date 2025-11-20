@@ -79,7 +79,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(hintText: 'Scrivi un messaggio'),
+                    decoration:
+                        const InputDecoration(hintText: 'Scrivi un messaggio'),
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),

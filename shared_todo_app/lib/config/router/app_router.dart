@@ -170,12 +170,14 @@ class AppRouter {
             name: 'chat',
             pageBuilder: (BuildContext context, GoRouterState state) {
               // Recupera l'ID della lista dal path param
-              final todoListId = state.pathParameters['listId']!; // sempre presente perché definito in path
+              final todoListId = state.pathParameters[
+                  'listId']!; // sempre presente perché definito in path
 
               return CustomTransitionPage(
                 key: state.pageKey,
                 child: ChatScreen(todoListId: todoListId),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
                   return child; // nessuna animazione
                 },
               );

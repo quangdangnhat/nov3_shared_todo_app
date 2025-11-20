@@ -53,7 +53,8 @@ class ChatService {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return [];
 
-    final url = Uri.parse('http://localhost:8080/api/chat/todolist/$todoListId');
+    final url =
+        Uri.parse('http://localhost:8080/api/chat/todolist/$todoListId');
 
     try {
       final response = await http.get(url);
