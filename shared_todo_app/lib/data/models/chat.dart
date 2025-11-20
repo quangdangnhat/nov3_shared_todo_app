@@ -4,8 +4,7 @@ class ChatMessage {
   final String userId;
   final String todoListId;
   final DateTime createdAt;
-  // Opzionale: nome utente (se il backend lo manda o se lo recuperi localmente)
-  final String? username; 
+  final String? username;
 
   ChatMessage({
     required this.id,
@@ -16,14 +15,21 @@ class ChatMessage {
     this.username,
   });
 
-  factory ChatMessage.fromMap(Map<String, dynamic> map) {
-    return ChatMessage(
-      id: map['id'] ?? '',
-      content: map['content'] ?? '',
-      userId: map['user_id'] ?? '',
-      todoListId: map['todo_list_id'] ?? '',
-      createdAt: DateTime.tryParse(map['created_at'] ?? '') ?? DateTime.now(),
-      username: map['username'], // Se Spring Boot fa il join e lo manda
-    );
-  }
+  factory ChatMessage.fromMap(Map<String, dynamic> map) => ChatMessage(
+        id: map['id'] ?? '',
+        content: map['content'] ?? '',
+        userId: map['userId'] ?? '',
+        todoListId: map['todoListId'] ?? '',
+        createdAt: DateTime.tryParse(map['createdAt'] ?? '') ?? DateTime.now(),
+        username: map['username'],
+      );
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'content': content,
+        'userId': userId,
+        'todoListId': todoListId,
+        'createdAt': createdAt.toIso8601String(),
+        'username': username,
+      };
 }

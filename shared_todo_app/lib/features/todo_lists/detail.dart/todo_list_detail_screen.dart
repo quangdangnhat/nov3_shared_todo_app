@@ -547,11 +547,32 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                 Positioned(
                   bottom: 16,
                   right: 16,
-                  child: DetailActionButtons(
-                    onNewFolder: () => _openFolderDialog(),
-                    onNewTask: () => _openTaskDialog(),
-                    isMobile: isMobile,
-                    currentUserRole: _viewModel.currentUserRole,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // FAB Chat
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: FloatingActionButton(
+                          heroTag: 'chat_fab', // Serve se ci sono più FAB
+                          onPressed: () {
+                            // Naviga alla chat della todo list corrente
+                            context.go('/list/${widget.todoList.id}/chat');
+                          },
+                          backgroundColor: Colors.blue,
+                          child: const Icon(Icons.chat),
+                          tooltip: 'Open Chat',
+                        ),
+                      ),
+                      // FAB esistenti (DetailActionButtons)
+                      DetailActionButtons(
+                        onNewFolder: () => _openFolderDialog(),
+                        onNewTask: () => _openTaskDialog(),
+                        isMobile: isMobile,
+                        currentUserRole: _viewModel.currentUserRole,
+                      ),
+                    ],
                   ),
                 ),
               ],

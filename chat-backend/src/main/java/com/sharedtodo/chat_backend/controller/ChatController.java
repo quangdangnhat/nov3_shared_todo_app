@@ -1,28 +1,80 @@
 package com.sharedtodo.chat_backend.controller;
 
 import com.sharedtodo.chat_backend.model.ChatMessage;
-import org.springframework.messaging.handler.annotation.MessageMapping;
+import com.sharedtodo.chat_backend.repository.ChatMessageRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/chat")
 public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatMessageRepository chatMessageRepository;
 
-    // Iniettiamo il template per inviare messaggi ai client connessi
-    public ChatController(SimpMessagingTemplate messagingTemplate) {
+    public ChatController(SimpMessagingTemplate messagingTemplate, ChatMessageRepository chatMessageRepository) {
         this.messagingTemplate = messagingTemplate;
+        this.chatMessageRepository = chatMessageRepository;
     }
 
-    // Riceve un messaggio inviato dal client per una specifica to-do list e lo inoltra a tutti i client sottoscritti a quel topic.
-    // Parametri:
-    // - todoListId: Id della to-do list
-    // - message:    Messaggio inviato dal client
+    // WebSocket
     @MessageMapping("/todolist/{todoListId}/send")
-    public void sendMessage(@DestinationVariable String todoListId, ChatMessage message) {
-        // Invia il messaggio a tutti i client connessi a /topic/todolist/{todoListId}
+    public void sendMessageWS(@DestinationVariable String todoListId, ChatMessage message) {
+        message.setTodoListId(UUID.fromString(todoListId));
+        if (message.getCreatedAt() == null) message.setCreatedAt(LocalDateTime.now());
+        chatMessageRepository.save(message);
         messagingTemplate.convertAndSend("/topic/todolist/" + todoListId, message);
+    }
+
+    // REST: invio messaggio
+    @PostMapping("/send")
+    public ResponseEntity<ChatMessage> sendMessageREST(@RequestBody ChatMessageDTO dto) {
+        try {
+            ChatMessage msg = new ChatMessage();
+            msg.setContent(dto.getContent());
+            msg.setTodoListId(UUID.fromString(dto.getTodoListId()));
+            msg.setUserId(UUID.fromString(dto.getUserId()));
+            msg.setCreatedAt(LocalDateTime.now());
+            ChatMessage saved = chatMessageRepository.save(msg);
+
+            // Aggiorna anche WebSocket
+            messagingTemplate.convertAndSend("/topic/todolist/" + dto.getTodoListId(), saved);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    // REST: recupero cronologia
+    @GetMapping("/todolist/{todoListId}")
+    public List<ChatMessage> getMessages(@PathVariable UUID todoListId) {
+        return chatMessageRepository.findAll()
+                .stream()
+                .filter(msg -> msg.getTodoListId().equals(todoListId))
+                .sorted((a,b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
+                .toList();
+    }
+
+    // DTO per ricevere dati dal frontend come string UUID
+    public static class ChatMessageDTO {
+        private String content;
+        private String userId;
+        private String todoListId;
+
+        public String getContent() { return content; }
+        public void setContent(String content) { this.content = content; }
+        public String getUserId() { return userId; }
+        public void setUserId(String userId) { this.userId = userId; }
+        public String getTodoListId() { return todoListId; }
+        public void setTodoListId(String todoListId) { this.todoListId = todoListId; }
     }
 }
