@@ -17,6 +17,7 @@ dependencies:
   go_router: ^16.3.0
   intl: ^0.20.2
   animated_tree_view: ^2.3.0
+  stomp_dart_client: ^3.0.1
 
 dev_dependencies:
   flutter_test:
