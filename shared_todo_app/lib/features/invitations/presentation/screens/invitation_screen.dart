@@ -28,7 +28,9 @@ class InvitationsNotificationButton extends StatelessWidget {
             isLabelVisible: count > 0,
             backgroundColor: Theme.of(context).colorScheme.error,
             child: Icon(
-              count > 0 ? Icons.notifications_active : Icons.notifications_outlined,
+              count > 0
+                  ? Icons.notifications_active
+                  : Icons.notifications_outlined,
             ),
           ),
           onPressed: () {
@@ -63,10 +65,10 @@ class InvitationsPanel extends StatefulWidget {
 
 class _InvitationsPanelState extends State<InvitationsPanel> {
   final InvitationRepository _invitationRepo = InvitationRepository();
-  
+
   // Set per tracciare quali inviti stanno caricando (spinner)
   final Set<String> _loadingInvitations = {};
-  
+
   // NUOVO: Set per nascondere immediatamente gli inviti gestiti con successo
   // Questo garantisce il refresh istantaneo della UI anche se lo Stream ritarda
   final Set<String> _processedInvitationsIds = {};
@@ -117,18 +119,17 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
       stream: _invitationRepo.getPendingInvitationsStream(),
       builder: (context, snapshot) {
         // Se lo stream sta caricando inizialmente
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-           return const SizedBox(
-             height: 200, 
-             child: Center(child: CircularProgressIndicator())
-           );
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const SizedBox(
+              height: 200, child: Center(child: CircularProgressIndicator()));
         }
 
         // Prendiamo i dati grezzi dallo stream
         final rawInvitations = snapshot.data ?? [];
 
         // 3. FILTRO REALTIME:
-        // Mostriamo solo gli inviti che arrivano dallo stream MENO quelli che abbiamo 
+        // Mostriamo solo gli inviti che arrivano dallo stream MENO quelli che abbiamo
         // appena processato con successo in questa sessione del dialog.
         final visibleInvitations = rawInvitations
             .where((inv) => !_processedInvitationsIds.contains(inv.id))
@@ -136,12 +137,12 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
 
         // Auto-chiusura soft: se non c'è nulla da mostrare ed abbiamo processato qualcosa
         if (visibleInvitations.isEmpty && _processedInvitationsIds.isNotEmpty) {
-           // Usiamo un post frame callback per non chiudere durante il build
-           WidgetsBinding.instance.addPostFrameCallback((_) {
-             if (mounted && Navigator.canPop(context)) {
-               Navigator.pop(context);
-             }
-           });
+          // Usiamo un post frame callback per non chiudere durante il build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          });
         }
 
         return ConstrainedBox(
@@ -159,13 +160,15 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Row(
                     children: [
-                      Icon(Icons.mail_outline, color: Theme.of(context).colorScheme.primary),
+                      Icon(Icons.mail_outline,
+                          color: Theme.of(context).colorScheme.primary),
                       const SizedBox(width: 12),
                       Text(
                         'Invitations',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                       ),
                       const Spacer(),
                       IconButton(
@@ -176,10 +179,10 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
                 const Divider(height: 1),
-                
+
                 // Lista
                 Flexible(
                   child: visibleInvitations.isEmpty
@@ -188,15 +191,18 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
                           padding: const EdgeInsets.all(24),
                           shrinkWrap: true,
                           itemCount: visibleInvitations.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 16),
                           itemBuilder: (context, index) {
                             final invitation = visibleInvitations[index];
                             return _InvitationCard(
                               key: ValueKey(invitation.id),
                               invitation: invitation,
-                              isLoading: _loadingInvitations.contains(invitation.id),
+                              isLoading:
+                                  _loadingInvitations.contains(invitation.id),
                               onAccept: () => _handleResponse(invitation, true),
-                              onDecline: () => _handleResponse(invitation, false),
+                              onDecline: () =>
+                                  _handleResponse(invitation, false),
                             );
                           },
                         ),
@@ -234,7 +240,7 @@ class _InvitationCard extends StatelessWidget {
   final VoidCallback onDecline;
 
   const _InvitationCard({
-    super.key, 
+    super.key,
     required this.invitation,
     required this.isLoading,
     required this.onAccept,
@@ -244,7 +250,7 @@ class _InvitationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
@@ -261,8 +267,8 @@ class _InvitationCard extends StatelessWidget {
                 child: Text(
                   invitation.todoListTitle ?? 'Unknown List',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
               Container(
@@ -286,12 +292,16 @@ class _InvitationCard extends StatelessWidget {
           Text(
             'Invited by: ${invitation.invitedByUserEmail ?? 'Unknown'}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+                  color: colorScheme.onSurfaceVariant,
+                ),
           ),
           const SizedBox(height: 16),
           if (isLoading)
-            const Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+            const Center(
+                child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2)))
           else
             Row(
               children: [
@@ -300,7 +310,8 @@ class _InvitationCard extends StatelessWidget {
                     onPressed: onDecline,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: colorScheme.error,
-                      side: BorderSide(color: colorScheme.error.withOpacity(0.5)),
+                      side:
+                          BorderSide(color: colorScheme.error.withOpacity(0.5)),
                       padding: const EdgeInsets.symmetric(vertical: 0),
                     ),
                     child: const Text('Decline'),

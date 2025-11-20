@@ -421,7 +421,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                     context.go(AppRouter.visualizer, extra: _todoListRepo);
                   },
                 ),
-                // gestione del campenello  
+                // gestione del campenello
                 const InvitationsNotificationButton(),
               ],
             ),
