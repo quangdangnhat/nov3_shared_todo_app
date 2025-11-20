@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/chat.dart';
 
 class ChatRepository {
-  final String _socketUrl = 'ws://localhost:8080/ws'; 
+  final String _socketUrl = 'ws://localhost:8080/ws';
   StompClient? _client;
 
   final _messagesController = StreamController<ChatMessage>.broadcast();
@@ -21,13 +21,12 @@ class ChatRepository {
         onConnect: (frame) {
           debugPrint('Connesso al backend Spring Boot Chat!');
 
-          _client?.subscribe(
+          _client!.subscribe(
             destination: '/topic/todolist/$todoListId',
             callback: (frame) {
               if (frame.body != null) {
                 final data = jsonDecode(frame.body!);
-                final message = ChatMessage.fromMap(data);
-                _messagesController.add(message);
+                _messagesController.add(ChatMessage.fromMap(data));
               }
             },
           );
@@ -43,24 +42,30 @@ class ChatRepository {
 
   void sendMessage(String todoListId, String content) {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) {
-      debugPrint('Nessun utente loggato, impossibile inviare il messaggio');
-      return;
-    }
+    if (user == null) return;
 
-    if (_client == null || !_client!.connected) {
-      debugPrint('WebSocket non connesso, impossibile inviare il messaggio');
-      return;
-    }
+    if (_client == null || !_client!.connected) return;
 
-    _client?.send(
+    final message = {
+      'content': content,
+      'userId': user.id,                       // necessario
+      'username': user.userMetadata?['username'] ?? 'User',
+    };
+
+    _client!.send(
       destination: '/app/todolist/$todoListId/send',
-      body: jsonEncode({
-        'content': content,
-        'user_id': user.id,
-        'username': user.userMetadata?['username'] ?? 'Unknown',
-      }),
+      body: jsonEncode(message),
     );
+
+    // Aggiungi subito il messaggio allo stream per il client stesso
+    _messagesController.add(ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: content,
+      userId: user.id,
+      todoListId: todoListId,
+      createdAt: DateTime.now(),
+      username: user.userMetadata?['username'] ?? 'User',
+    ));
   }
 
   void dispose() {

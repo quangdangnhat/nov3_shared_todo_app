@@ -8,15 +8,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ChatService {
   final ChatRepository _repository = ChatRepository();
 
-  // Stream dei messaggi in tempo reale
   Stream<ChatMessage> get messageStream => _repository.messageStream;
 
-  // Connetti WebSocket per una Todo List
   void connect(String todoListId) {
     _repository.connect(todoListId);
   }
 
-  // Invia un messaggio al backend
+  void dispose() {
+    _repository.dispose();
+  }
+
   Future<void> sendMessage(String todoListId, String content) async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
@@ -25,6 +26,7 @@ class ChatService {
       'content': content,
       'userId': user.id,
       'todoListId': todoListId,
+      'username': user.userMetadata?['username'] ?? 'User',
     };
 
     final url = Uri.parse('http://localhost:8080/api/chat/send');
@@ -36,7 +38,7 @@ class ChatService {
         body: jsonEncode(payload),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('Messaggio inviato con successo');
       } else {
         debugPrint('Errore invio messaggio: ${response.statusCode}');
@@ -47,7 +49,6 @@ class ChatService {
     }
   }
 
-  // Recupera cronologia messaggi via REST
   Future<List<ChatMessage>> fetchHistory(String todoListId) async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return [];
@@ -67,9 +68,5 @@ class ChatService {
       debugPrint('Exception fetchHistory: $e');
       return [];
     }
-  }
-
-  void dispose() {
-    _repository.dispose();
   }
 }

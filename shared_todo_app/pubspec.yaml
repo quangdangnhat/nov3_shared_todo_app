@@ -18,6 +18,7 @@ dependencies:
   intl: ^0.20.2
   animated_tree_view: ^2.3.0
   stomp_dart_client: ^3.0.1
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

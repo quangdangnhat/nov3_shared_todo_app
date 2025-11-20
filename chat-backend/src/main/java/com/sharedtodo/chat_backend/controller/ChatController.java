@@ -25,50 +25,61 @@ public class ChatController {
         this.chatMessageRepository = chatMessageRepository;
     }
 
-    // WebSocket
+    // --- WebSocket: invio messaggi ---
+    // --- WebSocket ---
     @MessageMapping("/todolist/{todoListId}/send")
     public void sendMessageWS(@DestinationVariable String todoListId, ChatMessage message) {
+        // Imposta ID e data
         message.setTodoListId(UUID.fromString(todoListId));
         if (message.getCreatedAt() == null) message.setCreatedAt(LocalDateTime.now());
-        chatMessageRepository.save(message);
-        messagingTemplate.convertAndSend("/topic/todolist/" + todoListId, message);
+
+        // Salva nel DB
+        ChatMessage saved = chatMessageRepository.save(message);
+
+        // Invia a tutti i client e include username
+        messagingTemplate.convertAndSend(
+            "/topic/todolist/" + todoListId,
+            saved
+        );
     }
 
-    // REST: invio messaggio
+    // --- REST: invio messaggi ---
     @PostMapping("/send")
     public ResponseEntity<ChatMessage> sendMessageREST(@RequestBody ChatMessageDTO dto) {
-        try {
-            ChatMessage msg = new ChatMessage();
-            msg.setContent(dto.getContent());
-            msg.setTodoListId(UUID.fromString(dto.getTodoListId()));
-            msg.setUserId(UUID.fromString(dto.getUserId()));
-            msg.setCreatedAt(LocalDateTime.now());
-            ChatMessage saved = chatMessageRepository.save(msg);
-
-            // Aggiorna anche WebSocket
-            messagingTemplate.convertAndSend("/topic/todolist/" + dto.getTodoListId(), saved);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        if (dto.getContent() == null || dto.getUserId() == null || dto.getTodoListId() == null) {
+            return ResponseEntity.badRequest().build();
         }
+
+        ChatMessage message = new ChatMessage();
+        message.setContent(dto.getContent());
+        message.setUserId(UUID.fromString(dto.getUserId()));
+        message.setTodoListId(UUID.fromString(dto.getTodoListId()));
+        message.setUsername(dto.getUsername());
+        message.setCreatedAt(LocalDateTime.now());
+
+        ChatMessage saved = chatMessageRepository.save(message);
+
+        // Pubblica via WebSocket per aggiornare tutti i client
+        messagingTemplate.convertAndSend("/topic/todolist/" + dto.getTodoListId(), saved);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    // REST: recupero cronologia
+    // --- REST: recupera cronologia ---
     @GetMapping("/todolist/{todoListId}")
     public List<ChatMessage> getMessages(@PathVariable UUID todoListId) {
-        return chatMessageRepository.findAll()
-                .stream()
+        return chatMessageRepository.findAll().stream()
                 .filter(msg -> msg.getTodoListId().equals(todoListId))
-                .sorted((a,b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
+                .sorted((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
                 .toList();
     }
 
-    // DTO per ricevere dati dal frontend come string UUID
+    // DTO per ricevere messaggi REST
     public static class ChatMessageDTO {
         private String content;
         private String userId;
         private String todoListId;
+        private String username;
 
         public String getContent() { return content; }
         public void setContent(String content) { this.content = content; }
@@ -76,5 +87,7 @@ public class ChatController {
         public void setUserId(String userId) { this.userId = userId; }
         public String getTodoListId() { return todoListId; }
         public void setTodoListId(String todoListId) { this.todoListId = todoListId; }
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
     }
 }
