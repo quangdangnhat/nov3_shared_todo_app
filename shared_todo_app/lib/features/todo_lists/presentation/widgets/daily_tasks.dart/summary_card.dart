@@ -45,17 +45,12 @@ class SummaryCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.assessment,
-          color: theme.colorScheme.primary,
-          size: isMobile ? 18 : 24,
-        ),
         SizedBox(width: isMobile ? 6 : 8),
         Text(
           'Daily Recap',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 14 : 16,
+            fontSize: isMobile ? 24 : 30,
           ),
         ),
       ],
@@ -126,7 +121,7 @@ class _StatItem extends StatelessWidget {
           child: Text(
             '$count',
             style: TextStyle(
-              fontSize: compact ? 14 : 20,
+              fontSize: compact ? 18 : 20,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -136,7 +131,7 @@ class _StatItem extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: compact ? 9 : 12,
+            fontSize: compact ? 13 : 16,
             color: color,
           ),
           textAlign: TextAlign.center,

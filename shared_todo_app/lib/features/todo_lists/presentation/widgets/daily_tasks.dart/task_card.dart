@@ -25,19 +25,32 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final categoryColor = ColorHelper.getCategoryColor(category, theme);
+    final isOverdue = category == TaskCategory.overdue;
+
+    // Colore neutro per i testi
+    final neutralColor = Colors.grey[800]!;
+
     final priorityColor = ColorHelper.getPriorityColor(task.priority, theme);
     final isMobile = ResponsiveLayout.isMobile(context);
 
     return Card(
-      elevation: category == TaskCategory.overdue ? 3 : 1,
+      // RIPRISTINATO COME NEL TUO CODICE ORIGINALE
+      // Usiamo l'elevation per dare stacco, visto che togliamo il bordo
+      elevation: isOverdue ? 3 : 1,
+      color: theme.cardColor,
+      margin: EdgeInsets.only(bottom: isMobile ? 10 : 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: category == TaskCategory.overdue
+            borderRadius: BorderRadius.circular(14),
+            // RIPRISTINATO COME NEL TUO CODICE ORIGINALE:
+            // Nessun bordo, tranne se è scaduto (overdue)
+            border: isOverdue
                 ? Border.all(
                     color: ColorHelper.getOverdueBorderColor(theme),
                     width: 2,
@@ -45,13 +58,14 @@ class TaskCard extends StatelessWidget {
                 : null,
           ),
           child: Padding(
-            padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
+            // Mantengo la spaziatura "via di mezzo" (16/20)
+            padding: EdgeInsets.all(isMobile ? 16.0 : 20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildTitleRow(context, theme, priorityColor, isMobile),
-                SizedBox(height: isMobile ? 8 : 12),
-                _buildInfoChips(theme, categoryColor, isMobile),
+                SizedBox(height: isMobile ? 10 : 12),
+                _buildInfoChips(theme, neutralColor, isOverdue, isMobile),
               ],
             ),
           ),
@@ -63,47 +77,59 @@ class TaskCard extends StatelessWidget {
   Widget _buildTitleRow(BuildContext context, ThemeData theme,
       Color priorityColor, bool isMobile) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Text(
             task.title,
             style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+              // Font size "via di mezzo"
               fontSize: ResponsiveLayout.responsive<double>(
                 context,
-                mobile: 14,
-                desktop: 16,
+                mobile: 18,
+                desktop: 21,
               ),
+              height: 1.2,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         _PriorityBadge(
             priority: task.priority, color: priorityColor, isMobile: isMobile),
       ],
     );
   }
 
-  Widget _buildInfoChips(ThemeData theme, Color categoryColor, bool isMobile) {
+  Widget _buildInfoChips(
+      ThemeData theme, Color neutralColor, bool isOverdue, bool isMobile) {
     return Wrap(
-      spacing: isMobile ? 8 : 12,
+      spacing: 10,
       runSpacing: 8,
       children: [
+        // Start Date
         _InfoChip(
-          icon: Icons.play_arrow,
+          icon: Icons.play_arrow_rounded,
           text:
-              'start date: ${DateFormatter.formatShort(task.startDate ?? DateTime.now())}',
-          color: theme.colorScheme.primary,
+              'Start: ${DateFormatter.formatShort(task.startDate ?? DateTime.now())}',
+          itemColor: Colors.grey[700]!,
+          bgColor: Colors.grey[50]!,
           isMobile: isMobile,
         ),
+
+        // Expire Date
         _InfoChip(
-          icon: Icons.flag,
-          text: 'expire date: ${DateFormatter.formatShort(task.dueDate)}',
-          color: categoryColor,
+          icon: isOverdue ? Icons.warning_rounded : Icons.flag_rounded,
+          text: 'Due: ${DateFormatter.formatShort(task.dueDate)}',
+          itemColor: isOverdue ? Colors.red[700]! : Colors.grey[700]!,
+          bgColor: isOverdue ? Colors.red[50]! : Colors.grey[50]!,
           isMobile: isMobile,
         ),
+
+        // Status
         _StatusChip(status: task.status, theme: theme, isMobile: isMobile),
       ],
     );
@@ -126,19 +152,23 @@ class _PriorityBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 6 : 8,
-        vertical: 4,
+        horizontal: 10,
+        vertical: 5,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color, width: 1),
+        // NUOVO: Bordo leggero interno
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         priority.toUpperCase(),
         style: TextStyle(
           color: color,
-          fontSize: isMobile ? 9 : 11,
+          fontSize: isMobile ? 11 : 12,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -146,17 +176,19 @@ class _PriorityBadge extends StatelessWidget {
   }
 }
 
-/// Widget per un chip informativo
+/// Widget per un chip informativo (Date)
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String text;
-  final Color color;
+  final Color itemColor;
+  final Color bgColor;
   final bool isMobile;
 
   const _InfoChip({
     required this.icon,
     required this.text,
-    required this.color,
+    required this.itemColor,
+    required this.bgColor,
     required this.isMobile,
   });
 
@@ -164,23 +196,28 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 6 : 8,
-        vertical: 4,
+        horizontal: 10,
+        vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: bgColor,
         borderRadius: BorderRadius.circular(8),
+        // NUOVO: Bordo leggero interno (grigio/colorato)
+        border: Border.all(
+          color: itemColor.withOpacity(0.2),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: isMobile ? 12 : 14, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: isMobile ? 16 : 18, color: itemColor),
+          const SizedBox(width: 5),
           Text(
             text,
             style: TextStyle(
-              color: color,
-              fontSize: isMobile ? 10 : 11,
+              color: itemColor,
+              fontSize: isMobile ? 12 : 13,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -208,18 +245,23 @@ class _StatusChip extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 8 : 10,
-        vertical: 4,
+        horizontal: 10,
+        vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(10),
+        color: statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        // NUOVO: Bordo leggero interno
+        border: Border.all(
+          color: statusColor.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         status,
         style: TextStyle(
           color: statusColor,
-          fontSize: isMobile ? 10 : 11,
+          fontSize: isMobile ? 12 : 13,
           fontWeight: FontWeight.w600,
         ),
       ),
