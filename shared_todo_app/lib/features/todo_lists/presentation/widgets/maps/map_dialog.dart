@@ -26,11 +26,11 @@ class _MapDialogState extends State<MapDialog> {
   LatLng? _currentPosition;
   LatLng? _selectedLocation;
   String _selectedPlaceName = "Ricerca posizione...";
-  
+
   bool _isLoadingMap = true;
   bool _isSaving = false;
   bool _isGettingAddress = false;
-  
+
   final MapController _mapController = MapController();
 
   @override
@@ -53,9 +53,8 @@ class _MapDialogState extends State<MapDialog> {
           _mapController.move(userLatLng, 16.0);
         });
       }
-      
-      await _getAddress(userLatLng);
 
+      await _getAddress(userLatLng);
     } catch (e) {
       if (mounted) {
         setState(() => _selectedPlaceName = "Posizione GPS non trovata");
@@ -97,8 +96,7 @@ class _MapDialogState extends State<MapDialog> {
 
     try {
       final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&zoom=18&addressdetails=1'
-      );
+          'https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&zoom=18&addressdetails=1');
 
       final response = await http.get(url, headers: {
         'User-Agent': 'com.example.mytaskapp',
@@ -107,10 +105,10 @@ class _MapDialogState extends State<MapDialog> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
+
         if (data['display_name'] != null) {
           foundAddress = data['display_name'];
-           
+
           List<String> parts = foundAddress.split(',');
           if (parts.length > 2) {
             foundAddress = "${parts[0]}, ${parts[1]}";
@@ -128,7 +126,8 @@ class _MapDialogState extends State<MapDialog> {
         if (foundAddress.isNotEmpty) {
           _selectedPlaceName = foundAddress;
         } else {
-          _selectedPlaceName = "Lat: ${position.latitude.toStringAsFixed(4)}, Lng: ${position.longitude.toStringAsFixed(4)}";
+          _selectedPlaceName =
+              "Lat: ${position.latitude.toStringAsFixed(4)}, Lng: ${position.longitude.toStringAsFixed(4)}";
         }
         _isGettingAddress = false;
       });
@@ -157,7 +156,7 @@ class _MapDialogState extends State<MapDialog> {
       if (mounted) {
         // ← CHIAMA IL CALLBACK per notificare l'aggiornamento
         widget.onPlaceUpdated?.call();
-        
+
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -235,14 +234,14 @@ class _MapDialogState extends State<MapDialog> {
                   : FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: _currentPosition ?? 
-                            const LatLng(41.9028, 12.4964),
+                        initialCenter:
+                            _currentPosition ?? const LatLng(41.9028, 12.4964),
                         initialZoom: 16.0,
                         onTap: _onMapTap,
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: 
+                          urlTemplate:
                               'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.example.app',
                         ),
@@ -271,11 +270,11 @@ class _MapDialogState extends State<MapDialog> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: (_isLoadingMap || 
-                      _isSaving || 
-                      _isGettingAddress || 
-                      _selectedLocation == null) 
-                      ? null 
+                  onPressed: (_isLoadingMap ||
+                          _isSaving ||
+                          _isGettingAddress ||
+                          _selectedLocation == null)
+                      ? null
                       : _saveLocation,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -317,7 +316,7 @@ class _MapDialogState extends State<MapDialog> {
                 ),
               ),
             ),
-            
+
             // CREDIT (Richiesto dalla licenza OSM)
             const Padding(
               padding: EdgeInsets.only(bottom: 8.0),

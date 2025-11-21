@@ -76,7 +76,8 @@ class TaskSorter {
   }
 
   /// Esegue il sort effettivo
-  static List<Task> _performSort(List<Task> sortedTasks, TaskFilterType filterType) {
+  static List<Task> _performSort(
+      List<Task> sortedTasks, TaskFilterType filterType) {
     switch (filterType) {
       case TaskFilterType.createdAtNewest:
         sortedTasks.sort((a, b) {

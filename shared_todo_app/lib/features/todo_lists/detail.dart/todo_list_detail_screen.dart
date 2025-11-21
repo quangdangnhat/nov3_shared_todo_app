@@ -88,7 +88,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       if (result == true && mounted) {
         showSuccessSnackBar(
           context,
-          message: 'Folder ${folderToEdit == null ? 'created' : 'updated'} successfully',
+          message:
+              'Folder ${folderToEdit == null ? 'created' : 'updated'} successfully',
         );
         _refreshStreams();
       }
@@ -96,7 +97,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       if (mounted) {
         showErrorSnackBar(
           context,
-          message: 'Failed to ${folderToEdit == null ? 'create' : 'update'} folder: $error',
+          message:
+              'Failed to ${folderToEdit == null ? 'create' : 'update'} folder: $error',
         );
       }
     }
@@ -121,13 +123,15 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                   await _viewModel.deleteFolder(folder.id);
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
-                    showSuccessSnackBar(context, message: 'Folder deleted successfully');
+                    showSuccessSnackBar(context,
+                        message: 'Folder deleted successfully');
                     _refreshStreams();
                   }
                 } catch (error) {
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
-                    showErrorSnackBar(context, message: 'Failed to delete folder: $error');
+                    showErrorSnackBar(context,
+                        message: 'Failed to delete folder: $error');
                   }
                 }
               },
@@ -153,7 +157,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       if (result == true && mounted) {
         showSuccessSnackBar(
           context,
-          message: 'Task ${taskToEdit == null ? 'created' : 'updated'} successfully',
+          message:
+              'Task ${taskToEdit == null ? 'created' : 'updated'} successfully',
         );
         _refreshStreams();
       }
@@ -161,7 +166,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       if (mounted) {
         showErrorSnackBar(
           context,
-          message: 'Failed to ${taskToEdit == null ? 'create' : 'update'} task: $error',
+          message:
+              'Failed to ${taskToEdit == null ? 'create' : 'update'} task: $error',
         );
       }
     }
@@ -186,12 +192,14 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                   await _viewModel.deleteTask(widget.parentFolder.id, task.id);
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
-                    showSuccessSnackBar(context, message: 'Task deleted successfully');
+                    showSuccessSnackBar(context,
+                        message: 'Task deleted successfully');
                   }
                 } catch (error) {
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
-                    showErrorSnackBar(context, message: 'Failed to delete task: $error');
+                    showErrorSnackBar(context,
+                        message: 'Failed to delete task: $error');
                   }
                 }
               },
@@ -209,7 +217,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       await _viewModel.handleTaskStatusChange(task, newStatus);
     } catch (error) {
       if (mounted) {
-        showErrorSnackBar(context, message: 'Failed to update task status: $error');
+        showErrorSnackBar(context,
+            message: 'Failed to update task status: $error');
       }
     }
   }
@@ -258,7 +267,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       final String parentFolderId = widget.parentFolder.parentId!;
       try {
         final folderRepository = FolderRepository();
-        final Folder parentOfCurrentFolder = await folderRepository.getFolder(parentFolderId);
+        final Folder parentOfCurrentFolder =
+            await folderRepository.getFolder(parentFolderId);
 
         if (!mounted) return;
         final bool isParentTheRoot = parentOfCurrentFolder.parentId == null;
@@ -287,7 +297,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         }
       } catch (error) {
         if (mounted) {
-          showErrorSnackBar(context, message: 'Failed to navigate back: $error');
+          showErrorSnackBar(context,
+              message: 'Failed to navigate back: $error');
         }
       }
     }
@@ -301,7 +312,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
     final bool isFoldersCollapsed = _viewModel.isFoldersCollapsed;
     final bool isTasksCollapsed = _viewModel.isTasksCollapsed;
     final Stream<List<Folder>> foldersStream = _viewModel.foldersStream;
-    final Stream<List<Task>> tasksStream = _viewModel.tasksStream(widget.parentFolder.id);
+    final Stream<List<Task>> tasksStream =
+        _viewModel.tasksStream(widget.parentFolder.id);
 
     return Container(
       key: ValueKey('folder_screen_${widget.parentFolder.id}'),
@@ -322,7 +334,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                 RefreshIndicator(
                   onRefresh: () async => _refreshStreams(),
                   child: CustomScrollView(
-                    key: PageStorageKey('tasks_scroll_${widget.parentFolder.id}'),
+                    key: PageStorageKey(
+                        'tasks_scroll_${widget.parentFolder.id}'),
                     slivers: [
                       FolderListSection(
                         isCollapsed: isFoldersCollapsed,
@@ -343,18 +356,25 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                             },
                           );
                         },
-                        onEdit: (folder) => _openFolderDialog(folderToEdit: folder),
+                        onEdit: (folder) =>
+                            _openFolderDialog(folderToEdit: folder),
                         onDelete: (folder) => _showDeleteFolderDialog(folder),
                       ),
 
                       // TASK HEADER
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0).copyWith(top: 24),
+                          padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0, vertical: 8.0)
+                              .copyWith(top: 24),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Tasks', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey)),
+                              Text('Tasks',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(color: Colors.grey)),
                               Row(
                                 children: [
                                   TaskFilterDropdown(
@@ -367,11 +387,15 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                                   ),
                                   IconButton(
                                     icon: Icon(
-                                      isTasksCollapsed ? Icons.expand_more : Icons.expand_less,
+                                      isTasksCollapsed
+                                          ? Icons.expand_more
+                                          : Icons.expand_less,
                                       color: Colors.grey,
                                     ),
                                     onPressed: _viewModel.toggleTasksCollapse,
-                                    tooltip: isTasksCollapsed ? 'Expand Tasks' : 'Collapse Tasks',
+                                    tooltip: isTasksCollapsed
+                                        ? 'Expand Tasks'
+                                        : 'Collapse Tasks',
                                   ),
                                 ],
                               )
@@ -384,11 +408,13 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                       StreamBuilder<List<Task>>(
                         stream: tasksStream,
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
                             return const SliverToBoxAdapter(
                               child: Padding(
                                 padding: EdgeInsets.all(30),
-                                child: Center(child: CircularProgressIndicator()),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
                               ),
                             );
                           }
@@ -403,7 +429,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                           }
 
                           final tasks = snapshot.data ?? [];
-                          final sortedTasks = TaskSorter.sortTasks(tasks, _selectedTaskFilter);
+                          final sortedTasks =
+                              TaskSorter.sortTasks(tasks, _selectedTaskFilter);
 
                           if (sortedTasks.isEmpty) {
                             return const SliverToBoxAdapter(
@@ -415,12 +442,14 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                           }
 
                           if (isTasksCollapsed) {
-                            return const SliverToBoxAdapter(child: SizedBox.shrink());
+                            return const SliverToBoxAdapter(
+                                child: SizedBox.shrink());
                           }
 
                           // SOLUZIONE: SliverList.builder con key UNICA e STABILE
                           return SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
                             sliver: SliverList.builder(
                               itemCount: sortedTasks.length,
                               itemBuilder: (context, index) {
@@ -434,7 +463,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                                     task: task,
                                     currentUserRole: _viewModel.currentUserRole,
                                     onTap: () {},
-                                    onEdit: () => _openTaskDialog(taskToEdit: task),
+                                    onEdit: () =>
+                                        _openTaskDialog(taskToEdit: task),
                                     onDelete: () => _showDeleteTaskDialog(task),
                                     onStatusChanged: (newStatus) {
                                       _handleTaskStatusChange(task, newStatus);

@@ -11,7 +11,7 @@ class Task {
   final DateTime dueDate;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  
+
   // MODIFICA: Usa 'double' minuscolo
   final double? latitude;
   final double? longitude;
@@ -36,8 +36,13 @@ class Task {
 
   factory Task.fromMap(Map<String, dynamic> map) {
     // ... (i tuoi helper date restano uguali) ...
-    DateTime? parseNullableDate(dynamic value) { /* ... */ return null; } 
-    DateTime parseRequiredDate(dynamic value, String fieldName) { /* ... */ return DateTime.now(); } // Semplificato per brevità
+    DateTime? parseNullableDate(dynamic value) {
+      /* ... */ return null;
+    }
+
+    DateTime parseRequiredDate(dynamic value, String fieldName) {
+      /* ... */ return DateTime.now();
+    } // Semplificato per brevità
 
     final sdValue = map['start_date'] ?? map['startDate'];
     final uaValue = map['updated_at'] ?? map['updatedAt'];
@@ -55,7 +60,7 @@ class Task {
       dueDate: parseRequiredDate(ddValue, 'dueDate'),
       createdAt: parseRequiredDate(caValue, 'createdAt'),
       updatedAt: parseNullableDate(uaValue),
-      
+
       // --- MODIFICA FONDAMENTALE ---
       // Convertiamo in double in modo sicuro (gestisce anche se il DB manda un int)
       latitude: (map['latitude'] as num?)?.toDouble(),
@@ -76,7 +81,7 @@ class Task {
       'due_date': dueDate.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
-      
+
       // I double passano normalmente
       'latitude': latitude,
       'longitude': longitude,

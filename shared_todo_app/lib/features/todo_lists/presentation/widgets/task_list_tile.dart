@@ -50,14 +50,14 @@ class _TaskListTileState extends State<TaskListTile> {
 
   void _updateStatusOptimistically(String newStatus) {
     if (_currentStatus == newStatus || _isUpdating) return;
-    
+
     setState(() {
       _currentStatus = newStatus;
       _isUpdating = true;
     });
-    
+
     widget.onStatusChanged(newStatus);
-    
+
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
@@ -92,14 +92,14 @@ class _TaskListTileState extends State<TaskListTile> {
     final task = widget.task;
 
     final bool isDone = _currentStatus == 'Done';
-    
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final bool isOverdue = task.dueDate.isBefore(today) && !isDone;
 
     final Color borderColor = theme.dividerColor;
-    final Color titleColor = isDone 
-        ? theme.disabledColor 
+    final Color titleColor = isDone
+        ? theme.disabledColor
         : (theme.textTheme.titleMedium?.color ?? Colors.black);
     final Color dateColor = isOverdue ? colorScheme.error : Colors.grey[700]!;
 
@@ -107,9 +107,11 @@ class _TaskListTileState extends State<TaskListTile> {
     final double bodySize = ResponsiveLayout.isMobile(context) ? 13 : 14;
 
     final bool hasDescription = task.desc != null && task.desc!.isNotEmpty;
-    final String descriptionText = hasDescription ? task.desc! : 'No description';
-    final Color descriptionColor = hasDescription ? Colors.grey[600]! : Colors.grey[400]!;
-    
+    final String descriptionText =
+        hasDescription ? task.desc! : 'No description';
+    final Color descriptionColor =
+        hasDescription ? Colors.grey[600]! : Colors.grey[400]!;
+
     final bool hasPlace = task.placeName != null && task.placeName!.isNotEmpty;
     final String placeText = hasPlace ? task.placeName! : "No place indicated";
     final Color placeTextColor = hasPlace ? Colors.black87 : Colors.grey[400]!;
@@ -132,7 +134,7 @@ class _TaskListTileState extends State<TaskListTile> {
               children: [
                 // ICONA
                 SizedBox(
-                  width: 40, 
+                  width: 40,
                   height: 28,
                   child: Icon(
                     Icons.assignment_outlined,
@@ -187,19 +189,22 @@ class _TaskListTileState extends State<TaskListTile> {
                       Row(
                         children: [
                           Icon(
-                            Icons.notes, 
-                            size: 14, 
-                            color: hasDescription ? Colors.grey : Colors.grey[300],
+                            Icons.notes,
+                            size: 14,
+                            color:
+                                hasDescription ? Colors.grey : Colors.grey[300],
                           ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               descriptionText,
                               style: TextStyle(
-                                fontSize: bodySize, 
+                                fontSize: bodySize,
                                 color: descriptionColor,
                                 height: 1.2,
-                                fontStyle: hasDescription ? FontStyle.normal : FontStyle.italic,
+                                fontStyle: hasDescription
+                                    ? FontStyle.normal
+                                    : FontStyle.italic,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -229,10 +234,13 @@ class _TaskListTileState extends State<TaskListTile> {
                                 style: TextStyle(
                                   fontSize: bodySize,
                                   color: placeTextColor,
-                                  fontStyle: hasPlace ? FontStyle.normal : FontStyle.italic,
+                                  fontStyle: hasPlace
+                                      ? FontStyle.normal
+                                      : FontStyle.italic,
                                   height: 1.2,
                                   decoration: TextDecoration.underline,
-                                  decorationColor: placeTextColor.withOpacity(0.5),
+                                  decorationColor:
+                                      placeTextColor.withOpacity(0.5),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -249,10 +257,11 @@ class _TaskListTileState extends State<TaskListTile> {
                 SizedBox(
                   width: 24,
                   height: 24,
-                  child: isAdmin 
+                  child: isAdmin
                       ? PopupMenuButton<String>(
                           padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                          icon: const Icon(Icons.more_vert,
+                              color: Colors.grey, size: 20),
                           onSelected: (value) {
                             if (value == 'edit') {
                               widget.onEdit();
@@ -262,13 +271,13 @@ class _TaskListTileState extends State<TaskListTile> {
                           },
                           itemBuilder: (context) => [
                             const PopupMenuItem(
-                              value: 'edit', 
+                              value: 'edit',
                               child: Text('Edit'),
                             ),
                             const PopupMenuItem(
                               value: 'delete',
                               child: Text(
-                                'Delete', 
+                                'Delete',
                                 style: TextStyle(color: Colors.red),
                               ),
                             ),
@@ -288,7 +297,8 @@ class _TaskListTileState extends State<TaskListTile> {
               children: [
                 _buildStatusButton(context, 'To Do', _currentStatus == 'To Do'),
                 const SizedBox(width: 8),
-                _buildStatusButton(context, 'In Progress', _currentStatus == 'In Progress'),
+                _buildStatusButton(
+                    context, 'In Progress', _currentStatus == 'In Progress'),
                 const SizedBox(width: 8),
                 _buildStatusButton(context, 'Done', _currentStatus == 'Done'),
               ],
@@ -299,7 +309,8 @@ class _TaskListTileState extends State<TaskListTile> {
     );
   }
 
-  Widget _buildStatusButton(BuildContext context, String label, bool isSelected) {
+  Widget _buildStatusButton(
+      BuildContext context, String label, bool isSelected) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
