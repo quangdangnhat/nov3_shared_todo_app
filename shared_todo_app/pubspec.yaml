@@ -29,7 +29,6 @@ dependencies:
 #Alternativa:
   flutter_map: ^8.2.2            # <-- AGGIUNGI QUESTO (Motore mappa)
   latlong2: ^0.9.1
-  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
