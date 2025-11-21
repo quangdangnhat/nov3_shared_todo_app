@@ -1,20 +1,21 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart'; // Pacchetto OSM
-import 'package:latlong2/latlong.dart';      // Pacchetto coordinate
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_todo_app/data/repositories/task_repository.dart';
 
-
 class MapDialog extends StatefulWidget {
   final String taskId;
   final TaskRepository taskRepository;
+  final VoidCallback? onPlaceUpdated; // ← NUOVO PARAMETRO per real-time update
 
   const MapDialog({
     super.key,
     required this.taskId,
     required this.taskRepository,
+    this.onPlaceUpdated, // ← NUOVO
   });
 
   @override
@@ -22,7 +23,6 @@ class MapDialog extends StatefulWidget {
 }
 
 class _MapDialogState extends State<MapDialog> {
-  // Usiamo LatLng di 'latlong2', non di Google Maps
   LatLng? _currentPosition;
   LatLng? _selectedLocation;
   String _selectedPlaceName = "Ricerca posizione...";
@@ -31,7 +31,6 @@ class _MapDialogState extends State<MapDialog> {
   bool _isSaving = false;
   bool _isGettingAddress = false;
   
-  // Controller per muovere la mappa programmaticamente
   final MapController _mapController = MapController();
 
   @override
@@ -50,10 +49,8 @@ class _MapDialogState extends State<MapDialog> {
           _currentPosition = userLatLng;
           _selectedLocation = userLatLng;
         });
-        // Spostiamo la mappa sulla posizione utente
-        // Nota: _mapController deve essere pronto, quindi aspettiamo un frame
         WidgetsBinding.instance.addPostFrameCallback((_) {
-           _mapController.move(userLatLng, 16.0);
+          _mapController.move(userLatLng, 16.0);
         });
       }
       
@@ -75,14 +72,19 @@ class _MapDialogState extends State<MapDialog> {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return Future.error('Permessi negati.');
+      if (permission == LocationPermission.denied) {
+        return Future.error('Permessi negati.');
+      }
     }
-    if (permission == LocationPermission.deniedForever) return Future.error('Permessi negati per sempre.');
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error('Permessi negati per sempre.');
+    }
 
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
   }
 
-  // --- GEOCODING GRATUITO (Nominatim / OpenStreetMap) ---
   Future<void> _getAddress(LatLng position) async {
     if (!mounted) return;
 
@@ -94,33 +96,25 @@ class _MapDialogState extends State<MapDialog> {
     String foundAddress = "";
 
     try {
-      // URL di Nominatim (Servizio gratuito di OSM)
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}&zoom=18&addressdetails=1'
       );
 
-      //debugPrint("🌍 Chiamata OSM: $url");
-
-      // ⚠️ IMPORTANTE: Nominatim richiede un User-Agent valido
       final response = await http.get(url, headers: {
-        'User-Agent': 'com.example.mytaskapp', // Metti qui il nome del tuo package
-        'Accept-Language': 'it', // Richiediamo risposta in Italiano
+        'User-Agent': 'com.example.mytaskapp',
+        'Accept-Language': 'it',
       });
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         
-        // Nominatim restituisce un oggetto 'address' molto dettagliato
         if (data['display_name'] != null) {
-           // 'display_name' è l'indirizzo completo. 
-           // Spesso è molto lungo, possiamo prendere solo parti specifiche se vuoi.
-           foundAddress = data['display_name'];
+          foundAddress = data['display_name'];
            
-           // Esempio di pulizia (opzionale): Prendiamo solo i primi 2 pezzi della virgola
-           List<String> parts = foundAddress.split(',');
-           if (parts.length > 2) {
-             foundAddress = "${parts[0]}, ${parts[1]}";
-           }
+          List<String> parts = foundAddress.split(',');
+          if (parts.length > 2) {
+            foundAddress = "${parts[0]}, ${parts[1]}";
+          }
         }
       } else {
         debugPrint("⚠️ OSM Error: ${response.statusCode}");
@@ -153,7 +147,6 @@ class _MapDialogState extends State<MapDialog> {
     setState(() => _isSaving = true);
 
     try {
-      // Nota: LatLng di OSM è double, quindi va bene per il tuo DB
       await widget.taskRepository.updateTask(
         taskId: widget.taskId,
         latitude: _selectedLocation!.latitude,
@@ -162,14 +155,22 @@ class _MapDialogState extends State<MapDialog> {
       );
 
       if (mounted) {
+        // ← CHIAMA IL CALLBACK per notificare l'aggiornamento
+        widget.onPlaceUpdated?.call();
+        
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Luogo salvato!"), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text("Luogo salvato!"),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Errore: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Errore: $e")),
+        );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -197,14 +198,23 @@ class _MapDialogState extends State<MapDialog> {
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  const Icon(Icons.location_on, color: Colors.blue), // Blu per differenziare da Google
+                  const Icon(Icons.location_on, color: Colors.blue),
                   const SizedBox(width: 10),
                   Expanded(
                     child: _isGettingAddress
-                        ? const Text("Sto chiedendo a OpenStreetMap...", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey))
+                        ? const Text(
+                            "Sto chiedendo a OpenStreetMap...",
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey,
+                            ),
+                          )
                         : Text(
                             _selectedPlaceName,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -225,17 +235,17 @@ class _MapDialogState extends State<MapDialog> {
                   : FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: _currentPosition ?? const LatLng(41.9028, 12.4964),
+                        initialCenter: _currentPosition ?? 
+                            const LatLng(41.9028, 12.4964),
                         initialZoom: 16.0,
-                        onTap: _onMapTap, // Gestisce il click
+                        onTap: _onMapTap,
                       ),
                       children: [
-                        // 1. LAYER DELLE TILE (La grafica della mappa)
                         TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.example.app', // IMPORTANTE
+                          urlTemplate: 
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.example.app',
                         ),
-                        // 2. LAYER DEI MARKER (Il puntatore)
                         if (_selectedLocation != null)
                           MarkerLayer(
                             markers: [
@@ -261,26 +271,48 @@ class _MapDialogState extends State<MapDialog> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: (_isLoadingMap || _isSaving || _isGettingAddress || _selectedLocation == null) 
+                  onPressed: (_isLoadingMap || 
+                      _isSaving || 
+                      _isGettingAddress || 
+                      _selectedLocation == null) 
                       ? null 
                       : _saveLocation,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.blue, // Stile OSM
+                    backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: _isGettingAddress
                       ? const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            ),
                             SizedBox(width: 10),
-                            Text("Attendi...", style: TextStyle(color: Colors.white)),
+                            Text(
+                              "Attendi...",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ],
                         )
                       : _isSaving
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Text("CONFERMA POSIZIONE"),
                 ),
               ),
@@ -289,7 +321,10 @@ class _MapDialogState extends State<MapDialog> {
             // CREDIT (Richiesto dalla licenza OSM)
             const Padding(
               padding: EdgeInsets.only(bottom: 8.0),
-              child: Text("© OpenStreetMap contributors", style: TextStyle(fontSize: 10, color: Colors.grey)),
+              child: Text(
+                "© OpenStreetMap contributors",
+                style: TextStyle(fontSize: 10, color: Colors.grey),
+              ),
             ),
           ],
         ),
