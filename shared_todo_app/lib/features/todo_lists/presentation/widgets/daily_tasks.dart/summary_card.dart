@@ -59,6 +59,8 @@ class SummaryCard extends StatelessWidget {
 
   Widget _buildStats(BuildContext context, ThemeData theme) {
     final isMobile = ResponsiveLayout.isMobile(context);
+    // Definisco il grigio per i bordi standard (non troppo chiaro, es. shade500)
+    final standardBorderColor = Colors.grey.shade500;
 
     // Tutto sulla stessa riga, versione compatta per mobile
     return Row(
@@ -68,24 +70,29 @@ class SummaryCard extends StatelessWidget {
           label: 'Total',
           count: totalTasks,
           color: theme.colorScheme.primary,
+          borderColor: standardBorderColor, // Grigio
           compact: isMobile,
         ),
         _StatItem(
           label: 'Urgent',
           count: overdueTasks,
           color: theme.colorScheme.error,
+          borderColor:
+              theme.colorScheme.error, // Rosso (Mantiene il suo colore)
           compact: isMobile,
         ),
         _StatItem(
           label: 'Today',
           count: dueTodayTasks,
           color: theme.colorScheme.secondary,
+          borderColor: standardBorderColor, // Grigio
           compact: isMobile,
         ),
         _StatItem(
           label: 'Active',
           count: activeTasks,
           color: theme.colorScheme.primary,
+          borderColor: standardBorderColor, // Grigio
           compact: isMobile,
         ),
       ],
@@ -98,12 +105,14 @@ class _StatItem extends StatelessWidget {
   final String label;
   final int count;
   final Color color;
+  final Color borderColor; // Nuova proprietà per il colore del bordo
   final bool compact;
 
   const _StatItem({
     required this.label,
     required this.count,
     required this.color,
+    required this.borderColor, // Richiesto nel costruttore
     this.compact = false,
   });
 
@@ -117,6 +126,11 @@ class _StatItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: color.withOpacity(0.15),
             shape: BoxShape.circle,
+            // Aggiunto il bordo
+            border: Border.all(
+              color: borderColor,
+              width: 2.0, // Spessore del bordo
+            ),
           ),
           child: Text(
             '$count',

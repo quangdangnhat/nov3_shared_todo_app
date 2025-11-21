@@ -34,8 +34,7 @@ class TaskCard extends StatelessWidget {
     final isMobile = ResponsiveLayout.isMobile(context);
 
     return Card(
-      // RIPRISTINATO COME NEL TUO CODICE ORIGINALE
-      // Usiamo l'elevation per dare stacco, visto che togliamo il bordo
+      // Usiamo l'elevation per dare stacco
       elevation: isOverdue ? 3 : 1,
       color: theme.cardColor,
       margin: EdgeInsets.only(bottom: isMobile ? 10 : 14),
@@ -48,14 +47,18 @@ class TaskCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            // RIPRISTINATO COME NEL TUO CODICE ORIGINALE:
-            // Nessun bordo, tranne se è scaduto (overdue)
+            // --- MODIFICA QUI ---
             border: isOverdue
                 ? Border.all(
+                    // CASO 1: Scaduto (Contorno esistente, più spesso e colorato)
                     color: ColorHelper.getOverdueBorderColor(theme),
                     width: 2,
                   )
-                : null,
+                : Border.all(
+                    // CASO 2: Normale (Grigio non troppo chiaro)
+                    color: Colors.grey.shade400,
+                    width: 1,
+                  ),
           ),
           child: Padding(
             // Mantengo la spaziatura "via di mezzo" (16/20)

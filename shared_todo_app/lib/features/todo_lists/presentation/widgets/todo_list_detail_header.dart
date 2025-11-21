@@ -38,22 +38,36 @@ class TodoListDetailHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // 1. HAMBURGER MENU
-          // Visibile SOLO se siamo su Mobile.
-          // Su Tablet e Desktop (isMobile = false) questo blocco viene ignorato.
-          if (isMobile)
-            // 2. FRECCIA INDIETRO
-            // Visibile SEMPRE (Desktop, Tablet e Mobile), subito dopo l'eventuale menu.
+          // --- INIZIO LOGICA LEADING ICON ---
+
+          // CASO 1: DESKTOP / TABLET
+          // Richiesta: "L'hamburger non deve mai essere visualizzato. Solo freccia."
+          if (!isMobile)
             IconButton(
               icon: const Icon(Icons.arrow_back),
               tooltip: 'Indietro',
               onPressed: onBackTap,
             ),
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Menu',
-          ),
+
+          // CASO 2: MOBILE
+          if (isMobile) ...[
+            // Se siamo nella root folder su mobile -> HAMBURGER
+            if (isRootFolder)
+              IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'Menu',
+              )
+            // Se siamo in una sottocartella su mobile -> FRECCIA INDIETRO
+            else
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Indietro',
+                onPressed: onBackTap,
+              ),
+          ],
+
+          // --- FINE LOGICA LEADING ICON ---
 
           const SizedBox(width: 8),
 
