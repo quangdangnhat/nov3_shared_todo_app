@@ -616,7 +616,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
 
                   if (snapshot.hasError) {
                     return Center(
-                      child: Text('Error loading lists: ${snapshot.error}'),
+                      child: Text(
+                          'Error loading lists. Check your connection and try again!'),
                     );
                   }
 

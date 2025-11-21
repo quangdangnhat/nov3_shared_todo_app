@@ -133,6 +133,26 @@ class TaskRepository {
     }
   }
 
+// metodo utile per ottenere i task da inserire nella pagina di recap dei task
+  /// Recupera tutti i task attivi (non completati) per il recap giornaliero
+  Future<List<Task>> getActiveTasks() async {
+    try {
+      final response = await _supabase
+          .from('tasks')
+          .select()
+          // IMPORTANTE: Escludi i task già fatti!
+          // Assumo tu abbia un campo 'status' o 'is_completed'
+          .neq('status', 'Done') // O .eq('is_completed', false)
+          .order('due_date', ascending: true); // Ordina per scadenza
+
+      return (response as List)
+          .map((json) => Task.fromMap(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Errore caricamento task attivi: $e');
+    }
+  }
+
   /// Recupera i task che hanno 'dueDate' tra start e end
   Future<List<Task>> getTasksForCalendar(DateTime start, DateTime end) async {
     final response = await _supabase

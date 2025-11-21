@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shared_todo_app/config/responsive.dart';
 import 'package:shared_todo_app/features/account/presentation/dialogs/change_password_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../config/router/app_router.dart';
 import '../../data/account_service.dart';
 import '../widgets/account_avatar.dart';
 import '../widgets/account_info_card.dart';
@@ -77,15 +75,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   Scaffold.of(context).openDrawer();
                 },
               )
-            : BackButton(
-                onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.goNamed(AppRouter.home);
-                  }
-                },
-              ),
+            : null,
       ),
       body: Center(
         child: ConstrainedBox(
