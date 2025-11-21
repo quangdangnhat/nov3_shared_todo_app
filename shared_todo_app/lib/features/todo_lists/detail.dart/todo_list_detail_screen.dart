@@ -462,82 +462,82 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         ),
                       ),
 
-                      // === 5. TASK LIST WIDGET ===
-                      // Applicato il TaskSorter
+                      // ... dentro slivers: [ ... FolderListSection, TaskFilterHeader ...
+
+// === 5. TASK LIST WIDGET STABILE ===
                       StreamBuilder<List<Task>>(
                         stream: tasksStream,
                         builder: (context, snapshot) {
-                          if (isTasksCollapsed) {
-                            return const SliverToBoxAdapter(
-                                child: SizedBox.shrink());
-                          }
+                          // Gestione Loading ed Errori
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return const SliverToBoxAdapter(
-                                child: Center(
-                                    child: Padding(
-                                        padding: EdgeInsets.all(16.0),
-                                        child: CircularProgressIndicator())));
+                              child: Padding(
+                                  padding: EdgeInsets.all(30),
+                                  child: Center(
+                                      child: CircularProgressIndicator())),
+                            );
                           }
                           if (snapshot.hasError) {
                             return SliverToBoxAdapter(
-                                child: Center(
-                                    child: Text(
-                                        'Error loading tasks: ${snapshot.error}')));
+                                child: Text('Error: ${snapshot.error}'));
                           }
 
-                          // --- APPLICA ORDINAMENTO CLIENT-SIDE ---
+                          // Ordinamento Dati
                           final tasks = snapshot.data ?? [];
                           final sortedTasks =
                               TaskSorter.sortTasks(tasks, _selectedTaskFilter);
 
                           if (sortedTasks.isEmpty) {
-                            return SliverToBoxAdapter(
+                            return const SliverToBoxAdapter(
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 32.0),
-                                child: Center(
-                                  child: Text(
-                                    'No tasks in this folder yet.',
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                ),
+                                padding: EdgeInsets.all(32.0),
+                                child: Center(child: Text("No tasks found.")),
                               ),
                             );
                           }
 
-                          // Usa la lista ordinata (sortedTasks)
-                          return SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final task = sortedTasks[index];
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0),
-                                  child: TaskListTile(
+                          // SEZIONE COLLAPSED
+                          if (isTasksCollapsed) {
+                            return const SliverToBoxAdapter(
+                                child: SizedBox.shrink());
+                          }
+
+                          // --- SOLUZIONE "BRUTE FORCE" ---
+                          // Usiamo SliverToBoxAdapter + Column.
+                          // Questo rimuove ogni logica di scrolling virtuale complessa.
+                          // I task vengono disegnati come un blocco unico solido.
+                          return SliverToBoxAdapter(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Column(
+                                children: sortedTasks.map((task) {
+                                  // Mappiamo ogni task direttamente nel widget
+                                  return TaskListTile(
+                                    // La chiave qui aiuta Flutter a distinguere i widget, ma dentro una Column è molto più stabile
+                                    key: ValueKey(task.id),
                                     task: task,
                                     currentUserRole: _viewModel.currentUserRole,
-                                    onTap: () {
-                                      /* TODO: Navigare al dettaglio task */
-                                    },
-                                    onEdit: () {
-                                      _openTaskDialog(taskToEdit: task);
-                                    },
-                                    onDelete: () {
-                                      _showDeleteTaskDialog(task);
-                                    },
+                                    onTap: () {}, // Aggiungi azione se vuoi
+                                    onEdit: () =>
+                                        _openTaskDialog(taskToEdit: task),
+                                    onDelete: () => _showDeleteTaskDialog(task),
                                     onStatusChanged: (newStatus) {
                                       _handleTaskStatusChange(task, newStatus);
                                     },
-                                  ),
-                                );
-                              },
-                              childCount:
-                                  sortedTasks.length, // Usa la lista ordinata
+                                  );
+                                }).toList(),
+                              ),
                             ),
                           );
                         },
                       ),
+
+// Spazio vuoto finale per non coprire l'ultimo elemento con il bottone
+                      const SliverToBoxAdapter(child: SizedBox(height: 100)),
+
+// ... ] chiusura slivers
                       // Spaziatore per i FAB
                       const SliverToBoxAdapter(child: SizedBox(height: 160)),
                     ],

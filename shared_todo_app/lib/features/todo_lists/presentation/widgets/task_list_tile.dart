@@ -1,22 +1,17 @@
-// coverage:ignore-file
-
-// consider testing later
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_todo_app/data/repositories/task_repository.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
 import '../../../../data/models/task.dart';
+import '../../../../config/responsive.dart';
 
-/// Un widget per visualizzare una singola riga di Task in una lista.
-class TaskListTile extends StatelessWidget {
+class TaskListTile extends StatefulWidget {
   final Task task;
-  final VoidCallback onTap; // Per aprire dettagli (futuro)
-  final VoidCallback onEdit; // Per modificare
-  final VoidCallback onDelete; // Per eliminare
-  // Callback per quando lo stato viene cambiato tramite i chip
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
   final ValueChanged<String> onStatusChanged;
-  final String? currentUserRole; // Ruolo dell'utente per i permessi
+  final String? currentUserRole;
 
   const TaskListTile({
     super.key,
@@ -28,217 +23,264 @@ class TaskListTile extends StatelessWidget {
     this.currentUserRole,
   });
 
-  // Helper per ottenere un colore in base alla priorità
-  /*Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'High':
-        return Colors.red.shade300;
-      case 'Medium':
-        return Colors.orange.shade300;
-      case 'Low':
-      default:
-        return Colors.green.shade300;
+  @override
+  State<TaskListTile> createState() => _TaskListTileState();
+}
+
+class _TaskListTileState extends State<TaskListTile> {
+  // Variabile locale per gestire l'aggiornamento immediato del chip
+  late String _currentStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentStatus = widget.task.status;
+  }
+
+  @override
+  void didUpdateWidget(covariant TaskListTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Se lo stream invia un aggiornamento reale dal database, allineiamo lo stato
+    if (widget.task.status != oldWidget.task.status) {
+      _currentStatus = widget.task.status;
     }
-  }*/
+  }
+
+  void _updateStatusOptimistically(String newStatus) {
+    if (_currentStatus == newStatus) return;
+
+    setState(() {
+      _currentStatus = newStatus;
+    });
+    // Notifica il genitore/backend
+    widget.onStatusChanged(newStatus);
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Determina se mostrare le opzioni di admin
-    final bool isAdmin = currentUserRole == 'admin';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final bool isAdmin = widget.currentUserRole == 'admin';
+    final task = widget.task;
 
-    // Determina se il task è scaduto
+    // Usiamo _currentStatus invece di task.status per la logica visiva immediata
     final bool isOverdue = task.dueDate.isBefore(
           DateTime(
-            DateTime.now().year,
-            DateTime.now().month,
-            DateTime.now().day,
-          ),
+              DateTime.now().year, DateTime.now().month, DateTime.now().day),
         ) &&
-        task.status != 'Done';
-    final bool isDone = task.status == 'Done';
-    final Color? textColor = isDone ? Colors.grey[600] : null;
+        _currentStatus != 'Done';
+    final bool isDone = _currentStatus == 'Done';
+
+    final Color borderColor =
+        isOverdue ? colorScheme.error.withOpacity(0.5) : theme.dividerColor;
+
+    final Color titleColor = isDone
+        ? theme.disabledColor
+        : theme.textTheme.titleMedium?.color ?? Colors.black;
+
+    final double titleSize = ResponsiveLayout.isMobile(context) ? 16 : 18;
+    final double bodySize = ResponsiveLayout.isMobile(context) ? 13 : 14;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1.5,
+      elevation: 1,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: isOverdue
-            ? BorderSide(color: Colors.red.shade200, width: 1)
-            : BorderSide.none,
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: borderColor, width: 1),
       ),
       child: Padding(
-        // Aggiunto Padding per separare contenuto e card
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize:
+              MainAxisSize.min, // Importante per evitare espansioni errate
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Icona Task a sinistra
+                // 1. ICONA
                 Padding(
-                  padding: const EdgeInsets.only(
-                    top: 4.0,
-                    left: 8.0,
-                    right: 16.0,
-                  ),
+                  padding: const EdgeInsets.only(right: 12.0, top: 2),
                   child: Icon(
-                    Icons.assignment_outlined, // NUOVA ICONA
-                    color: isDone
-                        ? Colors.grey
-                        : Theme.of(context).colorScheme.primary,
+                    Icons.assignment_outlined,
+                    color: isDone ? theme.disabledColor : colorScheme.primary,
                     size: 28,
                   ),
                 ),
-                // Titolo, Sottotitolo (Data, Priorità)
+
+                // 2. CONTENUTO TESTUALE
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Titolo
                       Text(
                         task.title,
                         style: TextStyle(
+                          fontSize: titleSize,
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          decoration: isDone
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
-                          color: textColor,
+                          color: titleColor,
+                          decoration:
+                              isDone ? TextDecoration.lineThrough : null,
                         ),
                       ),
                       const SizedBox(height: 6),
+
+                      // Data
                       Row(
                         children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 12,
-                            color: isOverdue ? Colors.red : Colors.grey,
-                          ),
+                          Icon(Icons.calendar_today_rounded,
+                              size: 14,
+                              color:
+                                  isOverdue ? colorScheme.error : Colors.grey),
                           const SizedBox(width: 4),
                           Text(
-                            DateFormat('dd/MM/yy').format(task.dueDate),
+                            DateFormat('dd MMM yyyy').format(task.dueDate),
                             style: TextStyle(
-                              fontSize: 12,
-                              color: isOverdue ? Colors.red : Colors.grey[600],
+                              fontSize: bodySize,
+                              color: isOverdue
+                                  ? colorScheme.error
+                                  : Colors.grey[700],
                               fontWeight: isOverdue
                                   ? FontWeight.bold
                                   : FontWeight.normal,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Container(/* Chip Priorità (invariato) */),
                         ],
                       ),
-                      // Descrizione (se presente)
+
+                      // Descrizione
                       if (task.desc != null && task.desc!.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(top: 6.0),
-                          child: Text(
-                            task.desc!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[500],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.notes,
+                                  size: 14, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  task.desc!,
+                                  style: TextStyle(
+                                      fontSize: bodySize,
+                                      color: Colors.grey[600]),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+
+                      // Luogo
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: InkWell(
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => MapDialog(
+                                taskId: task.id,
+                                taskRepository: TaskRepository(),
+                              ),
+                            );
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                size: 14,
+                                color: task.placeName != null
+                                    ? colorScheme.secondary
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  task.placeName ?? "No place indicated",
+                                  style: TextStyle(
+                                    fontSize: bodySize,
+                                    color: task.placeName != null
+                                        ? Colors.black87
+                                        : Colors.grey,
+                                    fontStyle: task.placeName == null
+                                        ? FontStyle.italic
+                                        : FontStyle.normal,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
-                // Menu 3 puntini a destra
+                // 3. MENU OPZIONI
                 if (isAdmin)
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, color: Colors.grey[600]),
-                    tooltip: "Task Options",
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        onEdit();
-                      } else if (value == 'delete') {
-                        onDelete();
-                        // ... dentro il tuo onSelected del PopupMenuButton
-                      } else if (value == 'add place') {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return MapDialog(
-                              taskId: task.id, // Passa l'ID del task corrente
-                              taskRepository:
-                                  TaskRepository(), // O la tua istanza del repository (es. context.read<TaskRepository>())
-                            );
-                          },
-                        );
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit, size: 20),
-                            SizedBox(width: 8),
-                            Text('Edit'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, size: 20, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuItem(
-                        value: 'add place',
-                        child: Row(
-                          children: [
-                            Icon(Icons.add_location_alt_outlined,
-                                size: 20, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Add place',
-                                style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
+                  SizedBox(
+                    width: 24,
+                    child: PopupMenuButton<String>(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(Icons.more_vert, color: Colors.grey),
+                      onSelected: (value) {
+                        if (value == 'edit')
+                          widget.onEdit();
+                        else if (value == 'delete') widget.onDelete();
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                        const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete',
+                                style: TextStyle(color: Colors.red))),
+                      ],
+                    ),
                   )
               ],
             ),
+
             const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Wrap(
-                // Wrap per andare a capo se non c'è spazio
-                spacing: 8.0, // Spazio orizzontale
-                runSpacing: 4.0, // Spazio verticale se va a capo
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+
+            // 4. CHIPS STATO
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
                 children: ['To Do', 'In Progress', 'Done'].map((status) {
-                  final bool isSelected = task.status == status;
-                  return FilterChip(
-                    label: Text(status),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      // Chiama la callback solo se si seleziona uno stato diverso
-                      if (selected && !isSelected) {
-                        onStatusChanged(status);
-                      }
-                    },
-                    checkmarkColor: Theme.of(context).colorScheme.onPrimary,
-                    selectedColor: Theme.of(context).colorScheme.primary,
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : null,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    backgroundColor: Colors.grey.withOpacity(0.1),
-                    shape: StadiumBorder(
-                      side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                  // Confrontiamo con lo stato locale per update immediato
+                  final bool isSelected = _currentStatus == status;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: Text(status),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        // Cambiamo stato solo se è diverso e selezionato
+                        if (selected && !isSelected) {
+                          _updateStatusOptimistically(status);
+                        }
+                      },
+                      selectedColor: colorScheme.primary,
+                      backgroundColor: theme.scaffoldBackgroundColor,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontSize: 12,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      side: BorderSide(
+                          color: isSelected
+                              ? Colors.transparent
+                              : Colors.grey.shade300),
+                      showCheckmark: false,
                     ),
                   );
                 }).toList(),
