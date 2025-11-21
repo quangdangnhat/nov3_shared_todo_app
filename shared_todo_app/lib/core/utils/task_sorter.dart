@@ -1,19 +1,86 @@
 import '../../data/models/task.dart';
 import '../enums/task_filter_type.dart';
 
-/// Utility class to sort Task list
+/// Utility class to sort Task list with stable ordering for date-based sorts
 class TaskSorter {
-  /// Sort task list by filter type
-  static List<Task> sortTasks(List<Task> tasks, TaskFilterType filterType) {
-    // Make a copy so as not to modify the original list
-    final sortedTasks = List<Task>.from(tasks);
+  // Cache dell'ordine degli ID per i filtri basati su data
+  static List<String>? _cachedOrderIds;
+  static TaskFilterType? _cachedFilterType;
+  static int? _cachedTaskCount;
 
+  /// Sort task list by filter type
+  /// Per i filtri basati su data (newest/oldest), mantiene l'ordine stabile
+  /// quando cambiano solo gli stati dei task.
+  static List<Task> sortTasks(List<Task> tasks, TaskFilterType filterType) {
+    if (tasks.isEmpty) return [];
+
+    final isDateBasedFilter = filterType == TaskFilterType.createdAtNewest ||
+        filterType == TaskFilterType.createdAtOldest;
+
+    // Se è un filtro basato su data e abbiamo una cache valida
+    if (isDateBasedFilter && _isCacheValid(tasks, filterType)) {
+      return _applyOrderFromCache(tasks);
+    }
+
+    // Altrimenti, esegui il sort normale
+    final sortedTasks = _performSort(List<Task>.from(tasks), filterType);
+
+    // Salva in cache solo per filtri basati su data
+    if (isDateBasedFilter) {
+      _updateCache(sortedTasks, filterType);
+    }
+
+    return sortedTasks;
+  }
+
+  /// Verifica se la cache è valida per essere riutilizzata
+  static bool _isCacheValid(List<Task> tasks, TaskFilterType filterType) {
+    if (_cachedOrderIds == null || _cachedFilterType != filterType) {
+      return false;
+    }
+
+    // Se il numero di task è cambiato, invalida la cache
+    if (_cachedTaskCount != tasks.length) {
+      return false;
+    }
+
+    // Verifica che tutti gli ID nella cache esistano ancora
+    final currentIds = tasks.map((t) => t.id).toSet();
+    final cachedIds = _cachedOrderIds!.toSet();
+
+    return cachedIds.length == currentIds.length &&
+        cachedIds.containsAll(currentIds);
+  }
+
+  /// Applica l'ordine dalla cache
+  static List<Task> _applyOrderFromCache(List<Task> tasks) {
+    final taskMap = {for (var t in tasks) t.id: t};
+    return _cachedOrderIds!
+        .where((id) => taskMap.containsKey(id))
+        .map((id) => taskMap[id]!)
+        .toList();
+  }
+
+  /// Aggiorna la cache con il nuovo ordine
+  static void _updateCache(List<Task> sortedTasks, TaskFilterType filterType) {
+    _cachedOrderIds = sortedTasks.map((t) => t.id).toList();
+    _cachedFilterType = filterType;
+    _cachedTaskCount = sortedTasks.length;
+  }
+
+  /// Invalida la cache manualmente (chiamare quando necessario)
+  static void invalidateCache() {
+    _cachedOrderIds = null;
+    _cachedFilterType = null;
+    _cachedTaskCount = null;
+  }
+
+  /// Esegue il sort effettivo
+  static List<Task> _performSort(List<Task> sortedTasks, TaskFilterType filterType) {
     switch (filterType) {
       case TaskFilterType.createdAtNewest:
         sortedTasks.sort((a, b) {
-          // 1. Confronta Date (dal più recente)
           int result = b.createdAt.compareTo(a.createdAt);
-          // 2. Se uguali, usa Titolo -> ID
           if (result == 0) return _resolveTie(a, b);
           return result;
         });
@@ -21,9 +88,7 @@ class TaskSorter {
 
       case TaskFilterType.createdAtOldest:
         sortedTasks.sort((a, b) {
-          // 1. Confronta Date (dal più vecchio)
           int result = a.createdAt.compareTo(b.createdAt);
-          // 2. Se uguali, usa Titolo -> ID
           if (result == 0) return _resolveTie(a, b);
           return result;
         });
@@ -31,9 +96,7 @@ class TaskSorter {
 
       case TaskFilterType.priorityHighToLow:
         sortedTasks.sort((a, b) {
-          // 1. Confronta Priorità (High -> Low)
           int result = _comparePriority(a.priority, b.priority);
-          // 2. Se priorità uguale, usa Titolo -> ID
           if (result == 0) return _resolveTie(a, b);
           return result;
         });
@@ -41,9 +104,7 @@ class TaskSorter {
 
       case TaskFilterType.priorityLowToHigh:
         sortedTasks.sort((a, b) {
-          // 1. Confronta Priorità (Low -> High)
           int result = _comparePriority(b.priority, a.priority);
-          // 2. Se priorità uguale, usa Titolo -> ID
           if (result == 0) return _resolveTie(a, b);
           return result;
         });
@@ -51,9 +112,7 @@ class TaskSorter {
 
       case TaskFilterType.alphabeticalAZ:
         sortedTasks.sort((a, b) {
-          // 1. Confronta Titoli (A-Z)
           int result = a.title.toLowerCase().compareTo(b.title.toLowerCase());
-          // 2. Se titoli identici, usa ID
           if (result == 0) return a.id.compareTo(b.id);
           return result;
         });
@@ -61,40 +120,25 @@ class TaskSorter {
 
       case TaskFilterType.alphabeticalZA:
         sortedTasks.sort((a, b) {
-          // 1. Confronta Titoli (Z-A)
           int result = b.title.toLowerCase().compareTo(a.title.toLowerCase());
-          // 2. Se titoli identici, usa ID
           if (result == 0) return a.id.compareTo(b.id);
           return result;
         });
         break;
     }
-
     return sortedTasks;
   }
 
-  /// Metodo centrale per gestire lo "spareggio" (Tie-Breaker).
-  /// Viene chiamato quando il criterio principale (Data o Priorità) è identico.
   static int _resolveTie(Task a, Task b) {
-    // 1. Prima prova in ordine alfabetico (più intuitivo per l'utente)
     int titleResult = a.title.toLowerCase().compareTo(b.title.toLowerCase());
-    
-    if (titleResult != 0) {
-      return titleResult;
-    }
-
-    // 2. Se anche il titolo è identico, usa l'ID per stabilità assoluta
+    if (titleResult != 0) return titleResult;
     return a.id.compareTo(b.id);
   }
 
-  /// Helper method for comparing priorities
-  /// High = 1, Medium = 2, Low = 3
   static int _comparePriority(String priorityA, String priorityB) {
     final priorityOrder = {'High': 1, 'Medium': 2, 'Low': 3};
-
     final valueA = priorityOrder[priorityA] ?? 999;
     final valueB = priorityOrder[priorityB] ?? 999;
-
     return valueA.compareTo(valueB);
   }
 }
