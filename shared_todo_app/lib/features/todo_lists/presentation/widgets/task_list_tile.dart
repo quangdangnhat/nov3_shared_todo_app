@@ -28,8 +28,8 @@ class TaskListTile extends StatefulWidget {
 }
 
 class _TaskListTileState extends State<TaskListTile> {
-  // Variabile locale per gestire l'aggiornamento immediato del chip
   late String _currentStatus;
+  bool _isUpdating = false;
 
   @override
   void initState() {
@@ -40,20 +40,41 @@ class _TaskListTileState extends State<TaskListTile> {
   @override
   void didUpdateWidget(covariant TaskListTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Se lo stream invia un aggiornamento reale dal database, allineiamo lo stato
-    if (widget.task.status != oldWidget.task.status) {
-      _currentStatus = widget.task.status;
+    if (!_isUpdating && widget.task.status != _currentStatus) {
+      setState(() {
+        _currentStatus = widget.task.status;
+      });
     }
   }
 
   void _updateStatusOptimistically(String newStatus) {
-    if (_currentStatus == newStatus) return;
-
+    if (_currentStatus == newStatus || _isUpdating) return;
+    
     setState(() {
       _currentStatus = newStatus;
+      _isUpdating = true;
     });
-    // Notifica il genitore/backend
+    
     widget.onStatusChanged(newStatus);
+    
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
+    });
+  }
+
+  // METODO SEPARATO per aprire la mappa - NON causa rebuild del tile
+  void _openMapDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => MapDialog(
+        taskId: widget.task.id,
+        taskRepository: TaskRepository(),
+      ),
+    );
   }
 
   @override
@@ -63,230 +84,271 @@ class _TaskListTileState extends State<TaskListTile> {
     final bool isAdmin = widget.currentUserRole == 'admin';
     final task = widget.task;
 
-    // Usiamo _currentStatus invece di task.status per la logica visiva immediata
-    final bool isOverdue = task.dueDate.isBefore(
-          DateTime(
-              DateTime.now().year, DateTime.now().month, DateTime.now().day),
-        ) &&
-        _currentStatus != 'Done';
     final bool isDone = _currentStatus == 'Done';
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final bool isOverdue = task.dueDate.isBefore(today) && !isDone;
 
-    final Color borderColor =
-        isOverdue ? colorScheme.error.withOpacity(0.5) : theme.dividerColor;
-
-    final Color titleColor = isDone
-        ? theme.disabledColor
-        : theme.textTheme.titleMedium?.color ?? Colors.black;
+    final Color borderColor = theme.dividerColor;
+    final Color titleColor = isDone 
+        ? theme.disabledColor 
+        : (theme.textTheme.titleMedium?.color ?? Colors.black);
+    final Color dateColor = isOverdue ? colorScheme.error : Colors.grey[700]!;
 
     final double titleSize = ResponsiveLayout.isMobile(context) ? 16 : 18;
     final double bodySize = ResponsiveLayout.isMobile(context) ? 13 : 14;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: borderColor, width: 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize:
-              MainAxisSize.min, // Importante per evitare espansioni errate
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. ICONA
-                Padding(
-                  padding: const EdgeInsets.only(right: 12.0, top: 2),
-                  child: Icon(
-                    Icons.assignment_outlined,
-                    color: isDone ? theme.disabledColor : colorScheme.primary,
-                    size: 28,
+    // Precalcoliamo le stringhe per evitare calcoli durante il build
+    final bool hasDescription = task.desc != null && task.desc!.isNotEmpty;
+    final String descriptionText = hasDescription ? task.desc! : 'No description';
+    final Color descriptionColor = hasDescription ? Colors.grey[600]! : Colors.grey[400]!;
+    
+    final bool hasPlace = task.placeName != null && task.placeName!.isNotEmpty;
+    final String placeText = hasPlace ? task.placeName! : "No place indicated";
+    final Color placeTextColor = hasPlace ? Colors.black87 : Colors.grey[400]!;
+    final Color placeIconColor = hasPlace ? colorScheme.secondary : Colors.grey;
+
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ICONA - DIMENSIONE FISSA
+                  SizedBox(
+                    width: 40, 
+                    height: 28,
+                    child: Icon(
+                      Icons.assignment_outlined,
+                      color: isDone ? theme.disabledColor : colorScheme.primary,
+                      size: 28,
+                    ),
                   ),
-                ),
 
-                // 2. CONTENUTO TESTUALE
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Titolo
-                      Text(
-                        task.title,
-                        style: TextStyle(
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.w600,
-                          color: titleColor,
-                          decoration:
-                              isDone ? TextDecoration.lineThrough : null,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-
-                      // Data
-                      Row(
+                  // CONTENUTO TESTUALE - ALTEZZA FISSA GARANTITA
+                  Expanded(
+                    child: SizedBox(
+                      height: 94, // Altezza fissa per contenere tutti gli elementi
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Icon(Icons.calendar_today_rounded,
-                              size: 14,
-                              color:
-                                  isOverdue ? colorScheme.error : Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(
-                            DateFormat('dd MMM yyyy').format(task.dueDate),
-                            style: TextStyle(
-                              fontSize: bodySize,
-                              color: isOverdue
-                                  ? colorScheme.error
-                                  : Colors.grey[700],
-                              fontWeight: isOverdue
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                          // Titolo - ALTEZZA FISSA
+                          SizedBox(
+                            height: 20,
+                            child: Text(
+                              task.title,
+                              style: TextStyle(
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w600,
+                                color: titleColor,
+                                height: 1.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+
+                          // Data - ALTEZZA FISSA
+                          SizedBox(
+                            height: 18,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 14,
+                                  color: isOverdue ? colorScheme.error : Colors.grey,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  DateFormat('dd MMM yyyy').format(task.dueDate),
+                                  style: TextStyle(
+                                    fontSize: bodySize,
+                                    color: dateColor,
+                                    fontWeight: FontWeight.normal,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+
+                          // Descrizione - SEMPRE PRESENTE CON ALTEZZA FISSA
+                          SizedBox(
+                            height: 18,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.notes, 
+                                  size: 14, 
+                                  color: hasDescription ? Colors.grey : Colors.grey[300],
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    descriptionText,
+                                    style: TextStyle(
+                                      fontSize: bodySize, 
+                                      color: descriptionColor,
+                                      height: 1.2,
+                                      fontStyle: hasDescription ? FontStyle.normal : FontStyle.italic,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+
+                          // Luogo - SEMPRE PRESENTE CON ALTEZZA FISSA
+                          // IMPORTANTE: InkWell invece di GestureDetector per non causare rebuild
+                          SizedBox(
+                            height: 18,
+                            child: InkWell(
+                              onTap: _openMapDialog, // Metodo separato
+                              // Rimuoviamo l'effetto splash per evitare repaint
+                              splashColor: Colors.transparent,
+                              highlightColor: Colors.transparent,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 14,
+                                    color: placeIconColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      placeText,
+                                      style: TextStyle(
+                                        fontSize: bodySize,
+                                        color: placeTextColor,
+                                        fontStyle: hasPlace ? FontStyle.normal : FontStyle.italic,
+                                        height: 1.2,
+                                        decoration: TextDecoration.underline, // Indica che è cliccabile
+                                        decorationColor: placeTextColor.withOpacity(0.5),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
-
-                      // Descrizione
-                      if (task.desc != null && task.desc!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.notes,
-                                  size: 14, color: Colors.grey),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  task.desc!,
-                                  style: TextStyle(
-                                      fontSize: bodySize,
-                                      color: Colors.grey[600]),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      // Luogo
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: InkWell(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => MapDialog(
-                                taskId: task.id,
-                                taskRepository: TaskRepository(),
-                              ),
-                            );
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                size: 14,
-                                color: task.placeName != null
-                                    ? colorScheme.secondary
-                                    : Colors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  task.placeName ?? "No place indicated",
-                                  style: TextStyle(
-                                    fontSize: bodySize,
-                                    color: task.placeName != null
-                                        ? Colors.black87
-                                        : Colors.grey,
-                                    fontStyle: task.placeName == null
-                                        ? FontStyle.italic
-                                        : FontStyle.normal,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
 
-                // 3. MENU OPZIONI
-                if (isAdmin)
+                  // MENU OPZIONI - DIMENSIONE FISSA
                   SizedBox(
                     width: 24,
-                    child: PopupMenuButton<String>(
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.more_vert, color: Colors.grey),
-                      onSelected: (value) {
-                        if (value == 'edit')
-                          widget.onEdit();
-                        else if (value == 'delete') widget.onDelete();
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        const PopupMenuItem(
-                            value: 'delete',
-                            child: Text('Delete',
-                                style: TextStyle(color: Colors.red))),
-                      ],
-                    ),
-                  )
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 8),
-
-            // 4. CHIPS STATO
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: ['To Do', 'In Progress', 'Done'].map((status) {
-                  // Confrontiamo con lo stato locale per update immediato
-                  final bool isSelected = _currentStatus == status;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ChoiceChip(
-                      label: Text(status),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        // Cambiamo stato solo se è diverso e selezionato
-                        if (selected && !isSelected) {
-                          _updateStatusOptimistically(status);
-                        }
-                      },
-                      selectedColor: colorScheme.primary,
-                      backgroundColor: theme.scaffoldBackgroundColor,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black87,
-                        fontSize: 12,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      side: BorderSide(
-                          color: isSelected
-                              ? Colors.transparent
-                              : Colors.grey.shade300),
-                      showCheckmark: false,
-                    ),
-                  );
-                }).toList(),
+                    height: 24,
+                    child: isAdmin 
+                        ? PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                            onSelected: (value) {
+                              if (value == 'edit') {
+                                widget.onEdit();
+                              } else if (value == 'delete') {
+                                widget.onDelete();
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit', 
+                                child: Text('Edit'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text(
+                                  'Delete', 
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
               ),
+
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+
+              // BOTTONI STATO - ALTEZZA FISSA
+              SizedBox(
+                height: 32,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildStaticStatusButton(context, 'To Do', _currentStatus == 'To Do'),
+                    const SizedBox(width: 8),
+                    _buildStaticStatusButton(context, 'In Progress', _currentStatus == 'In Progress'),
+                    const SizedBox(width: 8),
+                    _buildStaticStatusButton(context, 'Done', _currentStatus == 'Done'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStaticStatusButton(BuildContext context, String label, bool isSelected) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+           if (!isSelected && !_isUpdating) {
+             _updateStatusOptimistically(label);
+           }
+        },
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? colorScheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected ? colorScheme.primary : Colors.grey.shade300,
+              width: 1,
             ),
-          ],
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: isSelected ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.normal,
+              height: 1.0,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
     );

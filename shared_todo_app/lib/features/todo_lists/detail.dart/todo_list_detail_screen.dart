@@ -12,25 +12,22 @@ import '../../../config/router/app_router.dart';
 import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
 import '../../../data/models/task.dart';
-// Importa il ViewModel
 import '../../../data/repositories/folder_repository.dart';
 import '../presentation/controllers/todo_list_detail_viewmodel.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
 import '../presentation/widgets/task_list_tile.dart';
-import '../../../main.dart'; // per accedere a supabase
+import '../../../main.dart';
 import '../presentation/widgets/todo_list_detail_header.dart';
 import '../presentation/widgets/folder_list_section.dart';
 import '../presentation/widgets/detail_action_buttons.dart';
 import '../presentation/widgets/participants_dialog.dart';
-import '../presentation/widgets/manage_members_dialog.dart'; // Importato per _showInviteFormDialog
+import '../presentation/widgets/manage_members_dialog.dart';
 
-// --- IMPORT AGGIUNTI PER IL FILTRO ---
 import '../../../../core/enums/task_filter_type.dart';
 import '../../../../core/utils/task_sorter.dart';
 import '../presentation/widgets/task_filter_dropdown.dart';
-// --- FINE IMPORT ---
 
 /// Schermata di dettaglio di una TodoList con le sue cartelle e task.
 class TodoListDetailScreen extends StatefulWidget {
@@ -48,38 +45,28 @@ class TodoListDetailScreen extends StatefulWidget {
 }
 
 class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
-  // Istanza del ViewModel
   late final TodoListDetailViewModel _viewModel;
-
-  // --- STATO PER IL FILTRO TASK ---
-  // Aggiungiamo lo stato per il filtro, defaultato
   TaskFilterType _selectedTaskFilter = TaskFilterType.createdAtNewest;
-  // --- FINE STATO ---
 
+  // CRITICO: Manteniamo una cache locale dei task per evitare rebuild
+  List<Task> _cachedTasks = [];
+  
   @override
   void initState() {
     super.initState();
-    // Inizializza il ViewModel
     _viewModel = TodoListDetailViewModel();
-    // Passa i dati iniziali e avvia il caricamento
     _viewModel.init(widget.todoList.id, widget.parentFolder.id);
-    // Aggiunge un listener per rebuildare la UI quando lo stato cambia
     _viewModel.addListener(_onViewModelChanged);
   }
 
-  // Metodo chiamato dal listener del ViewModel
   void _onViewModelChanged() {
     if (mounted) {
-      setState(() {
-        // Forza un rebuild per riflettere i cambiamenti di stato
-        // (es. _isFoldersCollapsed)
-      });
+      setState(() {});
     }
   }
 
   @override
   void dispose() {
-    // Rimuove il listener e fa il dispose del ViewModel
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
     super.dispose();
@@ -87,12 +74,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
 
   void _refreshStreams() {
     if (!mounted) return;
-    // Resetta l'inizializzazione e ricarica i dati
     _viewModel.resetInitialization();
     _viewModel.init(widget.todoList.id, widget.parentFolder.id);
   }
 
-  // --- Funzioni Dialog (invariate) ---
   Future<void> _openFolderDialog({Folder? folderToEdit}) async {
     if (!mounted) return;
     try {
@@ -141,10 +126,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  // 1. Chiama il ViewModel
                   await _viewModel.deleteFolder(folder.id);
-
-                  // 2. Gestisce la UI
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
                     showSuccessSnackBar(
@@ -217,9 +199,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  // Correzione: folderId come primo parametro
                   await _viewModel.deleteTask(widget.parentFolder.id, task.id);
-
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
                     showSuccessSnackBar(
@@ -287,43 +267,30 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
           onInvitationSent: () {
             showSuccessSnackBar(context, message: 'Invitation Sent!');
           },
-          onParticipantsChanged: () {
-            // Non serve ricaricare, lo stream aggiorna
-          },
+          onParticipantsChanged: () {},
         );
       },
     );
   }
 
   Future<void> _navigateToParent() async {
-    // 1. Controlla se la cartella corrente è la cartella "root"
     final bool isRootFolder = widget.parentFolder.parentId == null;
-
     if (!mounted) return;
 
     if (isRootFolder) {
-      // 2. Se È la root, torna alla schermata Home (elenco delle liste)
       context.go(AppRouter.home);
     } else {
-      // 3. Se NON È la root, ha un genitore. Dobbiamo caricarlo.
       final String parentFolderId = widget.parentFolder.parentId!;
-
       try {
-        // Inizializza il repository (il costruttore vuoto va bene)
         final folderRepository = FolderRepository();
-
-        // 4. MODIFICA: Chiamiamo 'getFolder' come nel tuo nuovo repository
         final Folder parentOfCurrentFolder = await folderRepository.getFolder(
           parentFolderId,
         );
 
         if (!mounted) return;
-
-        // 5. Controlla se il genitore che abbiamo caricato è la root
         final bool isParentTheRoot = parentOfCurrentFolder.parentId == null;
 
         if (isParentTheRoot) {
-          // 6a. Se il genitore è la root, naviga alla rotta 'listDetail'
           context.goNamed(
             AppRouter.listDetail,
             pathParameters: {'listId': widget.todoList.id},
@@ -333,7 +300,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             },
           );
         } else {
-          // 6b. Se il genitore è un'altra cartella, naviga a 'folderDetail'
           context.goNamed(
             AppRouter.folderDetail,
             pathParameters: {
@@ -356,14 +322,12 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       }
     }
   }
-  // --- FINE FUNZIONI DIALOG ---
 
   @override
   Widget build(BuildContext context) {
     final bool isRootFolder = widget.parentFolder.parentId == null;
     final bool isMobile = ResponsiveLayout.isMobile(context);
 
-    // Leggiamo lo stato dal ViewModel
     final bool isFoldersCollapsed = _viewModel.isFoldersCollapsed;
     final bool isTasksCollapsed = _viewModel.isTasksCollapsed;
     final Stream<List<Folder>> foldersStream = _viewModel.foldersStream;
@@ -371,13 +335,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         _viewModel.tasksStream(widget.parentFolder.id);
 
     return Container(
-      key: ValueKey(
-        'folder_screen_${widget.parentFolder.id}',
-      ),
+      key: ValueKey('folder_screen_${widget.parentFolder.id}'),
       color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
-          // === 1. HEADER WIDGET ===
           TodoListDetailHeader(
             isMobile: isMobile,
             isRootFolder: isRootFolder,
@@ -387,15 +348,15 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             onInviteTap: _showInviteFormDialog,
           ),
 
-          // === 2. CONTENUTO PRINCIPALE ===
           Expanded(
             child: Stack(
               children: [
                 RefreshIndicator(
                   onRefresh: () async => _refreshStreams(),
                   child: CustomScrollView(
+                    // CRITICO: Key per mantenere lo stato dello scroll
+                    key: PageStorageKey('tasks_scroll_${widget.parentFolder.id}'),
                     slivers: [
-                      // === 3. FOLDER LIST WIDGET ===
                       FolderListSection(
                         isCollapsed: isFoldersCollapsed,
                         stream: foldersStream,
@@ -416,8 +377,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         onDelete: (folder) => _showDeleteFolderDialog(folder),
                       ),
 
-                      // === 4. TASK LIST HEADER ===
-                      // Aggiunto il filtro
+                      // TASK HEADER
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -433,17 +393,14 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                                       ?.copyWith(color: Colors.grey)),
                               Row(
                                 children: [
-                                  // --- AGGIUNTO TaskFilterDropdown ---
                                   TaskFilterDropdown(
                                     selectedFilter: _selectedTaskFilter,
                                     onFilterChanged: (newFilter) {
-                                      // Aggiorna lo stato per applicare il nuovo filtro
                                       setState(() {
                                         _selectedTaskFilter = newFilter;
                                       });
                                     },
                                   ),
-                                  // --- FINE ---
                                   IconButton(
                                     icon: Icon(
                                         isTasksCollapsed
@@ -462,13 +419,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         ),
                       ),
 
-                      // ... dentro slivers: [ ... FolderListSection, TaskFilterHeader ...
-
-// === 5. TASK LIST WIDGET STABILE ===
+                      // === SOLUZIONE DEFINITIVA: STREAMBUILDER CON LISTA STATICA ===
                       StreamBuilder<List<Task>>(
                         stream: tasksStream,
                         builder: (context, snapshot) {
-                          // Gestione Loading ed Errori
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return const SliverToBoxAdapter(
@@ -480,13 +434,27 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                           }
                           if (snapshot.hasError) {
                             return SliverToBoxAdapter(
-                                child: Text('Error: ${snapshot.error}'));
+                                child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text('Error: ${snapshot.error}'),
+                            ));
                           }
 
-                          // Ordinamento Dati
                           final tasks = snapshot.data ?? [];
                           final sortedTasks =
                               TaskSorter.sortTasks(tasks, _selectedTaskFilter);
+
+                          // CRITICO: Aggiorna la cache solo se i dati sono diversi
+                          if (!_areTaskListsEqual(_cachedTasks, sortedTasks)) {
+                            // Usa addPostFrameCallback per evitare setState durante build
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                setState(() {
+                                  _cachedTasks = sortedTasks;
+                                });
+                              }
+                            });
+                          }
 
                           if (sortedTasks.isEmpty) {
                             return const SliverToBoxAdapter(
@@ -497,29 +465,29 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                             );
                           }
 
-                          // SEZIONE COLLAPSED
                           if (isTasksCollapsed) {
                             return const SliverToBoxAdapter(
                                 child: SizedBox.shrink());
                           }
 
-                          // --- SOLUZIONE "BRUTE FORCE" ---
-                          // Usiamo SliverToBoxAdapter + Column.
-                          // Questo rimuove ogni logica di scrolling virtuale complessa.
-                          // I task vengono disegnati come un blocco unico solido.
-                          return SliverToBoxAdapter(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Column(
-                                children: sortedTasks.map((task) {
-                                  // Mappiamo ogni task direttamente nel widget
-                                  return TaskListTile(
-                                    // La chiave qui aiuta Flutter a distinguere i widget, ma dentro una Column è molto più stabile
-                                    key: ValueKey(task.id),
+                          // SOLUZIONE: SliverFixedExtentList invece di SliverList
+                          // Questo forza Flutter a sapere esattamente l'altezza di ogni item
+                          return SliverPadding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            sliver: SliverFixedExtentList(
+                              itemExtent: 202, // Altezza card (190) + margin (12)
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  // Usa la cache invece dei dati diretti per stabilità
+                                  final task = _cachedTasks.isNotEmpty 
+                                      ? _cachedTasks[index] 
+                                      : sortedTasks[index];
+
+                                  return _TaskListTileWrapper(
+                                    key: ValueKey('task_${task.id}'),
                                     task: task,
                                     currentUserRole: _viewModel.currentUserRole,
-                                    onTap: () {}, // Aggiungi azione se vuoi
                                     onEdit: () =>
                                         _openTaskDialog(taskToEdit: task),
                                     onDelete: () => _showDeleteTaskDialog(task),
@@ -527,23 +495,21 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                                       _handleTaskStatusChange(task, newStatus);
                                     },
                                   );
-                                }).toList(),
+                                },
+                                childCount: _cachedTasks.isNotEmpty 
+                                    ? _cachedTasks.length 
+                                    : sortedTasks.length,
+                                // RIMOSSO findChildIndexCallback - causa il glitch!
                               ),
                             ),
                           );
                         },
                       ),
 
-// Spazio vuoto finale per non coprire l'ultimo elemento con il bottone
-                      const SliverToBoxAdapter(child: SizedBox(height: 100)),
-
-// ... ] chiusura slivers
-                      // Spaziatore per i FAB
                       const SliverToBoxAdapter(child: SizedBox(height: 160)),
                     ],
                   ),
                 ),
-                // === 6. ACTION BUTTONS WIDGET ===
                 Positioned(
                   bottom: 16,
                   right: 16,
@@ -559,6 +525,59 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // Helper per confrontare liste di task
+  bool _areTaskListsEqual(List<Task> list1, List<Task> list2) {
+    if (list1.length != list2.length) return false;
+    for (int i = 0; i < list1.length; i++) {
+      if (list1[i].id != list2[i].id || list1[i].status != list2[i].status) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+/// Wrapper per TaskListTile con KeepAlive
+class _TaskListTileWrapper extends StatefulWidget {
+  final Task task;
+  final String? currentUserRole;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final ValueChanged<String> onStatusChanged;
+
+  const _TaskListTileWrapper({
+    super.key,
+    required this.task,
+    required this.currentUserRole,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onStatusChanged,
+  });
+
+  @override
+  State<_TaskListTileWrapper> createState() => _TaskListTileWrapperState();
+}
+
+class _TaskListTileWrapperState extends State<_TaskListTileWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+
+    return TaskListTile(
+      key: ValueKey(widget.task.id),
+      task: widget.task,
+      currentUserRole: widget.currentUserRole,
+      onTap: () {},
+      onEdit: widget.onEdit,
+      onDelete: widget.onDelete,
+      onStatusChanged: widget.onStatusChanged,
     );
   }
 }
