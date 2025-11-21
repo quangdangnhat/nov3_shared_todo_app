@@ -1,7 +1,4 @@
 // coverage:ignore-file
-
-// consider testing later
-
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
@@ -12,25 +9,22 @@ import '../../../config/router/app_router.dart';
 import '../../../data/models/todo_list.dart';
 import '../../../data/models/folder.dart';
 import '../../../data/models/task.dart';
-// Importa il ViewModel
 import '../../../data/repositories/folder_repository.dart';
 import '../presentation/controllers/todo_list_detail_viewmodel.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../presentation/widgets/folder_dialog.dart';
 import '../presentation/widgets/task_dialog.dart';
 import '../presentation/widgets/task_list_tile.dart';
-import '../../../main.dart'; // per accedere a supabase
+import '../../../main.dart';
 import '../presentation/widgets/todo_list_detail_header.dart';
 import '../presentation/widgets/folder_list_section.dart';
 import '../presentation/widgets/detail_action_buttons.dart';
 import '../presentation/widgets/participants_dialog.dart';
-import '../presentation/widgets/manage_members_dialog.dart'; // Importato per _showInviteFormDialog
+import '../presentation/widgets/manage_members_dialog.dart';
 
-// --- IMPORT AGGIUNTI PER IL FILTRO ---
 import '../../../../core/enums/task_filter_type.dart';
 import '../../../../core/utils/task_sorter.dart';
 import '../presentation/widgets/task_filter_dropdown.dart';
-// --- FINE IMPORT ---
 
 /// Schermata di dettaglio di una TodoList con le sue cartelle e task.
 class TodoListDetailScreen extends StatefulWidget {
@@ -48,38 +42,25 @@ class TodoListDetailScreen extends StatefulWidget {
 }
 
 class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
-  // Istanza del ViewModel
   late final TodoListDetailViewModel _viewModel;
-
-  // --- STATO PER IL FILTRO TASK ---
-  // Aggiungiamo lo stato per il filtro, defaultato
   TaskFilterType _selectedTaskFilter = TaskFilterType.createdAtNewest;
-  // --- FINE STATO ---
 
   @override
   void initState() {
     super.initState();
-    // Inizializza il ViewModel
     _viewModel = TodoListDetailViewModel();
-    // Passa i dati iniziali e avvia il caricamento
     _viewModel.init(widget.todoList.id, widget.parentFolder.id);
-    // Aggiunge un listener per rebuildare la UI quando lo stato cambia
     _viewModel.addListener(_onViewModelChanged);
   }
 
-  // Metodo chiamato dal listener del ViewModel
   void _onViewModelChanged() {
     if (mounted) {
-      setState(() {
-        // Forza un rebuild per riflettere i cambiamenti di stato
-        // (es. _isFoldersCollapsed)
-      });
+      setState(() {});
     }
   }
 
   @override
   void dispose() {
-    // Rimuove il listener e fa il dispose del ViewModel
     _viewModel.removeListener(_onViewModelChanged);
     _viewModel.dispose();
     super.dispose();
@@ -87,12 +68,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
 
   void _refreshStreams() {
     if (!mounted) return;
-    // Resetta l'inizializzazione e ricarica i dati
     _viewModel.resetInitialization();
     _viewModel.init(widget.todoList.id, widget.parentFolder.id);
   }
 
-  // --- Funzioni Dialog (invariate) ---
   Future<void> _openFolderDialog({Folder? folderToEdit}) async {
     if (!mounted) return;
     try {
@@ -141,25 +120,18 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  // 1. Chiama il ViewModel
                   await _viewModel.deleteFolder(folder.id);
-
-                  // 2. Gestisce la UI
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
-                    showSuccessSnackBar(
-                      context,
-                      message: 'Folder deleted successfully',
-                    );
+                    showSuccessSnackBar(context,
+                        message: 'Folder deleted successfully');
                     _refreshStreams();
                   }
                 } catch (error) {
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
-                    showErrorSnackBar(
-                      context,
-                      message: 'Failed to delete folder: $error',
-                    );
+                    showErrorSnackBar(context,
+                        message: 'Failed to delete folder: $error');
                   }
                 }
               },
@@ -217,23 +189,17 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  // Correzione: folderId come primo parametro
                   await _viewModel.deleteTask(widget.parentFolder.id, task.id);
-
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
-                    showSuccessSnackBar(
-                      context,
-                      message: 'Task deleted successfully',
-                    );
+                    showSuccessSnackBar(context,
+                        message: 'Task deleted successfully');
                   }
                 } catch (error) {
                   if (mounted) Navigator.of(dialogContext).pop();
                   if (mounted) {
-                    showErrorSnackBar(
-                      context,
-                      message: 'Failed to delete task: $error',
-                    );
+                    showErrorSnackBar(context,
+                        message: 'Failed to delete task: $error');
                   }
                 }
               },
@@ -251,10 +217,8 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
       await _viewModel.handleTaskStatusChange(task, newStatus);
     } catch (error) {
       if (mounted) {
-        showErrorSnackBar(
-          context,
-          message: 'Failed to update task status: $error',
-        );
+        showErrorSnackBar(context,
+            message: 'Failed to update task status: $error');
       }
     }
   }
@@ -287,43 +251,29 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
           onInvitationSent: () {
             showSuccessSnackBar(context, message: 'Invitation Sent!');
           },
-          onParticipantsChanged: () {
-            // Non serve ricaricare, lo stream aggiorna
-          },
+          onParticipantsChanged: () {},
         );
       },
     );
   }
 
   Future<void> _navigateToParent() async {
-    // 1. Controlla se la cartella corrente è la cartella "root"
     final bool isRootFolder = widget.parentFolder.parentId == null;
-
     if (!mounted) return;
 
     if (isRootFolder) {
-      // 2. Se È la root, torna alla schermata Home (elenco delle liste)
       context.go(AppRouter.home);
     } else {
-      // 3. Se NON È la root, ha un genitore. Dobbiamo caricarlo.
       final String parentFolderId = widget.parentFolder.parentId!;
-
       try {
-        // Inizializza il repository (il costruttore vuoto va bene)
         final folderRepository = FolderRepository();
-
-        // 4. MODIFICA: Chiamiamo 'getFolder' come nel tuo nuovo repository
-        final Folder parentOfCurrentFolder = await folderRepository.getFolder(
-          parentFolderId,
-        );
+        final Folder parentOfCurrentFolder =
+            await folderRepository.getFolder(parentFolderId);
 
         if (!mounted) return;
-
-        // 5. Controlla se il genitore che abbiamo caricato è la root
         final bool isParentTheRoot = parentOfCurrentFolder.parentId == null;
 
         if (isParentTheRoot) {
-          // 6a. Se il genitore è la root, naviga alla rotta 'listDetail'
           context.goNamed(
             AppRouter.listDetail,
             pathParameters: {'listId': widget.todoList.id},
@@ -333,7 +283,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             },
           );
         } else {
-          // 6b. Se il genitore è un'altra cartella, naviga a 'folderDetail'
           context.goNamed(
             AppRouter.folderDetail,
             pathParameters: {
@@ -348,22 +297,18 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         }
       } catch (error) {
         if (mounted) {
-          showErrorSnackBar(
-            context,
-            message: 'Failed to navigate back: $error',
-          );
+          showErrorSnackBar(context,
+              message: 'Failed to navigate back: $error');
         }
       }
     }
   }
-  // --- FINE FUNZIONI DIALOG ---
 
   @override
   Widget build(BuildContext context) {
     final bool isRootFolder = widget.parentFolder.parentId == null;
     final bool isMobile = ResponsiveLayout.isMobile(context);
 
-    // Leggiamo lo stato dal ViewModel
     final bool isFoldersCollapsed = _viewModel.isFoldersCollapsed;
     final bool isTasksCollapsed = _viewModel.isTasksCollapsed;
     final Stream<List<Folder>> foldersStream = _viewModel.foldersStream;
@@ -371,13 +316,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
         _viewModel.tasksStream(widget.parentFolder.id);
 
     return Container(
-      key: ValueKey(
-        'folder_screen_${widget.parentFolder.id}',
-      ),
+      key: ValueKey('folder_screen_${widget.parentFolder.id}'),
       color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
-          // === 1. HEADER WIDGET ===
           TodoListDetailHeader(
             isMobile: isMobile,
             isRootFolder: isRootFolder,
@@ -386,38 +328,40 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
             onManageTap: _showManageMembersDialog,
             onInviteTap: _showInviteFormDialog,
           ),
-
-          // === 2. CONTENUTO PRINCIPALE ===
           Expanded(
             child: Stack(
               children: [
                 RefreshIndicator(
                   onRefresh: () async => _refreshStreams(),
                   child: CustomScrollView(
+                    key: PageStorageKey(
+                        'tasks_scroll_${widget.parentFolder.id}'),
                     slivers: [
-                      // === 3. FOLDER LIST WIDGET ===
                       FolderListSection(
                         isCollapsed: isFoldersCollapsed,
                         stream: foldersStream,
                         currentUserRole: _viewModel.currentUserRole,
                         onToggleCollapse: _viewModel.toggleFoldersCollapse,
                         onFolderTap: (folder) {
-                          context.go(
-                            '/list/${widget.todoList.id}/folder/${folder.id}',
+                          // CORREZIONE: Usa goNamed invece di go per navigazione corretta
+                          context.goNamed(
+                            AppRouter.folderDetail,
+                            pathParameters: {
+                              'listId': widget.todoList.id,
+                              'folderId': folder.id,
+                            },
                             extra: {
                               'todoList': widget.todoList,
-                              'parentFolder': folder
+                              'parentFolder': folder,
                             },
                           );
                         },
-                        onEdit: (folder) => _openFolderDialog(
-                          folderToEdit: folder,
-                        ),
+                        onEdit: (folder) =>
+                            _openFolderDialog(folderToEdit: folder),
                         onDelete: (folder) => _showDeleteFolderDialog(folder),
                       ),
 
-                      // === 4. TASK LIST HEADER ===
-                      // Aggiunto il filtro
+                      // TASK HEADER
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -433,23 +377,21 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                                       ?.copyWith(color: Colors.grey)),
                               Row(
                                 children: [
-                                  // --- AGGIUNTO TaskFilterDropdown ---
                                   TaskFilterDropdown(
                                     selectedFilter: _selectedTaskFilter,
                                     onFilterChanged: (newFilter) {
-                                      // Aggiorna lo stato per applicare il nuovo filtro
                                       setState(() {
                                         _selectedTaskFilter = newFilter;
                                       });
                                     },
                                   ),
-                                  // --- FINE ---
                                   IconButton(
                                     icon: Icon(
-                                        isTasksCollapsed
-                                            ? Icons.expand_more
-                                            : Icons.expand_less,
-                                        color: Colors.grey),
+                                      isTasksCollapsed
+                                          ? Icons.expand_more
+                                          : Icons.expand_less,
+                                      color: Colors.grey,
+                                    ),
                                     onPressed: _viewModel.toggleTasksCollapse,
                                     tooltip: isTasksCollapsed
                                         ? 'Expand Tasks'
@@ -462,88 +404,83 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         ),
                       ),
 
-                      // === 5. TASK LIST WIDGET ===
-                      // Applicato il TaskSorter
+                      // SOLUZIONE: StreamBuilder con SliverList.builder
                       StreamBuilder<List<Task>>(
                         stream: tasksStream,
                         builder: (context, snapshot) {
-                          if (isTasksCollapsed) {
-                            return const SliverToBoxAdapter(
-                                child: SizedBox.shrink());
-                          }
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return const SliverToBoxAdapter(
-                                child: Center(
-                                    child: Padding(
-                                        padding: EdgeInsets.all(16.0),
-                                        child: CircularProgressIndicator())));
-                          }
-                          if (snapshot.hasError) {
-                            return SliverToBoxAdapter(
-                                child: Center(
-                                    child: Text(
-                                        'Error loading tasks: ${snapshot.error}')));
+                              child: Padding(
+                                padding: EdgeInsets.all(30),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
+                              ),
+                            );
                           }
 
-                          // --- APPLICA ORDINAMENTO CLIENT-SIDE ---
+                          if (snapshot.hasError) {
+                            return SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text('Error: ${snapshot.error}'),
+                              ),
+                            );
+                          }
+
                           final tasks = snapshot.data ?? [];
                           final sortedTasks =
                               TaskSorter.sortTasks(tasks, _selectedTaskFilter);
 
                           if (sortedTasks.isEmpty) {
-                            return SliverToBoxAdapter(
+                            return const SliverToBoxAdapter(
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 32.0),
-                                child: Center(
-                                  child: Text(
-                                    'No tasks in this folder yet.',
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                ),
+                                padding: EdgeInsets.all(32.0),
+                                child: Center(child: Text("No tasks found.")),
                               ),
                             );
                           }
 
-                          // Usa la lista ordinata (sortedTasks)
-                          return SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
+                          if (isTasksCollapsed) {
+                            return const SliverToBoxAdapter(
+                                child: SizedBox.shrink());
+                          }
+
+                          // SOLUZIONE: SliverList.builder con key UNICA e STABILE
+                          return SliverPadding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            sliver: SliverList.builder(
+                              itemCount: sortedTasks.length,
+                              itemBuilder: (context, index) {
                                 final task = sortedTasks[index];
+
+                                // KEY UNICA basata solo sull'ID del task
                                 return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0),
+                                  key: ValueKey('task_tile_${task.id}'),
+                                  padding: const EdgeInsets.only(bottom: 12),
                                   child: TaskListTile(
                                     task: task,
                                     currentUserRole: _viewModel.currentUserRole,
-                                    onTap: () {
-                                      /* TODO: Navigare al dettaglio task */
-                                    },
-                                    onEdit: () {
-                                      _openTaskDialog(taskToEdit: task);
-                                    },
-                                    onDelete: () {
-                                      _showDeleteTaskDialog(task);
-                                    },
+                                    onTap: () {},
+                                    onEdit: () =>
+                                        _openTaskDialog(taskToEdit: task),
+                                    onDelete: () => _showDeleteTaskDialog(task),
                                     onStatusChanged: (newStatus) {
                                       _handleTaskStatusChange(task, newStatus);
                                     },
                                   ),
                                 );
                               },
-                              childCount:
-                                  sortedTasks.length, // Usa la lista ordinata
                             ),
                           );
                         },
                       ),
-                      // Spaziatore per i FAB
+
                       const SliverToBoxAdapter(child: SizedBox(height: 160)),
                     ],
                   ),
                 ),
-                // === 6. ACTION BUTTONS WIDGET ===
                 Positioned(
                   bottom: 16,
                   right: 16,
