@@ -27,8 +27,11 @@ dependencies:
   geolocator: ^14.0.2
   geocoding: ^4.0.0
 #Alternativa:
-  flutter_map: ^8.2.2            # <-- AGGIUNGI QUESTO (Motore mappa)
+  flutter_map: ^8.2.2           
   latlong2: ^0.9.1
+# per salvare i dati e ottenerli facilmente ( gestione del theme persistente )
+shared_preferences: ^2.5.3
+
 
 dev_dependencies:
   flutter_test:

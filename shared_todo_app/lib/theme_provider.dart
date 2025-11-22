@@ -1,31 +1,61 @@
 // coverage:ignore-file
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// 1. Usiamo 'ChangeNotifier' per permettere a questa classe
-//    di inviare "notifiche" ai widget quando lo stato cambia.
 class ThemeProvider extends ChangeNotifier {
-  // 2. Questa è la variabile privata che memorizza lo stato attuale.
-  //    Iniziamo con il tema chiaro (light) come default.
-  ThemeMode _themeMode = ThemeMode.light;
+  // Chiave univoca per salvare il dato nella memoria del telefono
+  static const String _themeKey = 'theme_preference';
 
-  // 3. Questo è un "getter" pubblico.
-  //    I widget (come MaterialApp) lo useranno per LEGGERE lo stato attuale.
+  // Iniziamo con un valore di default (Sistema o Light) finché non carichiamo le preferenze
+  ThemeMode _themeMode = ThemeMode.system;
+
+  // Getter pubblico per leggere lo stato
   ThemeMode get currentThemeMode => _themeMode;
 
-  // 4. Questo è un helper comodo per il tuo Switch.
-  //    Restituisce 'true' se il tema scuro è attivo.
-  bool get isDarkMode => _themeMode == ThemeMode.dark;
+  // Helper per lo switch (true se dark, false se light o system)
+  bool get isDarkMode {
+    if (_themeMode == ThemeMode.system) {
+      // Se è impostato su "Sistema", non possiamo sapere qui se è dark o light 
+      // senza il context, ma per lo switch di solito si assume false.
+      return false; 
+    }
+    return _themeMode == ThemeMode.dark;
+  }
 
-  // 5. Questa è la FUNZIONE che il tuo Switch chiamerà.
-  //    Riceve un valore booleano (true = è scuro, false = è chiaro)
-  //    e aggiorna lo stato.
-  void toggleTheme(bool isDark) {
-    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+  // Costruttore: Appena il Provider viene creato, proviamo a caricare la preferenza salvata
+  ThemeProvider() {
+    _loadThemeFromPrefs();
+  }
 
-    // 6. FONDAMENTALE: Questo comando "notifica" a tutti i widget
-    //    in ascolto (principalmente il tuo MaterialApp in my_app.dart)
-    //    che devono ricostruirsi perché lo stato è cambiato.
+  /// Carica il tema salvato nelle SharedPreferences
+  Future<void> _loadThemeFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? savedTheme = prefs.getString(_themeKey);
+
+    // Se non c'è nulla salvato (prima volta che apre l'app), usiamo System
+    if (savedTheme == null) {
+      _themeMode = ThemeMode.system;
+    } else if (savedTheme == 'dark') {
+      _themeMode = ThemeMode.dark;
+    } else {
+      _themeMode = ThemeMode.light;
+    }
+
+    // Aggiorniamo la UI con il tema caricato
     notifyListeners();
+  }
+
+  /// Cambia il tema e salva la preferenza
+  Future<void> toggleTheme(bool isDark) async {
+    // 1. Aggiorniamo subito la variabile locale per dare feedback immediato all'utente
+    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    
+    // 2. Notifichiamo i widget (la UI cambia colore istantaneamente)
+    notifyListeners();
+
+    // 3. Salviamo la scelta in memoria in background
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themeKey, isDark ? 'dark' : 'light');
   }
 }
