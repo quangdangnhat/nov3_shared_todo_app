@@ -21,7 +21,7 @@ Future<void> main() async {
   // 3. Avvia l'app avvolta nel Provider
   runApp(
     ChangeNotifierProvider(
-      // Quando viene creato qui, il costruttore di ThemeProvider() 
+      // Quando viene creato qui, il costruttore di ThemeProvider()
       // parte subito a leggere la memoria del telefono.
       create: (context) => ThemeProvider(),
       child: const MyApp(),

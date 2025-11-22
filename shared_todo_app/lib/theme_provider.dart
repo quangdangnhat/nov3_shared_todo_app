@@ -16,9 +16,9 @@ class ThemeProvider extends ChangeNotifier {
   // Helper per lo switch (true se dark, false se light o system)
   bool get isDarkMode {
     if (_themeMode == ThemeMode.system) {
-      // Se è impostato su "Sistema", non possiamo sapere qui se è dark o light 
+      // Se è impostato su "Sistema", non possiamo sapere qui se è dark o light
       // senza il context, ma per lo switch di solito si assume false.
-      return false; 
+      return false;
     }
     return _themeMode == ThemeMode.dark;
   }
@@ -50,7 +50,7 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> toggleTheme(bool isDark) async {
     // 1. Aggiorniamo subito la variabile locale per dare feedback immediato all'utente
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    
+
     // 2. Notifichiamo i widget (la UI cambia colore istantaneamente)
     notifyListeners();
 
