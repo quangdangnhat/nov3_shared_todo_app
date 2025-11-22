@@ -9,8 +9,8 @@ class TodoListDetailHeader extends StatelessWidget {
   final bool isMobile;
   final String title;
   final VoidCallback onBackTap;
-  final VoidCallback onManageTap; // Vecchia funzione per gestire/invitare
-  final VoidCallback onInviteTap; // NUOVA funzione per invitare direttamente
+  final VoidCallback onManageTap;
+  final VoidCallback onInviteTap;
 
   const TodoListDetailHeader({
     super.key,
@@ -19,7 +19,7 @@ class TodoListDetailHeader extends StatelessWidget {
     required this.title,
     required this.onBackTap,
     required this.onManageTap,
-    required this.onInviteTap, // NUOVO PARAMETRO
+    required this.onInviteTap,
   });
 
   @override
@@ -38,21 +38,40 @@ class TodoListDetailHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Leading button: Menu (mobile, root) o Back (desktop, o mobile, subfolder)
-          if (isMobile && isRootFolder)
-            IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              tooltip: 'Menu',
-            )
-          else // <-- MODIFICA QUI
+          // --- INIZIO LOGICA LEADING ICON ---
+
+          // CASO 1: DESKTOP / TABLET
+          // Richiesta: "L'hamburger non deve mai essere visualizzato. Solo freccia."
+          if (!isMobile)
             IconButton(
               icon: const Icon(Icons.arrow_back),
               tooltip: 'Indietro',
               onPressed: onBackTap,
             ),
-          if (isRootFolder && isMobile) const SizedBox(width: 8),
-          // Titolo
+
+          // CASO 2: MOBILE
+          if (isMobile) ...[
+            // Se siamo nella root folder su mobile -> HAMBURGER
+            if (isRootFolder)
+              IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: 'Menu',
+              )
+            // Se siamo in una sottocartella su mobile -> FRECCIA INDIETRO
+            else
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Indietro',
+                onPressed: onBackTap,
+              ),
+          ],
+
+          // --- FINE LOGICA LEADING ICON ---
+
+          const SizedBox(width: 8),
+
+          // 3. TITOLO
           Expanded(
             child: Text(
               title,
@@ -64,19 +83,21 @@ class TodoListDetailHeader extends StatelessWidget {
             ),
           ),
 
-          // Actions
+          // 4. AZIONI (A DESTRA)
+          // Visibili solo se siamo nella root folder
           if (isRootFolder) ...[
-            // 1. NUOVO PULSANTE: Invita Utente (apre il form diretto)
-            /*IconButton(
+            /*
+            // Decommenta se vuoi usare l'invito diretto
+            IconButton(
               icon: const Icon(Icons.person_add_alt_1_outlined),
               tooltip: 'Invite User',
-              onPressed: onInviteTap, // Usa la nuova callback
-            ),*/
-            // 2. VECCHIO PULSANTE: Gestisci Membri (apre la lista)
+              onPressed: onInviteTap,
+            ),
+            */
             IconButton(
               icon: const Icon(Icons.group_outlined),
               tooltip: 'Manage Members',
-              onPressed: onManageTap, // Usa la callback originale (rinominata)
+              onPressed: onManageTap,
             ),
           ],
         ],

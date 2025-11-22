@@ -5,12 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_todo_app/data/models/task.dart';
 import 'package:shared_todo_app/features/invitations/presentation/screens/invitation_screen.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/search_result_tile.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/todo_list_tile.dart';
 import '../../../../config/responsive.dart';
 import '../../../../config/router/app_router.dart';
 import '../../../../data/models/todo_list.dart';
 import '../../../../data/repositories/todo_list_repository.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../widgets/todo_list_tile.dart';
 import '../../../../data/models/folder.dart';
 import '../../../../data/repositories/folder_repository.dart';
 
@@ -616,7 +616,8 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
 
                   if (snapshot.hasError) {
                     return Center(
-                      child: Text('Error loading lists: ${snapshot.error}'),
+                      child: Text(
+                          'Error loading lists. Check your connection and try again!'),
                     );
                   }
 

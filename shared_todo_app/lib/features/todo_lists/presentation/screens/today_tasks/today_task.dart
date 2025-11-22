@@ -53,14 +53,15 @@ class _TodayTasksPageState extends State<TodayTasksPage> {
     });
 
     try {
-      final dateRange = TaskCategorizer.getSearchRange();
+      // 1. Scarica TUTTI i task non finiti
+      final allTasks = await _taskRepository.getActiveTasks();
+      //debugPrint(allTasks.toString()); // verifichiamo come arrivano
 
-      final allTasks = await _taskRepository.getTasksForCalendar(
-        dateRange.start,
-        dateRange.end,
-      );
-
+      // 2. Il categorizer filtrerà quelli rilevanti per oggi
+      // (scaduti, di oggi, in corso) e ignorerà quelli futuri lontani
       final categorized = TaskCategorizer.categorize(allTasks);
+
+      //debugPrint(allTasks.toString()); // verifichiamo come vengono categorizzate
 
       setState(() {
         _categorizedTasks = categorized;
@@ -68,7 +69,8 @@ class _TodayTasksPageState extends State<TodayTasksPage> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Errore nel caricamento dei task: $e';
+        _errorMessage =
+            'Error loading tasks. Check your connection and try again!';
         _isLoading = false;
       });
     }

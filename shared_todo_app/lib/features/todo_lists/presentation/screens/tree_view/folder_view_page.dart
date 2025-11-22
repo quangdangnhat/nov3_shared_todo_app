@@ -114,7 +114,6 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
           if (snapshot.hasError) {
             return ErrorStateWidget(
               title: 'Loading Error ',
-              error: snapshot.error,
               onRetry: () => setState(() {
                 _treeStream = _buildTreeStream();
               }),

@@ -1,7 +1,6 @@
 // coverage:ignore-file
 
 // consider testing later
-
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/task.dart';
@@ -37,6 +36,10 @@ class TaskRepository {
     required String status,
     DateTime? startDate,
     required DateTime dueDate,
+// aggiunti per la geolocalizzazione
+    double? latitude,
+    double? longitude,
+    String? placeName,
   }) async {
     try {
       final payload = {
@@ -46,6 +49,11 @@ class TaskRepository {
         'priority': priority,
         'status': status,
         'due_date': dueDate.toIso8601String(),
+
+// aggiunti per la geolocalizzazione
+        'latitude': latitude,
+        'longitude': longitude,
+        'place_name': placeName,
       };
       if (startDate != null)
         payload['start_date'] = startDate.toIso8601String();
@@ -69,6 +77,10 @@ class TaskRepository {
     String? status,
     DateTime? startDate,
     DateTime? dueDate,
+// aggiunti per la geolocalizzazione
+    double? latitude,
+    double? longitude,
+    String? placeName,
   }) async {
     try {
       final updates = <String, dynamic>{
@@ -81,6 +93,11 @@ class TaskRepository {
       if (startDate != null)
         updates['start_date'] = startDate.toIso8601String();
       if (dueDate != null) updates['due_date'] = dueDate.toIso8601String();
+
+// aggiunti per la geolocalizzazione
+      if (latitude != null) updates['latitude'] = latitude;
+      if (longitude != null) updates['longitude'] = longitude;
+      if (placeName != null) updates['place_name'] = placeName;
 
       final response = await _supabase
           .from('tasks')
@@ -113,6 +130,26 @@ class TaskRepository {
     } catch (e) {
       debugPrint('Errore durante l\'eliminazione del task $taskId: $e');
       throw Exception('Failed to delete task: $e');
+    }
+  }
+
+// metodo utile per ottenere i task da inserire nella pagina di recap dei task
+  /// Recupera tutti i task attivi (non completati) per il recap giornaliero
+  Future<List<Task>> getActiveTasks() async {
+    try {
+      final response = await _supabase
+          .from('tasks')
+          .select()
+          // IMPORTANTE: Escludi i task già fatti!
+          // Assumo tu abbia un campo 'status' o 'is_completed'
+          .neq('status', 'Done') // O .eq('is_completed', false)
+          .order('due_date', ascending: true); // Ordina per scadenza
+
+      return (response as List)
+          .map((json) => Task.fromMap(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Errore caricamento task attivi: $e');
     }
   }
 

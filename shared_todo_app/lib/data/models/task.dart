@@ -9,6 +9,9 @@ class Task {
   final DateTime dueDate;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final double? latitude;
+  final double? longitude;
+  final String? placeName;
 
   Task({
     required this.id,
@@ -21,42 +24,55 @@ class Task {
     required this.dueDate,
     required this.createdAt,
     this.updatedAt,
+    this.latitude,
+    this.longitude,
+    this.placeName,
   });
 
-  // Factory 'fromMap' robusto
   factory Task.fromMap(Map<String, dynamic> map) {
-    // Helper sicuro per parsare date nullable
-    DateTime? parseNullableDate(dynamic value) {
-      if (value is String) {
-        try {
-          return DateTime.parse(value);
-        } catch (_) {
-          return null; // Ignora formati non validi
-        }
+    // --- HELPER ROBUSTO PER IL PARSING DELLE DATE ---
+    DateTime? parseDateSafe(dynamic value, String fieldName) {
+      if (value == null) return null;
+
+      // Se è già DateTime, lo ritorniamo
+      if (value is DateTime) return value;
+
+      String dateStr = value.toString();
+
+      // 🛠️ FIX CRUCIALE:
+      // Dart vuole "YYYY-MM-DDTHH:MM:SS".
+      // Se il DB manda lo spazio ("2025-11-21 16:00"), lo sostituiamo con T.
+      if (dateStr.contains(' ') && !dateStr.contains('T')) {
+        dateStr = dateStr.replaceFirst(' ', 'T');
       }
-      return null;
+
+      try {
+        return DateTime.parse(dateStr).toLocal();
+      } catch (e) {
+        print(
+            "🚨 ERRORE GRAVE parsing $fieldName: Valore '$value' non valido.");
+        return null; // Ritorna null se fallisce, NON DateTime.now()!
+      }
     }
 
-    // Helper sicuro per parsare date NON nullable
-    DateTime parseRequiredDate(dynamic value, String fieldName) {
-      if (value is String) {
-        try {
-          return DateTime.parse(value);
-        } catch (e) {
-          throw FormatException(
-            'Invalid date format for required field $fieldName: $value',
-          );
-        }
-      }
-      throw FormatException(
-        'Missing or invalid type for required field $fieldName: $value',
-      );
-    }
-
+    // --- ESTRAZIONE VALORI ---
     final sdValue = map['start_date'] ?? map['startDate'];
-    final uaValue = map['updated_at'] ?? map['updatedAt'];
     final ddValue = map['due_date'] ?? map['dueDate'];
     final caValue = map['created_at'] ?? map['createdAt'];
+    final uaValue = map['updated_at'] ?? map['updatedAt'];
+
+    // --- BLOCCO DEBUG TEMPORANEO (Per capire perché era null) ---
+    // Se vedi questi log nel terminale, controlla cosa stampa "RAW" vs "PARSED"
+    /*
+    if (sdValue != null) {
+      print("🔍 DEBUG TASK '${map['title']}'");
+      print("   💾 RAW startDate da DB: '$sdValue'");
+      final parsed = parseDateSafe(sdValue, 'startDate');
+      print("   ✅ PARSED startDate: $parsed");
+      print("--------------------------------");
+    }
+    */
+    // -----------------------------------------------------------
 
     return Task(
       id: map['id'] as String,
@@ -65,16 +81,22 @@ class Task {
       desc: map['desc'] as String?,
       priority: map['priority'] as String,
       status: map['status'] as String,
-      // --- MODIFICA: Usa parseNullableDate ---
-      startDate: parseNullableDate(sdValue),
-      // --- FINE MODIFICA ---
-      dueDate: parseRequiredDate(ddValue, 'dueDate'),
-      createdAt: parseRequiredDate(caValue, 'createdAt'),
-      updatedAt: parseNullableDate(uaValue),
+
+      // ✅ Usiamo la funzione sicura
+      startDate: parseDateSafe(sdValue, 'startDate'),
+
+      // Per i campi obbligatori, usiamo un fallback solo se restituisce null
+      dueDate: parseDateSafe(ddValue, 'dueDate') ?? DateTime.now(),
+      createdAt: parseDateSafe(caValue, 'createdAt') ?? DateTime.now(),
+
+      updatedAt: parseDateSafe(uaValue, 'updatedAt'),
+
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
+      placeName: map['place_name'] as String?,
     );
   }
 
-  // Metodo 'toMap' per l'invio al DB
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -83,12 +105,18 @@ class Task {
       'desc': desc,
       'priority': priority,
       'status': status,
-      // --- MODIFICA: Riportato a Nullable ---
-      'start_date': startDate?.toIso8601String(), // Invia null se non impostato
-      // --- FINE MODIFICA ---
+      'start_date': startDate?.toIso8601String(),
       'due_date': dueDate.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'latitude': latitude,
+      'longitude': longitude,
+      'place_name': placeName,
     };
+  }
+
+  @override
+  String toString() {
+    return 'Task(id: $id, title: $title, startDate: $startDate, dueDate: $dueDate)';
   }
 }

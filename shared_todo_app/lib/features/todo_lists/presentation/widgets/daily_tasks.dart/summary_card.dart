@@ -45,17 +45,12 @@ class SummaryCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.assessment,
-          color: theme.colorScheme.primary,
-          size: isMobile ? 18 : 24,
-        ),
         SizedBox(width: isMobile ? 6 : 8),
         Text(
           'Daily Recap',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: isMobile ? 14 : 16,
+            fontSize: isMobile ? 24 : 30,
           ),
         ),
       ],
@@ -64,6 +59,8 @@ class SummaryCard extends StatelessWidget {
 
   Widget _buildStats(BuildContext context, ThemeData theme) {
     final isMobile = ResponsiveLayout.isMobile(context);
+    // Definisco il grigio per i bordi standard (non troppo chiaro, es. shade500)
+    final standardBorderColor = Colors.grey.shade500;
 
     // Tutto sulla stessa riga, versione compatta per mobile
     return Row(
@@ -73,24 +70,29 @@ class SummaryCard extends StatelessWidget {
           label: 'Total',
           count: totalTasks,
           color: theme.colorScheme.primary,
+          borderColor: standardBorderColor, // Grigio
           compact: isMobile,
         ),
         _StatItem(
           label: 'Urgent',
           count: overdueTasks,
           color: theme.colorScheme.error,
+          borderColor:
+              theme.colorScheme.error, // Rosso (Mantiene il suo colore)
           compact: isMobile,
         ),
         _StatItem(
           label: 'Today',
           count: dueTodayTasks,
           color: theme.colorScheme.secondary,
+          borderColor: standardBorderColor, // Grigio
           compact: isMobile,
         ),
         _StatItem(
           label: 'Active',
           count: activeTasks,
           color: theme.colorScheme.primary,
+          borderColor: standardBorderColor, // Grigio
           compact: isMobile,
         ),
       ],
@@ -103,12 +105,14 @@ class _StatItem extends StatelessWidget {
   final String label;
   final int count;
   final Color color;
+  final Color borderColor; // Nuova proprietà per il colore del bordo
   final bool compact;
 
   const _StatItem({
     required this.label,
     required this.count,
     required this.color,
+    required this.borderColor, // Richiesto nel costruttore
     this.compact = false,
   });
 
@@ -122,11 +126,16 @@ class _StatItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: color.withOpacity(0.15),
             shape: BoxShape.circle,
+            // Aggiunto il bordo
+            border: Border.all(
+              color: borderColor,
+              width: 2.0, // Spessore del bordo
+            ),
           ),
           child: Text(
             '$count',
             style: TextStyle(
-              fontSize: compact ? 14 : 20,
+              fontSize: compact ? 18 : 20,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -136,7 +145,7 @@ class _StatItem extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: compact ? 9 : 12,
+            fontSize: compact ? 13 : 16,
             color: color,
           ),
           textAlign: TextAlign.center,

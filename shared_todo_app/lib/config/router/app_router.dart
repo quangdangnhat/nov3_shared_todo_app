@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_todo_app/features/chat/screens/chat_screen.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/createPage/create_screen.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/today_tasks/today_task.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/tree_view/folder_view_page.dart';
@@ -109,7 +110,7 @@ class AppRouter {
           return MainLayout(child: child);
         },
         routes: <RouteBase>[
-          // Home - Lista Todo
+          // Home - List Todo
           GoRoute(
             path: home,
             name: home,
@@ -119,7 +120,6 @@ class AppRouter {
                 child: const lists_screen.TodoListsScreen(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
-                  // Nessuna animazione per transizioni fluide
                   return child;
                 },
               );
@@ -161,6 +161,24 @@ class AppRouter {
                     (context, animation, secondaryAnimation, child) {
                   // Nessuna animazione per transizioni fluide
                   return child;
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: '/list/:listId/chat',
+            name: 'chat',
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              // Recupera l'ID della lista dal path param
+              final todoListId = state.pathParameters[
+                  'listId']!; // sempre presente perché definito in path
+
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: ChatScreen(todoListId: todoListId),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return child; // nessuna animazione
                 },
               );
             },
