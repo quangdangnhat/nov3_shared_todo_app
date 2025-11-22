@@ -6,17 +6,47 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_todo_app/data/repositories/task_repository.dart';
 
+/// Modello per i dati di localizzazione restituiti dal dialog
+class LocationData {
+  final double latitude;
+  final double longitude;
+  final String placeName;
+
+  LocationData({
+    required this.latitude,
+    required this.longitude,
+    required this.placeName,
+  });
+}
+
 class MapDialog extends StatefulWidget {
-  final String taskId;
-  final TaskRepository taskRepository;
-  final VoidCallback? onPlaceUpdated; // ← NUOVO PARAMETRO per real-time update
+  final String? taskId; // Nullable: se null, non fa update ma ritorna i dati
+  final TaskRepository? taskRepository; // Nullable: richiesto solo per update
+  final VoidCallback? onPlaceUpdated;
 
   const MapDialog({
     super.key,
-    required this.taskId,
-    required this.taskRepository,
-    this.onPlaceUpdated, // ← NUOVO
+    this.taskId,
+    this.taskRepository,
+    this.onPlaceUpdated,
   });
+
+  /// Costruttore per modalità UPDATE (task esistente)
+  const MapDialog.forUpdate({
+    super.key,
+    required String taskId,
+    required TaskRepository taskRepository,
+    this.onPlaceUpdated,
+  })  : taskId = taskId,
+        taskRepository = taskRepository;
+
+  /// Costruttore per modalità CREATE (nuovo task)
+  const MapDialog.forCreate({super.key})
+      : taskId = null,
+        taskRepository = null,
+        onPlaceUpdated = null;
+
+  bool get isCreateMode => taskId == null;
 
   @override
   State<MapDialog> createState() => _MapDialogState();
@@ -114,11 +144,9 @@ class _MapDialogState extends State<MapDialog> {
             foundAddress = "${parts[0]}, ${parts[1]}";
           }
         }
-      } else {
-        debugPrint("⚠️ OSM Error: ${response.statusCode}");
       }
     } catch (e) {
-      debugPrint("🔴 Errore connessione: $e");
+      debugPrint("Errore connessione: $e");
     }
 
     if (mounted) {
@@ -141,29 +169,41 @@ class _MapDialogState extends State<MapDialog> {
     _getAddress(position);
   }
 
-  Future<void> _saveLocation() async {
+  Future<void> _confirmLocation() async {
     if (_selectedLocation == null) return;
     setState(() => _isSaving = true);
 
     try {
-      await widget.taskRepository.updateTask(
-        taskId: widget.taskId,
+      final locationData = LocationData(
         latitude: _selectedLocation!.latitude,
         longitude: _selectedLocation!.longitude,
         placeName: _selectedPlaceName,
       );
 
-      if (mounted) {
-        // ← CHIAMA IL CALLBACK per notificare l'aggiornamento
-        widget.onPlaceUpdated?.call();
-
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Luogo salvato!"),
-            backgroundColor: Colors.green,
-          ),
+      if (widget.isCreateMode) {
+        // Modalità CREATE: ritorna i dati senza salvare
+        if (mounted) {
+          Navigator.of(context).pop(locationData);
+        }
+      } else {
+        // Modalità UPDATE: salva e poi chiudi
+        await widget.taskRepository!.updateTask(
+          taskId: widget.taskId!,
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+          placeName: locationData.placeName,
         );
+
+        if (mounted) {
+          widget.onPlaceUpdated?.call();
+          Navigator.of(context).pop(locationData);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Luogo salvato!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -227,7 +267,7 @@ class _MapDialogState extends State<MapDialog> {
             ),
             const Divider(height: 1),
 
-            // BODY: FLUTTER MAP (OSM)
+            // BODY: FLUTTER MAP
             Expanded(
               child: _isLoadingMap
                   ? const Center(child: CircularProgressIndicator())
@@ -275,7 +315,7 @@ class _MapDialogState extends State<MapDialog> {
                           _isGettingAddress ||
                           _selectedLocation == null)
                       ? null
-                      : _saveLocation,
+                      : _confirmLocation,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: Colors.blue,
@@ -297,10 +337,8 @@ class _MapDialogState extends State<MapDialog> {
                               ),
                             ),
                             SizedBox(width: 10),
-                            Text(
-                              "Attendi...",
-                              style: TextStyle(color: Colors.white),
-                            ),
+                            Text("Wait...",
+                                style: TextStyle(color: Colors.white)),
                           ],
                         )
                       : _isSaving
@@ -312,12 +350,13 @@ class _MapDialogState extends State<MapDialog> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text("CONFERMA POSIZIONE"),
+                          : Text(widget.isCreateMode
+                              ? "SELECT A POSITION"
+                              : "CONFIRM POSITION"),
                 ),
               ),
             ),
 
-            // CREDIT (Richiesto dalla licenza OSM)
             const Padding(
               padding: EdgeInsets.only(bottom: 8.0),
               child: Text(

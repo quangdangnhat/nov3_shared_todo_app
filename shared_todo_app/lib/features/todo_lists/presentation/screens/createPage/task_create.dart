@@ -1,10 +1,8 @@
 // coverage:ignore-file
-
-// consider testing later
-
 import 'package:flutter/material.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/create/task/location_display_card.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/create/task/status_picker.dart';
-// lib/presentation/pages/task/task_create_page.dart
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
 import '../../../../../data/repositories/folder_repository.dart';
 import '../../../../../data/repositories/task_repository.dart';
 import '../../../../../data/repositories/todo_list_repository.dart';
@@ -32,18 +30,13 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
   @override
   void initState() {
     super.initState();
-
     _controller = TaskCreateController(
       todoListRepo: TodoListRepository(),
       folderRepo: FolderRepository(),
       taskRepo: TaskRepository(),
     );
-
     _controller.initialize();
-
-    _titleController.addListener(() {
-      setState(() {});
-    });
+    _titleController.addListener(() => setState(() {}));
   }
 
   @override
@@ -62,6 +55,17 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
     setState(() {});
   }
 
+  Future<void> _showLocationDialog() async {
+    final result = await showDialog<LocationData>(
+      context: context,
+      builder: (context) => const MapDialog.forCreate(),
+    );
+
+    if (result != null) {
+      _controller.setLocation(result);
+    }
+  }
+
   Future<void> _handleCreateTask() async {
     try {
       if (_controller.dateError == null) {
@@ -76,7 +80,6 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Task created successfully!')),
           );
-
           _titleController.clear();
           _descriptionController.clear();
           _controller.resetForm();
@@ -84,10 +87,9 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-            SnackBar(content: Text('Collaborators can\'t create tasks')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Collaborators can\'t create tasks')),
+        );
       }
     }
   }
@@ -124,6 +126,17 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
                   onTap: _showFolderSelectionDialog,
                 ),
                 const SizedBox(height: 16),
+
+                // LOCATION CARD
+                LocationDisplayCard(
+                  selectedLocation: _controller.selectedLocation,
+                  onTap: _showLocationDialog,
+                  onClear: _controller.hasLocation
+                      ? () => _controller.clearLocation()
+                      : null,
+                ),
+
+                const SizedBox(height: 16),
                 DatePickerCard(
                   key: const ValueKey('start_date_picker'),
                   type: DatePickerType.startDate,
@@ -141,19 +154,14 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.red[700],
-                        size: 20,
-                      ),
+                      Icon(Icons.error_outline,
+                          color: Colors.red[700], size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _controller.dateError!,
-                          style: TextStyle(
-                            color: Colors.red[700],
-                            fontSize: 14,
-                          ),
+                          style:
+                              TextStyle(color: Colors.red[700], fontSize: 14),
                         ),
                       ),
                     ],
@@ -167,8 +175,7 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
                 const SizedBox(height: 16),
                 PrioritySelector(
                   selectedPriority: _controller.selectedPriority,
-                  onPriorityChanged: (priority) =>
-                      _controller.setPriority(priority),
+                  onPriorityChanged: (p) => _controller.setPriority(p),
                 ),
                 const SizedBox(height: 32),
                 CreateTaskButton(

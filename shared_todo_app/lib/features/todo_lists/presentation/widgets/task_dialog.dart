@@ -1,23 +1,20 @@
 // coverage:ignore-file
 
-// consider testing later
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
 import '../../../../data/models/task.dart';
 import '../../../../data/repositories/task_repository.dart';
 
 /// Un dialog per creare o modificare un Task.
 class TaskDialog extends StatefulWidget {
   final String folderId;
-  // --- MODIFICA: Aggiunto taskToEdit ---
-  final Task? taskToEdit; // Se non nullo, siamo in modalità modifica
-  // --- FINE MODIFICA ---
+  final Task? taskToEdit;
 
   const TaskDialog({
     super.key,
     required this.folderId,
-    this.taskToEdit, // Aggiunto al costruttore
+    this.taskToEdit,
   });
 
   @override
@@ -31,7 +28,6 @@ class _TaskDialogState extends State<TaskDialog> {
   final TaskRepository _taskRepo = TaskRepository();
   bool _isLoading = false;
 
-  // Stato per i campi specifici del Task
   final _priorities = ['Low', 'Medium', 'High'];
   final _statuses = ['To Do', 'In Progress', 'Done'];
   late String _selectedPriority;
@@ -39,19 +35,32 @@ class _TaskDialogState extends State<TaskDialog> {
   DateTime? _selectedStartDate;
   DateTime? _selectedDueDate;
 
+  // Location state
+  LocationData? _selectedLocation;
+
   bool get _isEditing => widget.taskToEdit != null;
+  bool get _hasLocation => _selectedLocation != null;
 
   @override
   void initState() {
     super.initState();
-    // --- MODIFICA: Pre-compila i campi se stiamo modificando ---
     _titleController = TextEditingController(text: widget.taskToEdit?.title);
     _descController = TextEditingController(text: widget.taskToEdit?.desc);
     _selectedPriority = widget.taskToEdit?.priority ?? _priorities[0];
     _selectedStatus = widget.taskToEdit?.status ?? _statuses[0];
     _selectedStartDate = widget.taskToEdit?.startDate;
-    _selectedDueDate = widget.taskToEdit?.dueDate; // Carica la data esistente
-    // --- FINE MODIFICA ---
+    _selectedDueDate = widget.taskToEdit?.dueDate;
+
+    // Carica location esistente se in modifica
+    if (widget.taskToEdit != null &&
+        widget.taskToEdit!.latitude != null &&
+        widget.taskToEdit!.longitude != null) {
+      _selectedLocation = LocationData(
+        latitude: widget.taskToEdit!.latitude!,
+        longitude: widget.taskToEdit!.longitude!,
+        placeName: widget.taskToEdit!.placeName ?? 'Posizione salvata',
+      );
+    }
   }
 
   @override
@@ -61,7 +70,6 @@ class _TaskDialogState extends State<TaskDialog> {
     super.dispose();
   }
 
-  // Funzione helper per mostrare il date picker
   Future<DateTime?> _selectDate(
     BuildContext context,
     DateTime? initialDate,
@@ -75,8 +83,22 @@ class _TaskDialogState extends State<TaskDialog> {
     return picked;
   }
 
+  Future<void> _showLocationDialog() async {
+    final result = await showDialog<LocationData>(
+      context: context,
+      builder: (context) => const MapDialog.forCreate(),
+    );
+
+    if (result != null) {
+      setState(() => _selectedLocation = result);
+    }
+  }
+
+  void _clearLocation() {
+    setState(() => _selectedLocation = null);
+  }
+
   Future<void> _submit() async {
-    // Validazione
     if (!_formKey.currentState!.validate() || _selectedDueDate == null) {
       setState(() {});
       return;
@@ -85,11 +107,9 @@ class _TaskDialogState extends State<TaskDialog> {
     setState(() => _isLoading = true);
 
     try {
-      // --- MODIFICA: Logica differenziata per Creazione/Modifica ---
       if (_isEditing) {
-        // Logica di Modifica
         await _taskRepo.updateTask(
-          taskId: widget.taskToEdit!.id, // ID del task da modificare
+          taskId: widget.taskToEdit!.id,
           title: _titleController.text.trim(),
           desc: _descController.text.trim().isNotEmpty
               ? _descController.text.trim()
@@ -97,10 +117,13 @@ class _TaskDialogState extends State<TaskDialog> {
           priority: _selectedPriority,
           status: _selectedStatus,
           startDate: _selectedStartDate,
-          dueDate: _selectedDueDate, // _selectedDueDate non può essere null qui
+          dueDate: _selectedDueDate,
+          // Location data
+          latitude: _selectedLocation?.latitude,
+          longitude: _selectedLocation?.longitude,
+          placeName: _selectedLocation?.placeName,
         );
       } else {
-        // Logica di Creazione
         await _taskRepo.createTask(
           folderId: widget.folderId,
           title: _titleController.text.trim(),
@@ -109,20 +132,21 @@ class _TaskDialogState extends State<TaskDialog> {
               : null,
           priority: _selectedPriority,
           status: _selectedStatus,
-          startDate: _selectedStartDate, // Può essere null (usa default DB)
+          startDate: _selectedStartDate,
           dueDate: _selectedDueDate!,
+          // Location data
+          latitude: _selectedLocation?.latitude,
+          longitude: _selectedLocation?.longitude,
+          placeName: _selectedLocation?.placeName,
         );
       }
-      // --- FINE MODIFICA ---
 
       if (mounted) {
-        Navigator.of(context).pop(true); // Chiudi e indica successo
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
-      // Propaga l'errore al chiamante
       rethrow;
     } finally {
-      // Assicurati che il loading venga disattivato
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -132,7 +156,6 @@ class _TaskDialogState extends State<TaskDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      // Titolo dinamico
       title: Text(_isEditing ? 'Edit Task' : 'Create New Task'),
       content: Form(
         key: _formKey,
@@ -184,6 +207,36 @@ class _TaskDialogState extends State<TaskDialog> {
                 },
               ),
               const SizedBox(height: 8),
+
+              // LOCATION TILE
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.location_on,
+                  color: _hasLocation ? Colors.blue : Colors.grey,
+                ),
+                title: Text(
+                  _hasLocation
+                      ? _selectedLocation!.placeName
+                      : 'Add a place (Optional)',
+                  style: TextStyle(
+                    color: _hasLocation ? Colors.black87 : Colors.grey[600],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: _hasLocation
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: _clearLocation,
+                        tooltip: 'Rimuovi luogo',
+                      )
+                    : const Icon(Icons.chevron_right),
+                onTap: _showLocationDialog,
+              ),
+
+              const Divider(height: 1),
+
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
@@ -207,7 +260,6 @@ class _TaskDialogState extends State<TaskDialog> {
                 title: Text(
                   _selectedDueDate == null
                       ? 'Select Due Date *'
-                      // Ora _selectedDueDate non è mai null qui se _isEditing è true
                       : 'Due: ${DateFormat('dd/MM/yyyy').format(_selectedDueDate!)}',
                 ),
                 trailing: const Icon(Icons.calendar_today),
@@ -249,7 +301,6 @@ class _TaskDialogState extends State<TaskDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              // Testo dinamico
               : Text(_isEditing ? 'Save Task' : 'Create Task'),
         ),
       ],

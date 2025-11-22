@@ -1,3 +1,4 @@
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
 import '../../../../../data/models/folder.dart';
 import '../../../../../data/models/task.dart';
 import '../../../../../data/models/todo_list.dart';
@@ -30,11 +31,15 @@ class TaskCreateController extends BaseFolderSelectionController {
   Folder? _rootFolder;
   String _searchQuery = '';
   bool _isLoading = false;
-  String _selectedPriority = 'low'; // Default: bassa
+  String _selectedPriority = 'low';
   DateTime _selectedDueDate = DateTime.now();
-  DateTime? _selectedStartDate = DateTime.now(); // Opzionale
+  DateTime? _selectedStartDate = DateTime.now();
   TaskStatus _selectedStatus = TaskStatus.toDo;
   String? _dateError;
+
+  // Location state
+  LocationData? _selectedLocation;
+
   bool get hasValidDates => _dateError == null;
 
   // Getters
@@ -57,6 +62,8 @@ class TaskCreateController extends BaseFolderSelectionController {
   DateTime? get selectedStartDate => _selectedStartDate;
   TaskStatus get selectedStatus => _selectedStatus;
   String? get dateError => _dateError;
+  LocationData? get selectedLocation => _selectedLocation;
+  bool get hasLocation => _selectedLocation != null;
 
   // Initialization
   @override
@@ -64,7 +71,6 @@ class TaskCreateController extends BaseFolderSelectionController {
     _listsStream = _todoListRepo.getTodoListsStream();
   }
 
-  // Filter lists based on search query
   @override
   List<TodoList> filterLists(List<TodoList> lists) {
     if (_searchQuery.isEmpty) return lists;
@@ -73,14 +79,12 @@ class TaskCreateController extends BaseFolderSelectionController {
     }).toList();
   }
 
-  // Update search query
   @override
   void updateSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
   }
 
-  // Select TodoList and load its root folder
   @override
   Future<void> selectTodoList(TodoList list) async {
     _selectedTodoList = list;
@@ -104,7 +108,6 @@ class TaskCreateController extends BaseFolderSelectionController {
     }
   }
 
-  // Select a folder and load its subfolders
   @override
   Future<void> selectFolder(Folder folder) async {
     if (folder.id != _selectedFolder?.id && _selectedTodoList != null) {
@@ -117,7 +120,6 @@ class TaskCreateController extends BaseFolderSelectionController {
     }
   }
 
-  // Set priority
   void setPriority(String priority) {
     _selectedPriority = priority;
     notifyListeners();
@@ -125,17 +127,15 @@ class TaskCreateController extends BaseFolderSelectionController {
 
   void setStatus(TaskStatus status) {
     _selectedStatus = status;
-    notifyListeners(); // O update() se usi GetX
+    notifyListeners();
   }
 
-  // Set due date
   void setDueDate(DateTime date) {
     _selectedDueDate = date;
     _validateDates();
     notifyListeners();
   }
 
-  // Set start date
   void setStartDate(DateTime date) {
     _selectedStartDate = date;
     _validateDates();
@@ -151,7 +151,17 @@ class TaskCreateController extends BaseFolderSelectionController {
     }
   }
 
-  // Create a new task
+  // Location methods
+  void setLocation(LocationData location) {
+    _selectedLocation = location;
+    notifyListeners();
+  }
+
+  void clearLocation() {
+    _selectedLocation = null;
+    notifyListeners();
+  }
+
   Future<Task> createTask({
     required String title,
     String? description,
@@ -164,8 +174,7 @@ class TaskCreateController extends BaseFolderSelectionController {
     if (title.trim().isEmpty) {
       throw Exception('Task title cannot be empty');
     }
-// da modificare: crea il metodo statico nella classe status_picker !!
-//INIZIO
+
     String status = "To Do";
     if (_selectedStatus.toString().split('.').last == 'inProgress') {
       status = "In Progress";
@@ -173,7 +182,7 @@ class TaskCreateController extends BaseFolderSelectionController {
     if (_selectedStatus.toString().split('.').last == 'done') {
       status = "Done";
     }
-// FINE
+
     return await _taskRepo.createTask(
       folderId: _selectedFolder!.id,
       title: title.trim(),
@@ -182,15 +191,17 @@ class TaskCreateController extends BaseFolderSelectionController {
       status: status,
       startDate: startDate,
       dueDate: _selectedDueDate,
+      // Aggiungi i dati di localizzazione se presenti
+      latitude: _selectedLocation?.latitude,
+      longitude: _selectedLocation?.longitude,
+      placeName: _selectedLocation?.placeName,
     );
   }
 
-  // Check if can create task
   bool canCreateTask(String taskTitle) {
     return _selectedFolder != null && taskTitle.trim().isNotEmpty;
   }
 
-  // Reset form to initial state
   void resetForm() {
     _selectedTodoList = null;
     _selectedFolder = null;
@@ -200,6 +211,7 @@ class TaskCreateController extends BaseFolderSelectionController {
     _selectedDueDate = DateTime.now();
     _searchQuery = '';
     _selectedStatus = TaskStatus.toDo;
+    _selectedLocation = null; // Reset anche la location
     notifyListeners();
   }
 }
