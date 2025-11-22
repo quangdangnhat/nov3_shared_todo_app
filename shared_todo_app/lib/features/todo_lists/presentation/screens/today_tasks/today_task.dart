@@ -55,13 +55,9 @@ class _TodayTasksPageState extends State<TodayTasksPage> {
     try {
       // 1. Scarica TUTTI i task non finiti
       final allTasks = await _taskRepository.getActiveTasks();
-      //debugPrint(allTasks.toString()); // verifichiamo come arrivano
 
       // 2. Il categorizer filtrerà quelli rilevanti per oggi
-      // (scaduti, di oggi, in corso) e ignorerà quelli futuri lontani
       final categorized = TaskCategorizer.categorize(allTasks);
-
-      //debugPrint(allTasks.toString()); // verifichiamo come vengono categorizzate
 
       setState(() {
         _categorizedTasks = categorized;
@@ -158,7 +154,10 @@ class _TodayTasksPageState extends State<TodayTasksPage> {
           onPressed: _loadTodayTasks,
           tooltip: 'Aggiorna',
         ),
-        const InvitationsNotificationButton(),
+
+        // --- MODIFICA QUI: Inserita la Key per stabilizzare il widget ---
+        const InvitationsNotificationButton(key: ValueKey('invitation_button')),
+
         if (!isMobile) const SizedBox(width: 8),
       ],
     );

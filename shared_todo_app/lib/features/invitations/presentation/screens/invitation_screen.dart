@@ -11,8 +11,6 @@ class InvitationsNotificationButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Usiamo un'istanza del repo. Assicurati che il tuo repo gestisca bene lo stream.
-    // Se il repo è un Singleton, questo va bene.
     final InvitationRepository invitationRepo = InvitationRepository();
 
     return StreamBuilder<List<Invitation>>(
@@ -49,7 +47,8 @@ class InvitationsNotificationButton extends StatelessWidget {
         insetPadding: const EdgeInsets.all(20),
         elevation: 10,
         backgroundColor: Theme.of(context).colorScheme.surface,
-        child: const InvitationsPanel(),
+        // La Key qui è corretta per mantenere lo stato
+        child: const InvitationsPanel(key: ValueKey('invitations_panel')),
       ),
     );
   }
@@ -69,8 +68,7 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
   // Set per tracciare quali inviti stanno caricando (spinner)
   final Set<String> _loadingInvitations = {};
 
-  // NUOVO: Set per nascondere immediatamente gli inviti gestiti con successo
-  // Questo garantisce il refresh istantaneo della UI anche se lo Stream ritarda
+  // Set per nascondere immediatamente gli inviti gestiti con successo
   final Set<String> _processedInvitationsIds = {};
 
   Future<void> _handleResponse(Invitation invitation, bool accept) async {
@@ -79,7 +77,6 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
     setState(() => _loadingInvitations.add(invitation.id));
 
     try {
-      // 1. Eseguiamo l'operazione SQL
       await _invitationRepo.respondToInvitation(invitation.id, accept);
 
       if (mounted) {
@@ -88,14 +85,9 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
           message: 'Invitation ${accept ? 'accepted' : 'declined'}',
         );
 
-        // 2. CRUCIALE: Aggiorniamo immediatamente la UI locale
-        // Aggiungiamo l'ID alla lista dei "processati" così sparisce subito dalla lista visibile
         setState(() {
           _processedInvitationsIds.add(invitation.id);
         });
-
-        // Opzionale: Se abbiamo gestito tutto, chiudiamo il dialog dopo un istante
-        // Nota: Lo facciamo dentro il builder controllando la lunghezza della lista filtrata
       }
     } catch (error) {
       if (mounted) {
@@ -115,109 +107,114 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 
-    return StreamBuilder<List<Invitation>>(
-      stream: _invitationRepo.getPendingInvitationsStream(),
-      builder: (context, snapshot) {
-        // Se lo stream sta caricando inizialmente
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const SizedBox(
-              height: 200, child: Center(child: CircularProgressIndicator()));
-        }
-
-        // Prendiamo i dati grezzi dallo stream
-        final rawInvitations = snapshot.data ?? [];
-
-        // 3. FILTRO REALTIME:
-        // Mostriamo solo gli inviti che arrivano dallo stream MENO quelli che abbiamo
-        // appena processato con successo in questa sessione del dialog.
-        final visibleInvitations = rawInvitations
-            .where((inv) => !_processedInvitationsIds.contains(inv.id))
-            .toList();
-
-        // Auto-chiusura soft: se non c'è nulla da mostrare ed abbiamo processato qualcosa
-        if (visibleInvitations.isEmpty && _processedInvitationsIds.isNotEmpty) {
-          // Usiamo un post frame callback per non chiudere durante il build
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
-          });
-        }
-
-        return ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: screenHeight * 0.6,
-            maxWidth: 400,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    children: [
-                      Icon(Icons.mail_outline,
-                          color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Invitations',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop(),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-                const Divider(height: 1),
-
-                // Lista
-                Flexible(
-                  child: visibleInvitations.isEmpty
-                      ? _buildEmptyState()
-                      : ListView.separated(
-                          padding: const EdgeInsets.all(24),
-                          shrinkWrap: true,
-                          itemCount: visibleInvitations.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            final invitation = visibleInvitations[index];
-                            return _InvitationCard(
-                              key: ValueKey(invitation.id),
-                              invitation: invitation,
-                              isLoading:
-                                  _loadingInvitations.contains(invitation.id),
-                              onAccept: () => _handleResponse(invitation, true),
-                              onDecline: () =>
-                                  _handleResponse(invitation, false),
-                            );
-                          },
+    // --- FIX DEL GLITCH ---
+    // Spostiamo il ConstrainedBox FUORI dallo StreamBuilder.
+    // In questo modo il Dialog ha subito la dimensione finale e non "salta"
+    // quando arrivano i dati.
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: screenHeight * 0.6,
+        maxWidth: 400,
+        // Impostiamo una larghezza minima per evitare che si restringa troppo
+        minWidth: 300,
+        // Impostiamo un'altezza minima pari a quella che usavi per il loading (200)
+        minHeight: 200,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // HEADER (Sempre visibile, anche durante il caricamento)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Icon(Icons.mail_outline,
+                      color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Invitations',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                ),
-              ],
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+
+            // CONTENUTO DINAMICO
+            Flexible(
+              child: StreamBuilder<List<Invitation>>(
+                stream: _invitationRepo.getPendingInvitationsStream(),
+                builder: (context, snapshot) {
+                  // STATO LOADING
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      !snapshot.hasData) {
+                    // Non serve più il SizedBox(height: 200) perché il padre
+                    // ha già minHeight: 200.
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final rawInvitations = snapshot.data ?? [];
+
+                  final visibleInvitations = rawInvitations
+                      .where(
+                          (inv) => !_processedInvitationsIds.contains(inv.id))
+                      .toList();
+
+                  // Auto-chiusura soft
+                  if (visibleInvitations.isEmpty &&
+                      _processedInvitationsIds.isNotEmpty) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted && Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
+                    });
+                  }
+
+                  // STATO LISTA VUOTA O DATI
+                  if (visibleInvitations.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(24),
+                    shrinkWrap: true,
+                    itemCount: visibleInvitations.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final invitation = visibleInvitations[index];
+                      return _InvitationCard(
+                        key: ValueKey(invitation.id),
+                        invitation: invitation,
+                        isLoading: _loadingInvitations.contains(invitation.id),
+                        onAccept: () => _handleResponse(invitation, true),
+                        onDecline: () => _handleResponse(invitation, false),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildEmptyState() {
-    return const Padding(
-      padding: EdgeInsets.all(32.0),
+    // Rimuoviamo il padding eccessivo per centrarlo meglio nel ConstrainedBox esistente
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
