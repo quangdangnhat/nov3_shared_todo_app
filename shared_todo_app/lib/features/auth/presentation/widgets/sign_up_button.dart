@@ -1,5 +1,4 @@
 // coverage:ignore-file
-
 // consider testing later
 
 import 'package:flutter/material.dart';

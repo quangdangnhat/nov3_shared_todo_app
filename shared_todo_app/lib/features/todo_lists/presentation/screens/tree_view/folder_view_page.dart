@@ -13,6 +13,7 @@ import '../../../../../data/repositories/todo_list_repository.dart';
 import '../../../../../data/services/tree/tree_builder_service.dart';
 import '../../../../../data/services/tree/tree_navigation_service.dart';
 import '../../widgets/tree_view/tree_view_content.dart';
+import '../../../../../data/models/tree/node_type.dart';
 
 class FolderTreeViewPage extends StatefulWidget {
   final TodoListRepository todoListRepository;
@@ -30,6 +31,9 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
   late final AutoScrollController _scrollController;
   late final TreeBuilderService _treeBuilder;
   late final TreeNavigationService _navigationService;
+  late final FolderRepository _folderRepository;
+  late final TaskRepository _taskRepository;
+
   late Stream<TreeNode<TreeNodeData>> _treeStream;
 
   @override
@@ -43,17 +47,18 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
     _scrollController = AutoScrollController();
 
     final cache = TreeDataCacheService();
-    final folderRepository = FolderRepository();
-    final taskRepository = TaskRepository();
+
+    _folderRepository = FolderRepository();
+    _taskRepository = TaskRepository();
 
     _treeBuilder = TreeBuilderService(
-      folderRepository: folderRepository,
-      taskRepository: taskRepository,
+      folderRepository: _folderRepository,
+      taskRepository: _taskRepository,
       cache: cache,
     );
 
     _navigationService = TreeNavigationService(
-      folderRepository: folderRepository,
+      folderRepository: _folderRepository,
     );
   }
 
@@ -76,6 +81,53 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
     });
   }
 
+  Future<void> _handleMoveNode(
+    TreeNodeData dragged,
+    TreeNodeData target,
+  ) async {
+    try {
+      debugPrint(
+        ' _handleMoveNode | dragged=${dragged.id} (${dragged.type}) '
+        '→ target=${target.id} (${target.type})',
+      );
+
+      // Evita casi assurdi: stesso nodo
+      if (dragged.id == target.id) {
+        return;
+      }
+
+      // Caso 1: Task → Cartella
+      if (dragged.type == NodeType.task && target.type == NodeType.folder) {
+        await _taskRepository.moveTaskToFolder(
+          taskId: dragged.id,
+          newFolderId: target.id,
+        );
+      }
+      // Caso 2: Cartella → Cartella
+      else if (dragged.type == NodeType.folder &&
+          target.type == NodeType.folder) {
+        // Evita di spostare una cartella dentro sé stessa (già coperto sopra, ma per sicurezza)
+        if (dragged.id == target.id) return;
+
+        await _folderRepository.moveFolder(
+          folderId: dragged.id,
+          newParentFolderId: target.id,
+        );
+      }
+
+      // ♻️ Ricarica l'albero dopo lo spostamento
+      setState(() {
+        _treeStream = _buildTreeStream();
+      });
+
+      debugPrint(' Spostamento completato');
+    } catch (e, st) {
+      debugPrint(' Errore durante lo spostamento del nodo: $e');
+      debugPrint(st.toString());
+    }
+  }
+  //  FINE METODO AGGIUNTO 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,9 +137,6 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Home',
           onPressed: () {
-            // goNamed naviga alla rotta 'home' (che hai definito come '/')
-            // go_router gestirà lo stack di navigazione in base alla tua configurazione
-            // (ad esempio, se questa è una sub-route, tornerà alla home).
             context.goNamed(AppRouter.home);
           },
         ),
@@ -95,10 +144,12 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => setState(() {
-              _treeStream = _buildTreeStream();
-            }),
             tooltip: 'Update',
+            onPressed: () {
+              setState(() {
+                _treeStream = _buildTreeStream();
+              });
+            },
           ),
         ],
       ),
@@ -134,6 +185,7 @@ class _FolderTreeViewPageState extends State<FolderTreeViewPage> {
             onNavigate: (TreeNodeData data) =>
                 _navigationService.navigateToItem(context, data),
             onToggle: _handleToggle,
+            onMoveNode: _handleMoveNode,
           );
         },
       ),

@@ -113,6 +113,28 @@ class TaskRepository {
     }
   }
 
+  /// Sposta un task in un'altra cartella
+  Future<void> moveTaskToFolder({
+    required String taskId,
+    required String newFolderId,
+  }) async {
+    try {
+      await _supabase
+          .from('tasks')
+          .update({
+            'folder_id': newFolderId,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', taskId);
+    } catch (e) {
+      debugPrint('Errore durante lo spostamento del task $taskId: $e');
+      throw Exception('Failed to move task: $e');
+    }
+  }
+
+
+
+
   /// Elimina un task
   Future<void> deleteTask(String taskId) async {
     try {
@@ -165,4 +187,6 @@ class TaskRepository {
         .map((json) => Task.fromMap(json as Map<String, dynamic>))
         .toList();
   }
+
+  
 }
