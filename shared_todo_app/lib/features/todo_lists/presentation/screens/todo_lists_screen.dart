@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_todo_app/data/models/task.dart';
-import 'package:shared_todo_app/features/invitations/presentation/screens/invitation_screen.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/search_result_tile.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/todo_list_tile.dart';
 import '../../../../config/responsive.dart';
@@ -422,7 +421,7 @@ class _TodoListsScreenState extends State<TodoListsScreen> {
                   },
                 ),
                 // gestione del campenello
-                const InvitationsNotificationButton(),
+                //  InvitationsNotificationButton(key: ValueKey('invitation_button')),
               ],
             ),
           ),

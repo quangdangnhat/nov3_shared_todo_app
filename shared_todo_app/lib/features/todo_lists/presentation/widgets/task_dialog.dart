@@ -229,7 +229,7 @@ class _TaskDialogState extends State<TaskDialog> {
                     ? IconButton(
                         icon: const Icon(Icons.close, size: 20),
                         onPressed: _clearLocation,
-                        tooltip: 'Rimuovi luogo',
+                        tooltip: 'Remove place',
                       )
                     : const Icon(Icons.chevron_right),
                 onTap: _showLocationDialog,

@@ -71,20 +71,49 @@ class _TaskListTileState extends State<TaskListTile> {
   }
 
   // Callback per aggiornare il luogo in real-time
-  void _onPlaceUpdated() {
+  /* void _onPlaceUpdated() {
     // Non serve fare nulla qui - lo stream si aggiorna automaticamente
     // Il widget verrà ricostruito con i nuovi dati
-  }
+  }*/
 
-  void _openMapDialog() {
-    showDialog(
+  void _openMapDialog() async {
+    // 1. Apriamo il dialog e aspettiamo il risultato (LocationData)
+    final result = await showDialog<LocationData>(
       context: context,
-      builder: (dialogContext) => MapDialog(
-        taskId: widget.task.id,
-        taskRepository: TaskRepository(),
-        onPlaceUpdated: _onPlaceUpdated,
-      ),
+      builder: (BuildContext context) {
+        // Usiamo il costruttore specifico per l'aggiornamento
+        return MapDialog.forUpdate(
+          taskId: widget.task.id,
+          taskRepository: TaskRepository(), // Istanziamo il repository
+
+          // Passiamo le coordinate attuali per far apparire il pin rosso
+          // se il task ha già una posizione salvata
+          currentLat: widget.task.latitude,
+          currentLong: widget.task.longitude,
+
+          // --- FIX IMPORTANTE ---
+          // Passiamo il titolo reale del task.
+          // Il dialog lo userà per creare il controllo di prossimità corretto,
+          // così la notifica dirà "Sei vicino a: Comprare il latte"
+          // invece di "Nuova Posizione".
+          currentTitle: widget.task.title,
+
+          onPlaceUpdated: () {
+            // Codice opzionale se vuoi fare qualcosa subito dopo il salvataggio
+            // es. debugPrint("Luogo aggiornato con successo");
+          },
+        );
+      },
     );
+
+    // 2. Se il dialog ritorna dei dati (l'utente ha confermato), aggiorniamo la UI
+    if (result != null && mounted) {
+      setState(() {
+        // Questo setState forza il ridisegno del widget corrente (es. TaskListTile).
+        // Se visualizzi l'indirizzo o l'icona mappa colorata nel tile,
+        // vedrai la modifica istantaneamente.
+      });
+    }
   }
 
   @override

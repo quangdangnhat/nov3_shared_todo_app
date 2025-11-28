@@ -1,38 +1,106 @@
 // coverage:ignore-file
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../data/models/invitation.dart';
 import '../../../../data/repositories/invitation_repository.dart';
 
-/// Widget bottone campanella + Logica Dialog
+// --- MODELLO DI SUPPORTO PER LE NOTIFICHE ---
+class AppNotification {
+  final String id;
+  final String title;
+  final String? taskId;
+  final DateTime createdAt;
+
+  AppNotification({
+    required this.id,
+    required this.title,
+    this.taskId,
+    required this.createdAt,
+  });
+
+  factory AppNotification.fromMap(Map<String, dynamic> map) {
+    return AppNotification(
+      id: map['id'],
+      title: map['title'],
+      taskId: map['task_id'],
+      createdAt: DateTime.parse(map['created_at']).toLocal(),
+    );
+  }
+}
+
+/// Widget bottone campanella + Logica Dialog (SINGLETON)
 class InvitationsNotificationButton extends StatelessWidget {
+  // 1. REPOSITORY & CLIENT STATICI
+  static final InvitationRepository _invitationRepo = InvitationRepository();
+  static final SupabaseClient _supabase = Supabase.instance.client;
+
+  // 2. MEMORIA GLOBALE STATICA
+  static final Set<String> _hiddenInvitationIds = {};
+  static final Set<String> _hiddenNotificationIds = {};
+
+  // 3. NOTIFIER PER AGGIORNAMENTO ISTANTANEO DEL BADGE (FIX NUMERO)
+  // Questo permette al bottone di ricostruirsi subito quando nascondiamo qualcosa localmente
+  static final ValueNotifier<int> _uiUpdateNotifier = ValueNotifier(0);
+
   const InvitationsNotificationButton({super.key});
+
+  /// Metodo helper per forzare l'aggiornamento UI
+  static void refreshBadge() {
+    _uiUpdateNotifier.value++;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final InvitationRepository invitationRepo = InvitationRepository();
+    // Avvolgiamo tutto in un ValueListenableBuilder per reagire alle modifiche locali
+    return ValueListenableBuilder<int>(
+      valueListenable: _uiUpdateNotifier,
+      builder: (context, _, __) {
+        return StreamBuilder<List<Invitation>>(
+          stream: _invitationRepo.getPendingInvitationsStream(),
+          builder: (context, invSnapshot) {
+            final invitations = invSnapshot.data ?? [];
 
-    return StreamBuilder<List<Invitation>>(
-      stream: invitationRepo.getPendingInvitationsStream(),
-      builder: (context, snapshot) {
-        final invitations = snapshot.data ?? [];
-        final count = invitations.length;
+            return StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _supabase
+                  .from('notifications')
+                  .stream(primaryKey: ['id'])
+                  .eq('is_read', false)
+                  .order('created_at'),
+              builder: (context, notifSnapshot) {
+                final rawNotifications = notifSnapshot.data ?? [];
 
-        return IconButton(
-          tooltip: 'Notifications',
-          icon: Badge(
-            label: count > 0 ? Text('$count') : null,
-            isLabelVisible: count > 0,
-            backgroundColor: Theme.of(context).colorScheme.error,
-            child: Icon(
-              count > 0
-                  ? Icons.notifications_active
-                  : Icons.notifications_outlined,
-            ),
-          ),
-          onPressed: () {
-            _showModernInvitationsDialog(context);
+                // Calcolo conteggi filtrati (escludendo quelli nascosti localmente)
+                final validInvitationsCount = invitations
+                    .where((i) => !_hiddenInvitationIds.contains(i.id))
+                    .length;
+
+                final validNotificationsCount = rawNotifications
+                    .where((n) => !_hiddenNotificationIds.contains(n['id']))
+                    .length;
+
+                final totalCount =
+                    validInvitationsCount + validNotificationsCount;
+
+                return IconButton(
+                  tooltip: 'Notifications',
+                  icon: Badge(
+                    label: totalCount > 0 ? Text('$totalCount') : null,
+                    isLabelVisible: totalCount > 0,
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    child: Icon(
+                      totalCount > 0
+                          ? Icons.notifications_active
+                          : Icons.notifications_outlined,
+                    ),
+                  ),
+                  onPressed: () {
+                    _showModernInvitationsDialog(context);
+                  },
+                );
+              },
+            );
           },
         );
       },
@@ -47,8 +115,8 @@ class InvitationsNotificationButton extends StatelessWidget {
         insetPadding: const EdgeInsets.all(20),
         elevation: 10,
         backgroundColor: Theme.of(context).colorScheme.surface,
-        // La Key qui è corretta per mantenere lo stato
-        child: const InvitationsPanel(key: ValueKey('invitations_panel')),
+        child: const InvitationsPanel(
+            key: ValueKey('singleton_notifications_panel')),
       ),
     );
   }
@@ -63,21 +131,16 @@ class InvitationsPanel extends StatefulWidget {
 }
 
 class _InvitationsPanelState extends State<InvitationsPanel> {
-  final InvitationRepository _invitationRepo = InvitationRepository();
+  final Set<String> _loadingIds = {};
 
-  // Set per tracciare quali inviti stanno caricando (spinner)
-  final Set<String> _loadingInvitations = {};
-
-  // Set per nascondere immediatamente gli inviti gestiti con successo
-  final Set<String> _processedInvitationsIds = {};
-
-  Future<void> _handleResponse(Invitation invitation, bool accept) async {
-    if (_loadingInvitations.contains(invitation.id)) return;
-
-    setState(() => _loadingInvitations.add(invitation.id));
+  // --- GESTIONE INVITI ---
+  Future<void> _handleInvitation(Invitation invitation, bool accept) async {
+    if (_loadingIds.contains(invitation.id)) return;
+    setState(() => _loadingIds.add(invitation.id));
 
     try {
-      await _invitationRepo.respondToInvitation(invitation.id, accept);
+      await InvitationsNotificationButton._invitationRepo
+          .respondToInvitation(invitation.id, accept);
 
       if (mounted) {
         showSuccessSnackBar(
@@ -85,21 +148,46 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
           message: 'Invitation ${accept ? 'accepted' : 'declined'}',
         );
 
-        setState(() {
-          _processedInvitationsIds.add(invitation.id);
-        });
+        // Aggiorna lista nera e notifica il badge
+        InvitationsNotificationButton._hiddenInvitationIds.add(invitation.id);
+        InvitationsNotificationButton.refreshBadge();
+
+        // Ridisegna il pannello per nascondere l'elemento
+        setState(() {});
       }
     } catch (error) {
       if (mounted) {
-        showErrorSnackBar(
-          context,
-          message: 'Error: ${error.toString().replaceFirst("Exception: ", "")}',
-        );
+        showErrorSnackBar(context, message: 'Error: ${error.toString()}');
       }
     } finally {
+      if (mounted) setState(() => _loadingIds.remove(invitation.id));
+    }
+  }
+
+  // --- GESTIONE NOTIFICHE ---
+  Future<void> _handleNotificationRead(AppNotification notification) async {
+    if (_loadingIds.contains(notification.id)) return;
+    setState(() => _loadingIds.add(notification.id));
+
+    try {
+      // Aggiorna DB
+      await InvitationsNotificationButton._supabase
+          .from('notifications')
+          .update({'is_read': true}).eq('id', notification.id);
+
       if (mounted) {
-        setState(() => _loadingInvitations.remove(invitation.id));
+        // Aggiorna lista nera e notifica il badge
+        InvitationsNotificationButton._hiddenNotificationIds
+            .add(notification.id);
+        InvitationsNotificationButton.refreshBadge();
+
+        // Ridisegna il pannello per nascondere l'elemento
+        setState(() {});
       }
+    } catch (e) {
+      debugPrint("Errore notifica: $e");
+    } finally {
+      if (mounted) setState(() => _loadingIds.remove(notification.id));
     }
   }
 
@@ -107,17 +195,11 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // --- FIX DEL GLITCH ---
-    // Spostiamo il ConstrainedBox FUORI dallo StreamBuilder.
-    // In questo modo il Dialog ha subito la dimensione finale e non "salta"
-    // quando arrivano i dati.
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: screenHeight * 0.6,
         maxWidth: 400,
-        // Impostiamo una larghezza minima per evitare che si restringa troppo
         minWidth: 300,
-        // Impostiamo un'altezza minima pari a quella che usavi per il loading (200)
         minHeight: 200,
       ),
       child: Padding(
@@ -125,16 +207,16 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // HEADER (Sempre visibile, anche durante il caricamento)
+            // HEADER
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 children: [
-                  Icon(Icons.mail_outline,
+                  Icon(Icons.notifications,
                       color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
                   Text(
-                    'Invitations',
+                    'Notifications',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -148,58 +230,93 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
             const Divider(height: 1),
 
-            // CONTENUTO DINAMICO
+            // LISTA UNIFICATA
             Flexible(
               child: StreamBuilder<List<Invitation>>(
-                stream: _invitationRepo.getPendingInvitationsStream(),
-                builder: (context, snapshot) {
-                  // STATO LOADING
-                  if (snapshot.connectionState == ConnectionState.waiting &&
-                      !snapshot.hasData) {
-                    // Non serve più il SizedBox(height: 200) perché il padre
-                    // ha già minHeight: 200.
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final rawInvitations = snapshot.data ?? [];
-
-                  final visibleInvitations = rawInvitations
-                      .where(
-                          (inv) => !_processedInvitationsIds.contains(inv.id))
-                      .toList();
-
-                  // Auto-chiusura soft
-                  if (visibleInvitations.isEmpty &&
-                      _processedInvitationsIds.isNotEmpty) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted && Navigator.canPop(context)) {
-                        Navigator.pop(context);
+                stream: InvitationsNotificationButton._invitationRepo
+                    .getPendingInvitationsStream(),
+                builder: (context, invSnapshot) {
+                  return StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: InvitationsNotificationButton._supabase
+                        .from('notifications')
+                        .stream(primaryKey: ['id'])
+                        .eq('is_read', false)
+                        .order('created_at'),
+                    builder: (context, notifSnapshot) {
+                      if (invSnapshot.connectionState ==
+                              ConnectionState.waiting &&
+                          notifSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
                       }
-                    });
-                  }
 
-                  // STATO LISTA VUOTA O DATI
-                  if (visibleInvitations.isEmpty) {
-                    return _buildEmptyState();
-                  }
+                      // 1. Converti e Filtra Inviti
+                      final invitations = (invSnapshot.data ?? [])
+                          .where((i) => !InvitationsNotificationButton
+                              ._hiddenInvitationIds
+                              .contains(i.id))
+                          .toList();
 
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(24),
-                    shrinkWrap: true,
-                    itemCount: visibleInvitations.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final invitation = visibleInvitations[index];
-                      return _InvitationCard(
-                        key: ValueKey(invitation.id),
-                        invitation: invitation,
-                        isLoading: _loadingInvitations.contains(invitation.id),
-                        onAccept: () => _handleResponse(invitation, true),
-                        onDecline: () => _handleResponse(invitation, false),
+                      // 2. Converti e Filtra Notifiche
+                      final notifications = (notifSnapshot.data ?? [])
+                          .map((map) => AppNotification.fromMap(map))
+                          .where((n) => !InvitationsNotificationButton
+                              ._hiddenNotificationIds
+                              .contains(n.id))
+                          .toList();
+
+                      // 3. Unisci tutto
+                      final List<dynamic> allItems = [
+                        ...invitations,
+                        ...notifications
+                      ];
+
+                      // 4. Ordina per data
+                      allItems.sort((a, b) {
+                        DateTime dateA = a is Invitation
+                            ? a.createdAt
+                            : (a as AppNotification).createdAt;
+                        DateTime dateB = b is Invitation
+                            ? b.createdAt
+                            : (b as AppNotification).createdAt;
+                        return dateB.compareTo(dateA);
+                      });
+
+                      // --- FIX: RIMOSSO IL BLOCCO DI AUTO-CLOSE AGGRESSIVO ---
+                      // Mostriamo invece l'Empty State se la lista è vuota
+                      if (allItems.isEmpty) {
+                        return _buildEmptyState();
+                      }
+
+                      return ListView.separated(
+                        padding: const EdgeInsets.all(24),
+                        shrinkWrap: true,
+                        itemCount: allItems.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final item = allItems[index];
+
+                          if (item is Invitation) {
+                            return _InvitationCard(
+                              key: ValueKey(item.id),
+                              invitation: item,
+                              isLoading: _loadingIds.contains(item.id),
+                              onAccept: () => _handleInvitation(item, true),
+                              onDecline: () => _handleInvitation(item, false),
+                            );
+                          } else if (item is AppNotification) {
+                            return _NotificationCard(
+                              key: ValueKey(item.id),
+                              notification: item,
+                              isLoading: _loadingIds.contains(item.id),
+                              onDismiss: () => _handleNotificationRead(item),
+                            );
+                          }
+                          return const SizedBox();
+                        },
                       );
                     },
                   );
@@ -213,23 +330,21 @@ class _InvitationsPanelState extends State<InvitationsPanel> {
   }
 
   Widget _buildEmptyState() {
-    // Rimuoviamo il padding eccessivo per centrarlo meglio nel ConstrainedBox esistente
     return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.done_all, size: 48, color: Colors.grey),
           SizedBox(height: 16),
-          Text(
-            'No pending invitations',
-            style: TextStyle(color: Colors.grey),
-          ),
+          Text('No new notifications', style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
   }
 }
 
+// ... Le classi _InvitationCard e _NotificationCard restano identiche al codice precedente ...
+// Copiale dal messaggio precedente se non le hai salvate, o lasciale se sono nello stesso file.
 class _InvitationCard extends StatelessWidget {
   final Invitation invitation;
   final bool isLoading;
@@ -247,7 +362,6 @@ class _InvitationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
@@ -260,37 +374,31 @@ class _InvitationCard extends StatelessWidget {
         children: [
           Row(
             children: [
+              const Icon(Icons.group_add, size: 20),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  invitation.todoListTitle ?? 'Unknown List',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  invitation.role,
+                  'Group Invitation',
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onPrimaryContainer,
-                  ),
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
+            invitation.todoListTitle ?? 'Unknown List',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
             'Invited by: ${invitation.invitedByUserEmail ?? 'Unknown'}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
           if (isLoading)
@@ -309,7 +417,6 @@ class _InvitationCard extends StatelessWidget {
                       foregroundColor: colorScheme.error,
                       side:
                           BorderSide(color: colorScheme.error.withOpacity(0.5)),
-                      padding: const EdgeInsets.symmetric(vertical: 0),
                     ),
                     child: const Text('Decline'),
                   ),
@@ -318,13 +425,90 @@ class _InvitationCard extends StatelessWidget {
                 Expanded(
                   child: FilledButton(
                     onPressed: onAccept,
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 0),
-                    ),
                     child: const Text('Accept'),
                   ),
                 ),
               ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotificationCard extends StatelessWidget {
+  final AppNotification notification;
+  final bool isLoading;
+  final VoidCallback onDismiss;
+
+  const _NotificationCard({
+    super.key,
+    required this.notification,
+    required this.isLoading,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blueAccent.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.location_on,
+                color: Colors.blueAccent, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nearby Task',
+                  style: TextStyle(
+                      color: Colors.blueAccent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  notification.title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'You are in the radius area.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          if (isLoading)
+            const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2))
+          else
+            IconButton(
+              icon: const Icon(Icons.check_circle_outline),
+              color: colorScheme.primary,
+              tooltip: 'Mark as read',
+              onPressed: onDismiss,
             ),
         ],
       ),
