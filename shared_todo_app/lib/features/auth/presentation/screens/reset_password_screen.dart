@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../config/router/app_router.dart';
+
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
 
@@ -36,7 +37,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     if (_client.auth.currentSession == null) {
       setState(() => _message =
-      'Nessuna sessione attiva. Riapri il link dalla mail o richiedi un nuovo reset.');
+          'Nessuna sessione attiva. Riapri il link dalla mail o richiedi un nuovo reset.');
       return;
     }
 
@@ -47,7 +48,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     try {
       final res =
-      await _client.auth.updateUser(UserAttributes(password: newPassword));
+          await _client.auth.updateUser(UserAttributes(password: newPassword));
 
       if (!mounted) return;
 
@@ -58,8 +59,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         await _client.auth.signOut();
         context.go(AppRouter.login);
       } else {
-        setState(() =>
-        _message = 'Impossibile aggiornare la password, riprova.');
+        setState(
+            () => _message = 'Impossibile aggiornare la password, riprova.');
       }
     } on AuthException catch (e) {
       if (!mounted) return;
@@ -109,9 +110,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
-                onPressed: _updatePassword,
-                child: const Text('Upgrade password'),
-              ),
+                      onPressed: _updatePassword,
+                      child: const Text('Upgrade password'),
+                    ),
             ),
             const SizedBox(height: 16),
             if (_message != null)
