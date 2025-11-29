@@ -73,7 +73,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 text: "Completed",
               ),
               Tab(
-                icon: Icon(Icons.history_rounded), // Icona più adatta per scaduti/storia
+                icon: Icon(Icons
+                    .history_rounded), // Icona più adatta per scaduti/storia
                 text: "Expired",
               ),
             ],
@@ -82,34 +83,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
             : TabBarView(
-          children: [
-            // TAB 1: Task Completati
-            _buildTaskList(
-              context,
-              controller.completedTasks,
-              emptyIcon: Icons.task_alt,
-              emptyMessage: "No completed tasks yet.",
-            ),
+                children: [
+                  // TAB 1: Task Completati
+                  _buildTaskList(
+                    context,
+                    controller.completedTasks,
+                    emptyIcon: Icons.task_alt,
+                    emptyMessage: "No completed tasks yet.",
+                  ),
 
-            // TAB 2: Task Scaduti
-            _buildTaskList(
-              context,
-              controller.expiredTasks,
-              emptyIcon: Icons.event_busy,
-              emptyMessage: "No expired tasks.",
-            ),
-          ],
-        ),
+                  // TAB 2: Task Scaduti
+                  _buildTaskList(
+                    context,
+                    controller.expiredTasks,
+                    emptyIcon: Icons.event_busy,
+                    emptyMessage: "No expired tasks.",
+                  ),
+                ],
+              ),
       ),
     );
   }
 
   Widget _buildTaskList(
-      BuildContext context,
-      List<Task> tasks, {
-        required IconData emptyIcon,
-        required String emptyMessage,
-      }) {
+    BuildContext context,
+    List<Task> tasks, {
+    required IconData emptyIcon,
+    required String emptyMessage,
+  }) {
     if (tasks.isEmpty) {
       return Center(
         child: Column(
@@ -121,8 +122,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               emptyMessage,
               style: TextStyle(
                   fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant
-              ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),

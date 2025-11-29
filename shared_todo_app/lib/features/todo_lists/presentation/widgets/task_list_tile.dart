@@ -104,18 +104,19 @@ class _TaskListTileState extends State<TaskListTile> {
     // Colore Bordo Card
     final Color borderColor = theme.dividerColor;
 
-    // Colore Titolo: Se fatto -> Grigio scuro/disabilitato. 
+    // Colore Titolo: Se fatto -> Grigio scuro/disabilitato.
     // Altrimenti -> Colore testo principale del tema (Bianco in dark, Nero in light)
-    final Color titleColor = isDone
-        ? theme.disabledColor
-        : colorScheme.onSurface;
+    final Color titleColor =
+        isDone ? theme.disabledColor : colorScheme.onSurface;
 
     // Colore Data
-    final Color dateColor = isOverdue ? colorScheme.error : colorScheme.onSurfaceVariant;
+    final Color dateColor =
+        isOverdue ? colorScheme.error : colorScheme.onSurfaceVariant;
 
     // Colore Descrizione: Usa onSurfaceVariant (grigio chiaro in dark mode)
     final bool hasDescription = task.desc != null && task.desc!.isNotEmpty;
-    final String descriptionText = hasDescription ? task.desc! : 'No description';
+    final String descriptionText =
+        hasDescription ? task.desc! : 'No description';
     final Color descriptionColor = hasDescription
         ? colorScheme.onSurfaceVariant
         : colorScheme.onSurface.withOpacity(0.3);
@@ -129,7 +130,8 @@ class _TaskListTileState extends State<TaskListTile> {
         ? colorScheme.onSurface
         : colorScheme.onSurface.withOpacity(0.4);
 
-    final Color placeIconColor = hasPlace ? colorScheme.primary : theme.disabledColor;
+    final Color placeIconColor =
+        hasPlace ? colorScheme.primary : theme.disabledColor;
 
     // Dimensioni responsive
     final double titleSize = ResponsiveLayout.isMobile(context) ? 16 : 18;
@@ -175,7 +177,8 @@ class _TaskListTileState extends State<TaskListTile> {
                           fontWeight: FontWeight.w600,
                           color: titleColor,
                           height: 1.2,
-                          decoration: isDone ? TextDecoration.lineThrough : null,
+                          decoration:
+                              isDone ? TextDecoration.lineThrough : null,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -256,8 +259,11 @@ class _TaskListTileState extends State<TaskListTile> {
                                       ? FontStyle.normal
                                       : FontStyle.italic,
                                   height: 1.2,
-                                  decoration: hasPlace ? TextDecoration.underline : null,
-                                  decorationColor: placeTextColor.withOpacity(0.5),
+                                  decoration: hasPlace
+                                      ? TextDecoration.underline
+                                      : null,
+                                  decorationColor:
+                                      placeTextColor.withOpacity(0.5),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -278,7 +284,8 @@ class _TaskListTileState extends State<TaskListTile> {
                     child: PopupMenuButton<String>(
                       padding: EdgeInsets.zero,
                       // Icona grigia chiara per visibilità su sfondo scuro
-                      icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant, size: 20),
+                      icon: Icon(Icons.more_vert,
+                          color: colorScheme.onSurfaceVariant, size: 20),
                       onSelected: (value) {
                         if (value == 'edit') {
                           widget.onEdit();
@@ -345,7 +352,9 @@ class _TaskListTileState extends State<TaskListTile> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               // Bordo visibile anche in dark mode (onSurface con opacità o outline)
-              color: isSelected ? colorScheme.primary : colorScheme.outline.withOpacity(0.5),
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.outline.withOpacity(0.5),
               width: 1,
             ),
           ),
