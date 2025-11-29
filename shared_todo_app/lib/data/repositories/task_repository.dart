@@ -165,4 +165,19 @@ class TaskRepository {
         .map((json) => Task.fromMap(json as Map<String, dynamic>))
         .toList();
   }
+
+  Future<List<Task>> getHistoryTasks() async {
+    final now = DateTime.now().toIso8601String();
+
+    // Scarichiamo i task che sono 'Done' OPPURE che hanno una data di scadenza passata
+    final response = await _supabase
+        .from('tasks')
+        .select()
+        .order('due_date', ascending: false); // I più recenti in alto
+
+    return (response as List)
+        .map((json) => Task.fromMap(json as Map<String, dynamic>))
+        .toList();
+  }
+
 }
