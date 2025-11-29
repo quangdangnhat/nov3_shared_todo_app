@@ -1,6 +1,3 @@
-// coverage:ignore-file
-
-// consider testing later
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_todo_app/data/repositories/task_repository.dart';
@@ -43,7 +40,6 @@ class _TaskListTileState extends State<TaskListTile> {
   @override
   void didUpdateWidget(covariant TaskListTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Aggiorna lo status se il task è cambiato e non stiamo facendo update locale
     if (!_isUpdating && widget.task.status != _currentStatus) {
       setState(() {
         _currentStatus = widget.task.status;
@@ -70,49 +66,23 @@ class _TaskListTileState extends State<TaskListTile> {
     });
   }
 
-  // Callback per aggiornare il luogo in real-time
-  /* void _onPlaceUpdated() {
-    // Non serve fare nulla qui - lo stream si aggiorna automaticamente
-    // Il widget verrà ricostruito con i nuovi dati
-  }*/
-
   void _openMapDialog() async {
-    // 1. Apriamo il dialog e aspettiamo il risultato (LocationData)
     final result = await showDialog<LocationData>(
       context: context,
       builder: (BuildContext context) {
-        // Usiamo il costruttore specifico per l'aggiornamento
         return MapDialog.forUpdate(
           taskId: widget.task.id,
-          taskRepository: TaskRepository(), // Istanziamo il repository
-
-          // Passiamo le coordinate attuali per far apparire il pin rosso
-          // se il task ha già una posizione salvata
+          taskRepository: TaskRepository(),
           currentLat: widget.task.latitude,
           currentLong: widget.task.longitude,
-
-          // --- FIX IMPORTANTE ---
-          // Passiamo il titolo reale del task.
-          // Il dialog lo userà per creare il controllo di prossimità corretto,
-          // così la notifica dirà "Sei vicino a: Comprare il latte"
-          // invece di "Nuova Posizione".
           currentTitle: widget.task.title,
-
-          onPlaceUpdated: () {
-            // Codice opzionale se vuoi fare qualcosa subito dopo il salvataggio
-            // es. debugPrint("Luogo aggiornato con successo");
-          },
+          onPlaceUpdated: () {},
         );
       },
     );
 
-    // 2. Se il dialog ritorna dei dati (l'utente ha confermato), aggiorniamo la UI
     if (result != null && mounted) {
-      setState(() {
-        // Questo setState forza il ridisegno del widget corrente (es. TaskListTile).
-        // Se visualizzi l'indirizzo o l'icona mappa colorata nel tile,
-        // vedrai la modifica istantaneamente.
-      });
+      setState(() {});
     }
   }
 
@@ -129,29 +99,45 @@ class _TaskListTileState extends State<TaskListTile> {
     final today = DateTime(now.year, now.month, now.day);
     final bool isOverdue = task.dueDate.isBefore(today) && !isDone;
 
+    // --- LOGICA COLORI CORRETTA PER DARK/LIGHT MODE ---
+
+    // Colore Bordo Card
     final Color borderColor = theme.dividerColor;
+
+    // Colore Titolo: Se fatto -> Grigio scuro/disabilitato. 
+    // Altrimenti -> Colore testo principale del tema (Bianco in dark, Nero in light)
     final Color titleColor = isDone
         ? theme.disabledColor
-        : (theme.textTheme.titleMedium?.color ?? Colors.black);
-    final Color dateColor = isOverdue ? colorScheme.error : Colors.grey[700]!;
+        : colorScheme.onSurface;
 
+    // Colore Data
+    final Color dateColor = isOverdue ? colorScheme.error : colorScheme.onSurfaceVariant;
+
+    // Colore Descrizione: Usa onSurfaceVariant (grigio chiaro in dark mode)
+    final bool hasDescription = task.desc != null && task.desc!.isNotEmpty;
+    final String descriptionText = hasDescription ? task.desc! : 'No description';
+    final Color descriptionColor = hasDescription
+        ? colorScheme.onSurfaceVariant
+        : colorScheme.onSurface.withOpacity(0.3);
+
+    // Colore Luogo
+    final bool hasPlace = task.placeName != null && task.placeName!.isNotEmpty;
+    final String placeText = hasPlace ? task.placeName! : "No place indicated";
+
+    // Se c'è il luogo, usa il colore primario o onSurface, NON nero.
+    final Color placeTextColor = hasPlace
+        ? colorScheme.onSurface
+        : colorScheme.onSurface.withOpacity(0.4);
+
+    final Color placeIconColor = hasPlace ? colorScheme.primary : theme.disabledColor;
+
+    // Dimensioni responsive
     final double titleSize = ResponsiveLayout.isMobile(context) ? 16 : 18;
     final double bodySize = ResponsiveLayout.isMobile(context) ? 13 : 14;
 
-    final bool hasDescription = task.desc != null && task.desc!.isNotEmpty;
-    final String descriptionText =
-        hasDescription ? task.desc! : 'No description';
-    final Color descriptionColor =
-        hasDescription ? Colors.grey[600]! : Colors.grey[400]!;
-
-    final bool hasPlace = task.placeName != null && task.placeName!.isNotEmpty;
-    final String placeText = hasPlace ? task.placeName! : "No place indicated";
-    final Color placeTextColor = hasPlace ? Colors.black87 : Colors.grey[400]!;
-    final Color placeIconColor = hasPlace ? colorScheme.secondary : Colors.grey;
-
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: theme.cardColor, // Colore sfondo card dal tema
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: borderColor, width: 1),
       ),
@@ -164,7 +150,7 @@ class _TaskListTileState extends State<TaskListTile> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ICONA
+                // ICONA PRINCIPALE
                 SizedBox(
                   width: 40,
                   height: 28,
@@ -189,6 +175,7 @@ class _TaskListTileState extends State<TaskListTile> {
                           fontWeight: FontWeight.w600,
                           color: titleColor,
                           height: 1.2,
+                          decoration: isDone ? TextDecoration.lineThrough : null,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -201,7 +188,7 @@ class _TaskListTileState extends State<TaskListTile> {
                           Icon(
                             Icons.calendar_today_rounded,
                             size: 14,
-                            color: isOverdue ? colorScheme.error : Colors.grey,
+                            color: dateColor,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -223,8 +210,7 @@ class _TaskListTileState extends State<TaskListTile> {
                           Icon(
                             Icons.notes,
                             size: 14,
-                            color:
-                                hasDescription ? Colors.grey : Colors.grey[300],
+                            color: descriptionColor,
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -246,7 +232,7 @@ class _TaskListTileState extends State<TaskListTile> {
                       ),
                       const SizedBox(height: 4),
 
-                      // Luogo - REAL-TIME UPDATE
+                      // Luogo
                       InkWell(
                         onTap: _openMapDialog,
                         splashColor: Colors.transparent,
@@ -270,9 +256,8 @@ class _TaskListTileState extends State<TaskListTile> {
                                       ? FontStyle.normal
                                       : FontStyle.italic,
                                   height: 1.2,
-                                  decoration: TextDecoration.underline,
-                                  decorationColor:
-                                      placeTextColor.withOpacity(0.5),
+                                  decoration: hasPlace ? TextDecoration.underline : null,
+                                  decorationColor: placeTextColor.withOpacity(0.5),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -286,37 +271,36 @@ class _TaskListTileState extends State<TaskListTile> {
                 ),
 
                 // MENU OPZIONI
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: isAdmin
-                      ? PopupMenuButton<String>(
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.more_vert,
-                              color: Colors.grey, size: 20),
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              widget.onEdit();
-                            } else if (value == 'delete') {
-                              widget.onDelete();
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Text('Edit'),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
-                ),
+                if (isAdmin)
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: PopupMenuButton<String>(
+                      padding: EdgeInsets.zero,
+                      // Icona grigia chiara per visibilità su sfondo scuro
+                      icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant, size: 20),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          widget.onEdit();
+                        } else if (value == 'delete') {
+                          widget.onDelete();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Edit'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Text(
+                            'Delete',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
 
@@ -360,7 +344,8 @@ class _TaskListTileState extends State<TaskListTile> {
             color: isSelected ? colorScheme.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isSelected ? colorScheme.primary : Colors.grey.shade300,
+              // Bordo visibile anche in dark mode (onSurface con opacità o outline)
+              color: isSelected ? colorScheme.primary : colorScheme.outline.withOpacity(0.5),
               width: 1,
             ),
           ),
@@ -368,7 +353,9 @@ class _TaskListTileState extends State<TaskListTile> {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: isSelected ? Colors.white : Colors.black87,
+              // Testo bianco se selezionato (perché primary di solito è scuro/colorato)
+              // Altrimenti usa il colore del testo su superficie (bianco in dark mode)
+              color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
               fontWeight: FontWeight.normal,
               height: 1.0,
             ),

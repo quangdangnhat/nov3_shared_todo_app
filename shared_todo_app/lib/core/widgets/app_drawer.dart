@@ -191,6 +191,7 @@ class _AppDrawerState extends State<AppDrawer> {
             },
           ),
 
+
           // Calendar View
           _buildMenuTile(
             context: context,
@@ -202,6 +203,19 @@ class _AppDrawerState extends State<AppDrawer> {
                 Navigator.of(context).pop();
               }
               context.go(AppRouter.calendar);
+            },
+          ),
+
+          _buildMenuTile(
+            context: context,
+            icon: Icons.history,
+            title: 'History',
+            route: AppRouter.history,
+            onTap: () {
+              if (Scaffold.of(context).isDrawerOpen) {
+                Navigator.of(context).pop();
+              }
+              context.go(AppRouter.history);
             },
           ),
 

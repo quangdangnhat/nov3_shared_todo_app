@@ -1,20 +1,24 @@
 // coverage:ignore-file
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_todo_app/features/chat/screens/chat_screen.dart';
+import 'package:shared_todo_app/features/history/presentation/screens/history_screen.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/createPage/create_screen.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/today_tasks/today_task.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/tree_view/folder_view_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/folder.dart';
 import '../../data/models/todo_list.dart';
+import '../../data/repositories/task_repository.dart';
 import '../../data/repositories/todo_list_repository.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
+import '../../features/history/presentation/controllers/history_controller.dart';
 import '../../features/todo_lists/presentation/screens/calendar/calendar_screen.dart';
 import '../../features/account/presentation/screens/email_change_success_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
 
 // Importa le schermate con prefissi per evitare conflitti
 import '../../features/todo_lists/detail.dart/todo_list_detail_screen.dart'
@@ -35,8 +39,17 @@ class _AuthNotifier extends ChangeNotifier {
   late final StreamSubscription<AuthState> _authStateSubscription;
   bool _isLoggedIn = supabase.auth.currentUser != null;
 
+  bool isPasswordRecovery = false;
+
   _AuthNotifier() {
     _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) {
+      if (data.event == AuthChangeEvent.passwordRecovery) {
+        isPasswordRecovery = true;
+      } else {
+        // Se avviene qualsiasi altro evento (es. login normale, logout, token refresh),
+        // disattiviamo la modalità recupero.
+        isPasswordRecovery = false;
+      }
       final bool newLoginState = data.session != null;
       // Se lo stato cambia, notifica GoRouter per rieseguire il redirect
       if (newLoginState != _isLoggedIn) {
@@ -62,12 +75,14 @@ class AppRouter {
   static const String home = '/';
   static const String tasks_day = '/today-tasks';
   static const String calendar = '/calendar';
+  static const String history = '/history';
   static const String listDetail = 'listDetail'; // Nome per la navigazione
   static const String folderDetail = 'folderDetail'; // Nome per la navigazione
   static const String account = '/account';
   static const String create = '/create';
   static const String invitations = '/invitations';
   static const String visualizer = '/tree_visualizer';
+  static const String passwordRecovery = '/password-recovery';
 
   static final _authNotifier = _AuthNotifier();
   static const String emailChangeSuccess = '/email-change-success';
@@ -92,6 +107,13 @@ class AppRouter {
         name: signup,
         builder: (BuildContext context, GoRouterState state) {
           return const SignUpScreen();
+        },
+      ),
+      GoRoute(
+        path: passwordRecovery,
+        name: passwordRecovery,
+        builder: (BuildContext context, GoRouterState state) {
+          return const ResetPasswordScreen();
         },
       ),
       GoRoute(
@@ -245,6 +267,30 @@ class AppRouter {
             },
           ),
 
+          // History
+          GoRoute(
+            path: history, // o AppRouter.history
+            name: history, // o AppRouter.history
+            pageBuilder: (BuildContext context, GoRouterState state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+
+                // --- MODIFICA QUI: Avvolgi HistoryScreen col Provider ---
+                child: ChangeNotifierProvider(
+                  create: (_) => HistoryController(
+                    taskRepository: TaskRepository(),
+                  ),
+                  child: const HistoryScreen(),
+                ),
+                // -------------------------------------------------------
+
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return child;
+                },
+              );
+            },
+          ),
+
           // Inviti
           GoRoute(
             path: invitations,
@@ -307,22 +353,24 @@ class AppRouter {
     // Logica di Redirect per l'autenticazione
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = supabase.auth.currentUser != null;
+      final String path = state.uri.path;
 
-      // Controlla se l'utente sta cercando di accedere a una pagina di autenticazione
-      final bool onAuthRoute =
-          state.matchedLocation == login || state.matchedLocation == signup;
+      // Tutte le rotte di autenticazione che devono essere accessibili anche se non loggati
+      final bool isAuthRoute =
+          path == login ||
+              path == signup ||
+              path == passwordRecovery;
 
-      // Se l'utente NON è loggato E NON sta andando a una pagina auth -> vai al login
-      if (!loggedIn && !onAuthRoute) {
+      // Se NON sono loggato e non sto andando su una rotta di auth → login
+      if (!loggedIn && !isAuthRoute) {
         return login;
       }
 
-      // Se l'utente È loggato E STA andando a una pagina auth -> vai alla home
-      if (loggedIn && onAuthRoute) {
+      // Se sono loggato e vado su login o signup → manda a home
+      if (loggedIn && (path == login || path == signup)) {
         return home;
       }
 
-      // In tutti gli altri casi, non fare nulla
       return null;
     },
 
