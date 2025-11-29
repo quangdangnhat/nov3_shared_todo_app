@@ -179,5 +179,4 @@ class TaskRepository {
         .map((json) => Task.fromMap(json as Map<String, dynamic>))
         .toList();
   }
-
 }

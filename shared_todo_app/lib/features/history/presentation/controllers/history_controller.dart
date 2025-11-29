@@ -21,15 +21,12 @@ class HistoryController extends ChangeNotifier {
       final today = DateTime(now.year, now.month, now.day);
 
       // FILTRO 1: Completati (Status è "Done")
-      completedTasks = allTasks
-          .where((t) => t.status == 'Done')
-          .toList();
+      completedTasks = allTasks.where((t) => t.status == 'Done').toList();
 
       // FILTRO 2: Scaduti (Non Done E data < oggi)
       expiredTasks = allTasks
           .where((t) => t.status != 'Done' && t.dueDate.isBefore(today))
           .toList();
-
     } catch (e) {
       debugPrint("Errore history: $e");
     } finally {

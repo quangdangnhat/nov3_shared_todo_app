@@ -284,7 +284,8 @@ class AppRouter {
                 ),
                 // -------------------------------------------------------
 
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
                   return child;
                 },
               );
@@ -357,9 +358,7 @@ class AppRouter {
 
       // Tutte le rotte di autenticazione che devono essere accessibili anche se non loggati
       final bool isAuthRoute =
-          path == login ||
-              path == signup ||
-              path == passwordRecovery;
+          path == login || path == signup || path == passwordRecovery;
 
       // Se NON sono loggato e non sto andando su una rotta di auth → login
       if (!loggedIn && !isAuthRoute) {
