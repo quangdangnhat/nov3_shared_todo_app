@@ -80,7 +80,6 @@ class InvitationRepository {
         // Applica il filtro desiderato client-side:
         if ((map['status'] ?? '') != 'pending') continue;
         if ((map['invited_user_id'] ?? '') != userId) continue;
-
         pendingMaps.add(map);
       }
 
