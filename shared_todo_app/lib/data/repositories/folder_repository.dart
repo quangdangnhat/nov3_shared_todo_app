@@ -113,6 +113,23 @@ class FolderRepository {
     }
   }
 
+  Future<void> moveFolder({
+    required String folderId,
+    required String newParentFolderId,
+  }) async {
+    try {
+      await _supabase
+          .from('folders') //  nome tabella cartelle
+          .update({
+        'parent_id': newParentFolderId, // usa la colonna giusta del DB
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', folderId);
+    } catch (e) {
+      debugPrint('Errore durante lo spostamento della cartella $folderId: $e');
+      throw Exception('Failed to move folder: $e');
+    }
+  }
+
   // --- DELETE: Elimina folder ---
   Future<void> deleteFolder(String id) async {
     try {

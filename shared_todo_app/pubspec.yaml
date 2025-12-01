@@ -44,7 +44,9 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
+
   assets:
-    # Dichiara l'intera cartella. Assicurati che l'indentazione
-    # (i 2 spazi) sia corretta e che ci sia lo / finale.
-    - assets/images/login_image.png
+    - assets/images/
+
+
+
