@@ -4,11 +4,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:shared_todo_app/data/models/daily_tasks/task_category.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/badges/recurring_badge.dart';
 import '../../../../../config/responsive.dart';
 import '../../../../../core/utils/daily_tasks/color_helper.dart';
 import '../../../../../core/utils/daily_tasks/date_formatter.dart';
 import '../../../../../data/models/task.dart';
-import '../badges/recurring_badge.dart';
 
 /// Card per visualizzare un singolo task
 class TaskCard extends StatelessWidget {

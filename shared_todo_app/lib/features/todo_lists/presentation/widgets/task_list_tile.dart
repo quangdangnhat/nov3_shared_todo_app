@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_todo_app/data/repositories/task_repository.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/badges/recurring_badge.dart';
 import '../../../../data/models/task.dart';
 import '../../../../config/responsive.dart';
-import 'badges/recurring_badge.dart';
 
 class TaskListTile extends StatefulWidget {
   final Task task;
