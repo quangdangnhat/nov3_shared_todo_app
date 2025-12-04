@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_todo_app/features/chat/screens/chat_screen.dart';
 import 'package:shared_todo_app/features/history/presentation/screens/history_screen.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/createPage/create_screen.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/screens/today_tasks/today_task.dart';
@@ -73,7 +72,7 @@ class AppRouter {
   static const String login = '/login';
   static const String signup = '/signup';
   static const String home = '/';
-  static const String tasks_day = '/today-tasks';
+  static const String tasksDay = '/today-tasks';
   static const String calendar = '/calendar';
   static const String history = '/history';
   static const String listDetail = 'listDetail'; // Nome per la navigazione
@@ -149,7 +148,7 @@ class AppRouter {
           ),
 
           GoRoute(
-            path: tasks_day,
+            path: tasksDay,
             name: 'today-tasks',
             pageBuilder: (BuildContext context, GoRouterState state) {
               return CustomTransitionPage(
@@ -183,24 +182,6 @@ class AppRouter {
                     (context, animation, secondaryAnimation, child) {
                   // Nessuna animazione per transizioni fluide
                   return child;
-                },
-              );
-            },
-          ),
-          GoRoute(
-            path: '/list/:listId/chat',
-            name: 'chat',
-            pageBuilder: (BuildContext context, GoRouterState state) {
-              // Recupera l'ID della lista dal path param
-              final todoListId = state.pathParameters[
-                  'listId']!; // sempre presente perché definito in path
-
-              return CustomTransitionPage(
-                key: state.pageKey,
-                child: ChatScreen(todoListId: todoListId),
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) {
-                  return child; // nessuna animazione
                 },
               );
             },

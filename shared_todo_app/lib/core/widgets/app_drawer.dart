@@ -171,7 +171,7 @@ class _AppDrawerState extends State<AppDrawer> {
               if (Scaffold.of(context).isDrawerOpen) {
                 Navigator.of(context).pop();
               }
-              context.go(AppRouter.tasks_day);
+              context.go(AppRouter.tasksDay);
             },
           ),
 

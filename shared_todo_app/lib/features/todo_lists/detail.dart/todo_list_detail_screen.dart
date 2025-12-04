@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_todo_app/features/chat/screens/chat_screen.dart';
 
 import '../../../config/responsive.dart';
 import '../../../config/router/app_router.dart';
@@ -404,7 +405,6 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         ),
                       ),
 
-                      // SOLUZIONE: StreamBuilder con SliverList.builder
                       StreamBuilder<List<Task>>(
                         stream: tasksStream,
                         builder: (context, snapshot) {
@@ -494,8 +494,15 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                         child: FloatingActionButton(
                           heroTag: 'chat_fab', // Serve se ci sono più FAB
                           onPressed: () {
-                            // Naviga alla chat della todo list corrente
-                            context.go('/list/${widget.todoList.id}/chat');
+                            showDialog(
+                              context: context,
+                              barrierDismissible:
+                                  true, // Permette chiudere cliccando fuori
+                              builder: (context) {
+                                return ChatDialog(
+                                    todoListId: widget.todoList.id);
+                              },
+                            );
                           },
                           backgroundColor: Colors.blue,
                           child: const Icon(Icons.chat),

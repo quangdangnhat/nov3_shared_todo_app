@@ -1,17 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:stomp_dart_client/stomp_dart_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/chat.dart';
 
 class ChatRepository {
+  // URL del WebSocket (Spring Boot)
   final String _socketUrl = 'ws://localhost:8080/ws';
+
+  // URL base per le API REST
+  final String _baseUrl = 'http://localhost:8080/api';
+
   StompClient? _client;
 
   final _messagesController = StreamController<ChatMessage>.broadcast();
   Stream<ChatMessage> get messageStream => _messagesController.stream;
 
+  // Lista interna per memorizzare lo storico dei messaggi
+  final List<ChatMessage> _allMessages = [];
+
+  /// Connette al WebSocket e si iscrive al topic della lista
   void connect(String todoListId) {
     if (_client != null && _client!.connected) return;
 
@@ -26,7 +36,13 @@ class ChatRepository {
             callback: (frame) {
               if (frame.body != null) {
                 final data = jsonDecode(frame.body!);
-                _messagesController.add(ChatMessage.fromMap(data));
+                final msg = ChatMessage.fromMap(data);
+
+                _allMessages.add(msg);
+                // Ordina sempre in ordine cronologico
+                _allMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+                _messagesController.add(msg);
               }
             },
           );
@@ -40,15 +56,19 @@ class ChatRepository {
     _client?.activate();
   }
 
+  /// Invia un messaggio tramite WebSocket
   void sendMessage(String todoListId, String content) {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
-    if (_client == null || !_client!.connected) return;
+    if (_client == null || !_client!.connected) {
+      debugPrint('Errore: Client non connesso');
+      return;
+    }
 
     final message = {
       'content': content,
-      'userId': user.id, // necessario
+      'userId': user.id,
       'username': user.userMetadata?['username'] ?? 'User',
     };
 
@@ -56,20 +76,47 @@ class ChatRepository {
       destination: '/app/todolist/$todoListId/send',
       body: jsonEncode(message),
     );
+  }
 
-    // Aggiungi subito il messaggio allo stream per il client stesso
-    _messagesController.add(ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      content: content,
-      userId: user.id,
-      todoListId: todoListId,
-      createdAt: DateTime.now(),
-      username: user.userMetadata?['username'] ?? 'User',
-    ));
+  /// Recupera la cronologia dei messaggi via REST
+  Future<List<ChatMessage>> fetchHistory(String todoListId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/chat/todolist/$todoListId'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        final messages = data.map((json) => ChatMessage.fromMap(json)).toList();
+
+        // Ordina in ordine cronologico
+        //messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+        // Aggiorna la lista interna
+        _allMessages.clear();
+        _allMessages.addAll(messages);
+
+        return messages;
+      } else {
+        debugPrint('Failed to fetch history: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      debugPrint('Error fetching history: $e');
+      return [];
+    }
+  }
+
+  /// Restituisce tutti i messaggi memorizzati localmente
+  List<ChatMessage> get allMessages => List.unmodifiable(_allMessages);
+  String? getCurrentUserId() {
+    return Supabase.instance.client.auth.currentUser?.id;
   }
 
   void dispose() {
     _client?.deactivate();
     _messagesController.close();
+    _allMessages.clear();
   }
 }
