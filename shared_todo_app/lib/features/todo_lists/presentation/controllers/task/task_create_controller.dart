@@ -183,7 +183,6 @@ class TaskCreateController extends BaseFolderSelectionController {
   Future<Task> createTask({
     required String title,
     String? description,
-    DateTime? startDate,
   }) async {
     if (_selectedFolder == null) {
       throw Exception('No folder selected');
@@ -207,7 +206,7 @@ class TaskCreateController extends BaseFolderSelectionController {
       desc: description?.trim(),
       priority: _selectedPriority,
       status: status,
-      startDate: startDate,
+      startDate: _selectedStartDate,
       dueDate: _selectedDueDate,
       // Aggiungi i dati di localizzazione se presenti
       latitude: _selectedLocation?.latitude,
@@ -230,6 +229,7 @@ class TaskCreateController extends BaseFolderSelectionController {
     _folderStream = null;
     _selectedPriority = 'low';
     _selectedDueDate = DateTime.now();
+    _selectedStartDate = DateTime.now();
     _searchQuery = '';
     _selectedStatus = TaskStatus.toDo;
     _selectedLocation = null; // Reset anche la location
