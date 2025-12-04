@@ -135,9 +135,9 @@ class _TaskDialogState extends State<TaskDialog> {
           latitude: _selectedLocation?.latitude,
           longitude: _selectedLocation?.longitude,
           placeName: _selectedLocation?.placeName,
-          // Recurring data
-          isRecurring: _isRecurring,
-          recurrenceType: _isRecurring ? _recurrenceType.value : 'none',
+          // Recurring data - TEMPORARILY DISABLED until migration is run
+          // isRecurring: _isRecurring,
+          // recurrenceType: _isRecurring ? _recurrenceType.value : 'none',
         );
       } else {
         await _taskRepo.createTask(
@@ -154,9 +154,9 @@ class _TaskDialogState extends State<TaskDialog> {
           latitude: _selectedLocation?.latitude,
           longitude: _selectedLocation?.longitude,
           placeName: _selectedLocation?.placeName,
-          // Recurring data
-          isRecurring: _isRecurring,
-          recurrenceType: _isRecurring ? _recurrenceType.value : 'none',
+          // Recurring data - TEMPORARILY DISABLED until migration is run
+          // isRecurring: _isRecurring,
+          // recurrenceType: _isRecurring ? _recurrenceType.value : 'none',
         );
       }
 
@@ -314,19 +314,21 @@ class _TaskDialogState extends State<TaskDialog> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 16),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              RecurrenceSelector(
-                isRecurring: _isRecurring,
-                recurrenceType: _recurrenceType,
-                onRecurringChanged: (value) {
-                  setState(() => _isRecurring = value);
-                },
-                onRecurrenceTypeChanged: (type) {
-                  setState(() => _recurrenceType = type);
-                },
-              ),
+              // TEMPORARILY HIDDEN until database migration is run
+              // Uncomment after running the migration SQL on Supabase
+              // const SizedBox(height: 16),
+              // const Divider(height: 1),
+              // const SizedBox(height: 8),
+              // RecurrenceSelector(
+              //   isRecurring: _isRecurring,
+              //   recurrenceType: _recurrenceType,
+              //   onRecurringChanged: (value) {
+              //     setState(() => _isRecurring = value);
+              //   },
+              //   onRecurrenceTypeChanged: (type) {
+              //     setState(() => _recurrenceType = type);
+              //   },
+              // ),
             ],
           ),
         ),
