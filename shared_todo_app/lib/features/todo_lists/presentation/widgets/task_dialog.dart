@@ -28,7 +28,8 @@ class _TaskDialogState extends State<TaskDialog> {
   final TaskRepository _taskRepo = TaskRepository();
   bool _isLoading = false;
 
-  final _priorities = ['Low', 'Medium', 'High'];
+  final _priorities = ['low', 'medium', 'high'];
+  final _priorityLabels = ['Low', 'Medium', 'High'];
   final _statuses = ['To Do', 'In Progress', 'Done'];
   late String _selectedPriority;
   late String _selectedStatus;
@@ -145,7 +146,18 @@ class _TaskDialogState extends State<TaskDialog> {
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      rethrow;
+      // Show error message to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+      // Log error for debugging
+      debugPrint('❌ Error creating/updating task: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -182,12 +194,12 @@ class _TaskDialogState extends State<TaskDialog> {
               DropdownButtonFormField<String>(
                 value: _selectedPriority,
                 decoration: const InputDecoration(labelText: 'Priority'),
-                items: _priorities.map((String value) {
+                items: List.generate(_priorities.length, (index) {
                   return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
+                    value: _priorities[index],
+                    child: Text(_priorityLabels[index]),
                   );
-                }).toList(),
+                }),
                 onChanged: (newValue) {
                   setState(() => _selectedPriority = newValue!);
                 },
