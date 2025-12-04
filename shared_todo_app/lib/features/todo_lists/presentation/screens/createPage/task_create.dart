@@ -87,9 +87,14 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
         }
       }
     } catch (e) {
+      debugPrint('❌ CREATE TASK ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Collaborators can\'t create tasks')),
+          SnackBar(
+            content: Text('Failed to create task: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     }
