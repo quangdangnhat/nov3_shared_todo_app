@@ -105,7 +105,7 @@ class Task {
       isRecurring: (map['is_recurring'] ?? map['isRecurring'] ?? false) as bool,
       recurrenceType: (map['recurrence_type'] ?? map['recurrenceType'] ?? 'none') as String,
       parentRecurringTaskId: (map['parent_recurring_task_id'] ?? map['parentRecurringTaskId']) as String?,
-    );
+    )..debugPrint('🔍 Task.fromMap [${map['title']}]: is_recurring=${map['is_recurring']}, recurrence_type=${map['recurrence_type']}');
   }
 
   Map<String, dynamic> toMap() {

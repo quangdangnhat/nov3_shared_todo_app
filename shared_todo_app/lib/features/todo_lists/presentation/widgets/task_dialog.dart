@@ -73,6 +73,7 @@ class _TaskDialogState extends State<TaskDialog> {
     if (widget.taskToEdit != null) {
       _isRecurring = widget.taskToEdit!.isRecurring;
       _recurrenceType = RecurrenceType.fromString(widget.taskToEdit!.recurrenceType);
+      debugPrint('🔍 TaskDialog: Loading recurring state - isRecurring: $_isRecurring, recurrenceType: ${_recurrenceType.value}');
     }
   }
 
@@ -121,6 +122,9 @@ class _TaskDialogState extends State<TaskDialog> {
 
     try {
       if (_isEditing) {
+        final recurrenceValue = _isRecurring ? _recurrenceType.value : 'none';
+        debugPrint('💾 TaskDialog: Saving task - isRecurring: $_isRecurring, recurrenceType: $recurrenceValue');
+
         await _taskRepo.updateTask(
           taskId: widget.taskToEdit!.id,
           title: _titleController.text.trim(),
@@ -137,8 +141,10 @@ class _TaskDialogState extends State<TaskDialog> {
           placeName: _selectedLocation?.placeName,
           // Recurring data
           isRecurring: _isRecurring,
-          recurrenceType: _isRecurring ? _recurrenceType.value : 'none',
+          recurrenceType: recurrenceValue,
         );
+
+        debugPrint('✅ TaskDialog: Task saved successfully');
       } else {
         await _taskRepo.createTask(
           folderId: widget.folderId,
@@ -321,9 +327,11 @@ class _TaskDialogState extends State<TaskDialog> {
                 isRecurring: _isRecurring,
                 recurrenceType: _recurrenceType,
                 onRecurringChanged: (value) {
+                  debugPrint('🔄 TaskDialog: Recurring checkbox changed to: $value');
                   setState(() => _isRecurring = value);
                 },
                 onRecurrenceTypeChanged: (type) {
+                  debugPrint('🔄 TaskDialog: Recurrence type changed to: ${type.value}');
                   setState(() => _recurrenceType = type);
                 },
               ),
