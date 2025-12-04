@@ -1,6 +1,7 @@
 // coverage:ignore-file
 import 'package:flutter/material.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/create/task/location_display_card.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/create/task/recurrence_selector.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/create/task/status_picker.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
 import '../../../../../data/repositories/folder_repository.dart';
@@ -176,6 +177,13 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
                 PrioritySelector(
                   selectedPriority: _controller.selectedPriority,
                   onPriorityChanged: (p) => _controller.setPriority(p),
+                ),
+                const SizedBox(height: 16),
+                RecurrenceSelector(
+                  isRecurring: _controller.isRecurring,
+                  recurrenceType: _controller.recurrenceType,
+                  onRecurringChanged: (value) => _controller.setRecurring(value),
+                  onRecurrenceTypeChanged: (type) => _controller.setRecurrenceType(type),
                 ),
                 const SizedBox(height: 32),
                 CreateTaskButton(

@@ -40,6 +40,10 @@ class TaskRepository {
     double? latitude,
     double? longitude,
     String? placeName,
+// aggiunti per recurring tasks
+    bool isRecurring = false,
+    String recurrenceType = 'none',
+    String? parentRecurringTaskId,
   }) async {
     try {
       final payload = {
@@ -54,6 +58,11 @@ class TaskRepository {
         'latitude': latitude,
         'longitude': longitude,
         'place_name': placeName,
+
+// aggiunti per recurring tasks
+        'is_recurring': isRecurring,
+        'recurrence_type': recurrenceType,
+        'parent_recurring_task_id': parentRecurringTaskId,
       };
       if (startDate != null)
         payload['start_date'] = startDate.toIso8601String();

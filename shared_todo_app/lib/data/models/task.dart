@@ -12,6 +12,9 @@ class Task {
   final double? latitude;
   final double? longitude;
   final String? placeName;
+  final bool isRecurring;
+  final String recurrenceType;
+  final String? parentRecurringTaskId;
 
   Task({
     required this.id,
@@ -27,6 +30,9 @@ class Task {
     this.latitude,
     this.longitude,
     this.placeName,
+    this.isRecurring = false,
+    this.recurrenceType = 'none',
+    this.parentRecurringTaskId,
   });
 
   factory Task.fromMap(Map<String, dynamic> map) {
@@ -94,6 +100,11 @@ class Task {
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
       placeName: map['place_name'] as String?,
+
+      // Recurring fields
+      isRecurring: (map['is_recurring'] ?? map['isRecurring'] ?? false) as bool,
+      recurrenceType: (map['recurrence_type'] ?? map['recurrenceType'] ?? 'none') as String,
+      parentRecurringTaskId: (map['parent_recurring_task_id'] ?? map['parentRecurringTaskId']) as String?,
     );
   }
 
@@ -112,6 +123,9 @@ class Task {
       'latitude': latitude,
       'longitude': longitude,
       'place_name': placeName,
+      'is_recurring': isRecurring,
+      'recurrence_type': recurrenceType,
+      'parent_recurring_task_id': parentRecurringTaskId,
     };
   }
 

@@ -1,4 +1,5 @@
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
+import '../../../../../core/enums/recurrence_type.dart';
 import '../../../../../data/models/folder.dart';
 import '../../../../../data/models/task.dart';
 import '../../../../../data/models/todo_list.dart';
@@ -40,6 +41,10 @@ class TaskCreateController extends BaseFolderSelectionController {
   // Location state
   LocationData? _selectedLocation;
 
+  // Recurring state
+  bool _isRecurring = false;
+  RecurrenceType _recurrenceType = RecurrenceType.daily;
+
   bool get hasValidDates => _dateError == null;
 
   // Getters
@@ -64,6 +69,8 @@ class TaskCreateController extends BaseFolderSelectionController {
   String? get dateError => _dateError;
   LocationData? get selectedLocation => _selectedLocation;
   bool get hasLocation => _selectedLocation != null;
+  bool get isRecurring => _isRecurring;
+  RecurrenceType get recurrenceType => _recurrenceType;
 
   // Initialization
   @override
@@ -162,6 +169,17 @@ class TaskCreateController extends BaseFolderSelectionController {
     notifyListeners();
   }
 
+  // Recurring methods
+  void setRecurring(bool value) {
+    _isRecurring = value;
+    notifyListeners();
+  }
+
+  void setRecurrenceType(RecurrenceType type) {
+    _recurrenceType = type;
+    notifyListeners();
+  }
+
   Future<Task> createTask({
     required String title,
     String? description,
@@ -195,6 +213,9 @@ class TaskCreateController extends BaseFolderSelectionController {
       latitude: _selectedLocation?.latitude,
       longitude: _selectedLocation?.longitude,
       placeName: _selectedLocation?.placeName,
+      // Aggiungi i dati di recurring se abilitato
+      isRecurring: _isRecurring,
+      recurrenceType: _isRecurring ? _recurrenceType.value : 'none',
     );
   }
 
@@ -212,6 +233,8 @@ class TaskCreateController extends BaseFolderSelectionController {
     _searchQuery = '';
     _selectedStatus = TaskStatus.toDo;
     _selectedLocation = null; // Reset anche la location
+    _isRecurring = false; // Reset recurring state
+    _recurrenceType = RecurrenceType.daily;
     notifyListeners();
   }
 }

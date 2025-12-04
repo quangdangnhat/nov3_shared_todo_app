@@ -8,6 +8,7 @@ import '../../../../../config/responsive.dart';
 import '../../../../../core/utils/daily_tasks/color_helper.dart';
 import '../../../../../core/utils/daily_tasks/date_formatter.dart';
 import '../../../../../data/models/task.dart';
+import '../badges/recurring_badge.dart';
 
 /// Card per visualizzare un singolo task
 class TaskCard extends StatelessWidget {
@@ -134,6 +135,13 @@ class TaskCard extends StatelessWidget {
 
         // Status
         _StatusChip(status: task.status, theme: theme, isMobile: isMobile),
+
+        // Recurring Badge
+        RecurringBadge(
+          isRecurring: task.isRecurring,
+          recurrenceType: task.recurrenceType,
+          isMobile: isMobile,
+        ),
       ],
     );
   }
