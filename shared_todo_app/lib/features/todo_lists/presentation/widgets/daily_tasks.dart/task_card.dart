@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:shared_todo_app/data/models/daily_tasks/task_category.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/badges/recurring_badge.dart';
 import '../../../../../config/responsive.dart';
 import '../../../../../core/utils/daily_tasks/color_helper.dart';
 import '../../../../../core/utils/daily_tasks/date_formatter.dart';
@@ -134,6 +135,13 @@ class TaskCard extends StatelessWidget {
 
         // Status
         _StatusChip(status: task.status, theme: theme, isMobile: isMobile),
+
+        // Recurring Badge
+        RecurringBadge(
+          isRecurring: task.isRecurring,
+          recurrenceType: task.recurrenceType,
+          isMobile: isMobile,
+        ),
       ],
     );
   }

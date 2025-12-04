@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_todo_app/data/repositories/task_repository.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
+import 'package:shared_todo_app/features/todo_lists/presentation/widgets/badges/recurring_badge.dart';
 import '../../../../data/models/task.dart';
 import '../../../../config/responsive.dart';
 
@@ -271,6 +272,14 @@ class _TaskListTileState extends State<TaskListTile> {
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Recurring Badge
+                      RecurringBadge(
+                        isRecurring: task.isRecurring,
+                        recurrenceType: task.recurrenceType,
+                        isMobile: ResponsiveLayout.isMobile(context),
                       ),
                     ],
                   ),
