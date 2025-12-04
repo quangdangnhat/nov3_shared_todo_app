@@ -3,8 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/map_dialog.dart';
-import 'package:shared_todo_app/features/todo_lists/presentation/widgets/create/task/recurrence_selector.dart';
-import 'package:shared_todo_app/core/enums/recurrence_type.dart';
 import '../../../../data/models/task.dart';
 import '../../../../data/repositories/task_repository.dart';
 
@@ -40,10 +38,6 @@ class _TaskDialogState extends State<TaskDialog> {
   // Location state
   LocationData? _selectedLocation;
 
-  // Recurring state
-  bool _isRecurring = false;
-  RecurrenceType _recurrenceType = RecurrenceType.daily;
-
   bool get _isEditing => widget.taskToEdit != null;
   bool get _hasLocation => _selectedLocation != null;
 
@@ -66,12 +60,6 @@ class _TaskDialogState extends State<TaskDialog> {
         longitude: widget.taskToEdit!.longitude!,
         placeName: widget.taskToEdit!.placeName ?? 'Posizione salvata',
       );
-    }
-
-    // Carica recurring state se in modifica
-    if (widget.taskToEdit != null) {
-      _isRecurring = widget.taskToEdit!.isRecurring;
-      _recurrenceType = RecurrenceType.fromString(widget.taskToEdit!.recurrenceType);
     }
   }
 
@@ -134,9 +122,6 @@ class _TaskDialogState extends State<TaskDialog> {
           latitude: _selectedLocation?.latitude,
           longitude: _selectedLocation?.longitude,
           placeName: _selectedLocation?.placeName,
-          // Recurring data
-          isRecurring: _isRecurring,
-          recurrenceType: _isRecurring ? _recurrenceType.value : 'none',
         );
       } else {
         await _taskRepo.createTask(
@@ -153,9 +138,6 @@ class _TaskDialogState extends State<TaskDialog> {
           latitude: _selectedLocation?.latitude,
           longitude: _selectedLocation?.longitude,
           placeName: _selectedLocation?.placeName,
-          // Recurring data
-          isRecurring: _isRecurring,
-          recurrenceType: _isRecurring ? _recurrenceType.value : 'none',
         );
       }
 
@@ -302,19 +284,6 @@ class _TaskDialogState extends State<TaskDialog> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 16),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              RecurrenceSelector(
-                isRecurring: _isRecurring,
-                recurrenceType: _recurrenceType,
-                onRecurringChanged: (value) {
-                  setState(() => _isRecurring = value);
-                },
-                onRecurrenceTypeChanged: (type) {
-                  setState(() => _recurrenceType = type);
-                },
-              ),
             ],
           ),
         ),

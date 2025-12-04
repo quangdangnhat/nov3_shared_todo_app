@@ -40,7 +40,8 @@ class TaskRepository {
     double? latitude,
     double? longitude,
     String? placeName,
-// aggiunti per recurring tasks
+
+// add for recurring tasks
     bool isRecurring = false,
     String recurrenceType = 'none',
     String? parentRecurringTaskId,
@@ -59,7 +60,7 @@ class TaskRepository {
         'longitude': longitude,
         'place_name': placeName,
 
-// aggiunti per recurring tasks
+// add for recurring tasks
         'is_recurring': isRecurring,
         'recurrence_type': recurrenceType,
         'parent_recurring_task_id': parentRecurringTaskId,
@@ -90,10 +91,6 @@ class TaskRepository {
     double? latitude,
     double? longitude,
     String? placeName,
-// aggiunti per recurring tasks
-    bool? isRecurring,
-    String? recurrenceType,
-    String? parentRecurringTaskId,
   }) async {
     try {
       final updates = <String, dynamic>{
@@ -111,11 +108,6 @@ class TaskRepository {
       if (latitude != null) updates['latitude'] = latitude;
       if (longitude != null) updates['longitude'] = longitude;
       if (placeName != null) updates['place_name'] = placeName;
-
-// aggiunti per recurring tasks
-      if (isRecurring != null) updates['is_recurring'] = isRecurring;
-      if (recurrenceType != null) updates['recurrence_type'] = recurrenceType;
-      if (parentRecurringTaskId != null) updates['parent_recurring_task_id'] = parentRecurringTaskId;
 
       final response = await _supabase
           .from('tasks')

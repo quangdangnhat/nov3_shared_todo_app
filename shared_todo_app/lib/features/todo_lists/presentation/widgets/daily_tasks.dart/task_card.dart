@@ -10,6 +10,7 @@ import '../../../../../core/utils/daily_tasks/color_helper.dart';
 import '../../../../../core/utils/daily_tasks/date_formatter.dart';
 import '../../../../../data/models/task.dart';
 
+
 /// Card per visualizzare un singolo task
 class TaskCard extends StatelessWidget {
   final Task task;
