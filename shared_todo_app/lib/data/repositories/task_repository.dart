@@ -113,6 +113,11 @@ class TaskRepository {
       if (longitude != null) updates['longitude'] = longitude;
       if (placeName != null) updates['place_name'] = placeName;
 
+// add for recurring tasks
+      if (isRecurring != null) updates['is_recurring'] = isRecurring;
+      if (recurrenceType != null) updates['recurrence_type'] = recurrenceType;
+      if (parentRecurringTaskId != null) updates['parent_recurring_task_id'] = parentRecurringTaskId;
+
       debugPrint('📤 TaskRepository.updateTask: Updates payload: $updates');
 
       final response = await _supabase
