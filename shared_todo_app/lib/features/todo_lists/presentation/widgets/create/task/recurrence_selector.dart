@@ -23,17 +23,21 @@ class RecurrenceSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Checkbox for "Make recurring"
-        Row(
-          children: [
-            Checkbox(
-              value: isRecurring,
-              onChanged: (value) => onRecurringChanged(value ?? false),
-            ),
-            const Text(
-              'Make recurring',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ],
+        InkWell(
+          onTap: () => onRecurringChanged(!isRecurring),
+          borderRadius: BorderRadius.circular(8),
+          child: Row(
+            children: [
+              Checkbox(
+                value: isRecurring,
+                onChanged: (value) => onRecurringChanged(value ?? false),
+              ),
+              const Text(
+                'Make recurring',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
         ),
 
         // Show recurrence options only when recurring is enabled
