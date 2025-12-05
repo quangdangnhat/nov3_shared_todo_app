@@ -182,8 +182,10 @@ class _TaskCreatePageState extends State<TaskCreatePage> {
                 RecurrenceSelector(
                   isRecurring: _controller.isRecurring,
                   recurrenceType: _controller.recurrenceType,
-                  onRecurringChanged: (value) => _controller.setRecurring(value),
-                  onRecurrenceTypeChanged: (type) => _controller.setRecurrenceType(type),
+                  onRecurringChanged: (value) =>
+                      _controller.setRecurring(value),
+                  onRecurrenceTypeChanged: (type) =>
+                      _controller.setRecurrenceType(type),
                 ),
                 const SizedBox(height: 32),
                 CreateTaskButton(
