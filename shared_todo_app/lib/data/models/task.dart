@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class Task {
   final String id;
   final String folderId;
@@ -80,7 +82,7 @@ class Task {
     */
     // -----------------------------------------------------------
 
-    return Task(
+    final task = Task(
       id: map['id'] as String,
       folderId: (map['folder_id'] ?? map['folderId']) as String,
       title: map['title'] as String,
@@ -105,7 +107,12 @@ class Task {
       isRecurring: (map['is_recurring'] ?? map['isRecurring'] ?? false) as bool,
       recurrenceType: (map['recurrence_type'] ?? map['recurrenceType'] ?? 'none') as String,
       parentRecurringTaskId: (map['parent_recurring_task_id'] ?? map['parentRecurringTaskId']) as String?,
-    )..debugPrint('🔍 Task.fromMap [${map['title']}]: is_recurring=${map['is_recurring']}, recurrence_type=${map['recurrence_type']}');
+    );
+
+    // Debug log for recurring fields
+    debugPrint('🔍 Task.fromMap [${task.title}]: is_recurring=${task.isRecurring}, recurrence_type=${task.recurrenceType}');
+
+    return task;
   }
 
   Map<String, dynamic> toMap() {
