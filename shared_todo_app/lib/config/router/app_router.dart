@@ -12,6 +12,7 @@ import '../../data/models/folder.dart';
 import '../../data/models/todo_list.dart';
 import '../../data/repositories/task_repository.dart';
 import '../../data/repositories/todo_list_repository.dart';
+import '../../data/repositories/folder_repository.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/history/presentation/controllers/history_controller.dart';
@@ -165,18 +166,65 @@ class AppRouter {
           GoRoute(
             path: '/list/:listId', // Path assoluto
             name: listDetail,
-            pageBuilder: (BuildContext context, GoRouterState state) {
-              // Recupera i dati passati
-              final Map<String, dynamic> extras =
-                  state.extra as Map<String, dynamic>;
-              final TodoList todoListExtra = extras['todoList'] as TodoList;
-              final Folder parentFolderExtra = extras['parentFolder'] as Folder;
+            pageBuilder: (BuildContext context, GoRouterState state) async {
+              // Handle page reload - fetch data if extra is null
+              TodoList? todoListExtra;
+              Folder? parentFolderExtra;
+
+              if (state.extra != null && state.extra is Map<String, dynamic>) {
+                final Map<String, dynamic> extras =
+                    state.extra as Map<String, dynamic>;
+                todoListExtra = extras['todoList'] as TodoList?;
+                parentFolderExtra = extras['parentFolder'] as Folder?;
+              }
+
+              // If data not passed (e.g., page reload), fetch from database
+              if (todoListExtra == null || parentFolderExtra == null) {
+                final listId = state.pathParameters['listId']!;
+                final todoListRepo = TodoListRepository();
+
+                try {
+                  // Fetch the todo list
+                  todoListExtra = await todoListRepo.getTodoList(listId);
+
+                  // Fetch the root folder for this list
+                  final folderRepo = FolderRepository();
+                  final folders = await folderRepo.getFolders(listId, parentId: null);
+                  if (folders.isNotEmpty) {
+                    parentFolderExtra = folders.first;
+                  } else {
+                    // Create a default root folder if none exists
+                    parentFolderExtra = Folder(
+                      id: 'root_$listId',
+                      name: 'Root',
+                      todoListId: listId,
+                      parentId: null,
+                      createdAt: DateTime.now(),
+                    );
+                  }
+                } catch (e) {
+                  debugPrint('Error fetching list data on reload: $e');
+                  // Return error page or redirect
+                  return CustomTransitionPage(
+                    key: state.pageKey,
+                    child: Scaffold(
+                      body: Center(
+                        child: Text('Error loading list: $e'),
+                      ),
+                    ),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      return child;
+                    },
+                  );
+                }
+              }
 
               return CustomTransitionPage(
                 key: state.pageKey,
                 child: detail_screen.TodoListDetailScreen(
-                  todoList: todoListExtra,
-                  parentFolder: parentFolderExtra,
+                  todoList: todoListExtra!,
+                  parentFolder: parentFolderExtra!,
                 ),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
@@ -212,16 +260,53 @@ class AppRouter {
           GoRoute(
             path: '/list/:listId/folder/:folderId',
             name: folderDetail,
-            pageBuilder: (BuildContext context, GoRouterState state) {
-              final Map<String, dynamic> extras =
-                  state.extra as Map<String, dynamic>;
-              final TodoList todoListExtra = extras['todoList'] as TodoList;
-              final Folder parentFolderExtra = extras['parentFolder'] as Folder;
+            pageBuilder: (BuildContext context, GoRouterState state) async {
+              // Handle page reload - fetch data if extra is null
+              TodoList? todoListExtra;
+              Folder? parentFolderExtra;
+
+              if (state.extra != null && state.extra is Map<String, dynamic>) {
+                final Map<String, dynamic> extras =
+                    state.extra as Map<String, dynamic>;
+                todoListExtra = extras['todoList'] as TodoList?;
+                parentFolderExtra = extras['parentFolder'] as Folder?;
+              }
+
+              // If data not passed (e.g., page reload), fetch from database
+              if (todoListExtra == null || parentFolderExtra == null) {
+                final listId = state.pathParameters['listId']!;
+                final folderId = state.pathParameters['folderId']!;
+                final todoListRepo = TodoListRepository();
+                final folderRepo = FolderRepository();
+
+                try {
+                  // Fetch the todo list
+                  todoListExtra = await todoListRepo.getTodoList(listId);
+
+                  // Fetch the specific folder
+                  parentFolderExtra = await folderRepo.getFolder(folderId);
+                } catch (e) {
+                  debugPrint('Error fetching folder data on reload: $e');
+                  // Return error page or redirect
+                  return CustomTransitionPage(
+                    key: state.pageKey,
+                    child: Scaffold(
+                      body: Center(
+                        child: Text('Error loading folder: $e'),
+                      ),
+                    ),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      return child;
+                    },
+                  );
+                }
+              }
 
               return CustomTransitionPage(
-                key: ValueKey('folder_${parentFolderExtra.id}'),
+                key: ValueKey('folder_${parentFolderExtra!.id}'),
                 child: detail_screen.TodoListDetailScreen(
-                  todoList: todoListExtra,
+                  todoList: todoListExtra!,
                   parentFolder: parentFolderExtra,
                 ),
                 transitionsBuilder:
