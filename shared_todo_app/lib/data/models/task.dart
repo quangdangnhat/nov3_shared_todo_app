@@ -139,6 +139,44 @@ class Task {
     };
   }
 
+  Task copyWith({
+    String? id,
+    String? folderId,
+    String? title,
+    String? desc,
+    String? priority,
+    String? status,
+    DateTime? startDate,
+    DateTime? dueDate,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    double? latitude,
+    double? longitude,
+    String? placeName,
+    bool? isRecurring,
+    String? recurrenceType,
+    String? parentRecurringTaskId,
+  }) {
+    return Task(
+      id: id ?? this.id,
+      folderId: folderId ?? this.folderId,
+      title: title ?? this.title,
+      desc: desc ?? this.desc,
+      priority: priority ?? this.priority,
+      status: status ?? this.status,
+      startDate: startDate ?? this.startDate,
+      dueDate: dueDate ?? this.dueDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      placeName: placeName ?? this.placeName,
+      isRecurring: isRecurring ?? this.isRecurring,
+      recurrenceType: recurrenceType ?? this.recurrenceType,
+      parentRecurringTaskId: parentRecurringTaskId ?? this.parentRecurringTaskId,
+    );
+  }
+
   @override
   String toString() {
     return 'Task(id: $id, title: $title, startDate: $startDate, dueDate: $dueDate)';

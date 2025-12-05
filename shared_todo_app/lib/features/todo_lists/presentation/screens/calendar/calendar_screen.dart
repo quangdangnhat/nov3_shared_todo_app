@@ -8,6 +8,7 @@ import 'package:shared_todo_app/core/utils/snackbar_utils.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:shared_todo_app/data/models/task.dart';
 import 'package:shared_todo_app/data/repositories/task_repository.dart';
+import 'package:shared_todo_app/core/services/recurring_task_service.dart';
 import '../../../../../config/responsive.dart';
 import '../../widgets/task_list_tile.dart';
 
@@ -20,6 +21,7 @@ class CalendarScreen extends StatefulWidget {
 
 class _CalendarScreenState extends State<CalendarScreen> {
   final _repo = TaskRepository();
+  final _recurringTaskService = RecurringTaskService();
 
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
@@ -321,10 +323,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   }
                                 },
                                 onStatusChanged: (newStatus) async {
+                                  final oldStatus = t.status;
+
+                                  // Update task status
                                   await _repo.updateTask(
                                     taskId: t.id,
                                     status: newStatus,
                                   );
+
+                                  // Generate next instance if recurring task is marked as Done
+                                  final updatedTask = t.copyWith(status: newStatus);
+                                  await _recurringTaskService.handleTaskStatusChange(
+                                    updatedTask,
+                                    oldStatus,
+                                    newStatus,
+                                  );
+
                                   setState(() {}); // Ricarica
                                 },
                               );

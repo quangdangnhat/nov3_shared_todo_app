@@ -11,6 +11,7 @@ import '../../../../data/repositories/folder_repository.dart';
 import '../../../../data/repositories/task_repository.dart';
 import '../../../../data/repositories/invitation_repository.dart';
 import '../../../../data/repositories/participant_repository.dart';
+import '../../../../core/services/recurring_task_service.dart';
 import '../../../../main.dart'; // per accedere a supabase
 
 class TodoListDetailViewModel extends ChangeNotifier {
@@ -19,6 +20,7 @@ class TodoListDetailViewModel extends ChangeNotifier {
   final _taskRepo = TaskRepository();
   final _invitationRepo = InvitationRepository();
   final _participantRepo = ParticipantRepository();
+  final _recurringTaskService = RecurringTaskService();
 
   // Stato UI
   bool _isFoldersCollapsed = false;
@@ -155,9 +157,22 @@ class TodoListDetailViewModel extends ChangeNotifier {
 
   Future<void> handleTaskStatusChange(Task task, String newStatus) async {
     try {
+      final oldStatus = task.status;
+
+      // Update the task status
       final updatedTask =
           await _taskRepo.updateTask(taskId: task.id, status: newStatus);
       _updateTaskCache(task.folderId, updatedTask);
+
+      // Generate next instance if this is a recurring task being marked as Done
+      final nextInstance = await _recurringTaskService.handleTaskStatusChange(
+          updatedTask, oldStatus, newStatus);
+
+      // Add the new instance to cache if it was created
+      if (nextInstance != null) {
+        _addTaskToCache(task.folderId, nextInstance);
+        debugPrint('✅ New recurring task instance added to cache: ${nextInstance.id}');
+      }
     } catch (e) {
       debugPrint('Errore nell\'update dello status del task: $e');
       rethrow;
