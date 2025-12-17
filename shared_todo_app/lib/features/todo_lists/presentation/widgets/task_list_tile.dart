@@ -395,6 +395,11 @@ class _TaskListTileState extends State<TaskListTile> {
   }
 
   Widget _buildPriorityBadge(BuildContext context, String priority) {
+    // Only show badge for HIGH priority tasks
+    if (priority.toLowerCase() != 'high') {
+      return const SizedBox.shrink();
+    }
+
     final theme = Theme.of(context);
     final priorityColor = ColorHelper.getPriorityColor(priority, theme);
     final isMobile = ResponsiveLayout.isMobile(context);
