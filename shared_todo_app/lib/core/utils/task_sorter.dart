@@ -116,7 +116,7 @@ class TaskSorter {
       case TaskFilterType.priorityHighToLow:
         sortedTasks.sort((a, b) {
           int result = _comparePriority(a.priority, b.priority);
-          if (result == 0) return _resolveTie(a, b);
+          if (result == 0) return _resolveTieByDueDate(a, b);
           return result;
         });
         break;
@@ -124,7 +124,7 @@ class TaskSorter {
       case TaskFilterType.priorityLowToHigh:
         sortedTasks.sort((a, b) {
           int result = _comparePriority(b.priority, a.priority);
-          if (result == 0) return _resolveTie(a, b);
+          if (result == 0) return _resolveTieByDueDate(a, b);
           return result;
         });
         break;
@@ -149,6 +149,20 @@ class TaskSorter {
   }
 
   static int _resolveTie(Task a, Task b) {
+    int titleResult = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+    if (titleResult != 0) return titleResult;
+    return a.id.compareTo(b.id);
+  }
+
+  /// Resolve tie by due date for HIGH priority only, otherwise by title
+  static int _resolveTieByDueDate(Task a, Task b) {
+    // Only sort by due date if both tasks are HIGH priority
+    if (a.priority.toLowerCase() == 'high' &&
+        b.priority.toLowerCase() == 'high') {
+      int dateResult = a.dueDate.compareTo(b.dueDate);
+      if (dateResult != 0) return dateResult;
+    }
+    // For other priorities, resolve by title
     int titleResult = a.title.toLowerCase().compareTo(b.title.toLowerCase());
     if (titleResult != 0) return titleResult;
     return a.id.compareTo(b.id);
