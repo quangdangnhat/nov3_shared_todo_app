@@ -129,6 +129,18 @@ class TaskSorter {
         });
         break;
 
+      case TaskFilterType.highPriorityOnly:
+        // Filter to keep only HIGH priority tasks
+        sortedTasks.removeWhere(
+            (task) => task.priority.toLowerCase() != 'high');
+        // Sort by due date (earliest first)
+        sortedTasks.sort((a, b) {
+          int result = a.dueDate.compareTo(b.dueDate);
+          if (result == 0) return _resolveTie(a, b);
+          return result;
+        });
+        break;
+
       case TaskFilterType.alphabeticalAZ:
         sortedTasks.sort((a, b) {
           int result = a.title.toLowerCase().compareTo(b.title.toLowerCase());

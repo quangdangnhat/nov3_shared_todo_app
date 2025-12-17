@@ -12,6 +12,10 @@ enum TaskFilterType {
     'Priority: Low → High',
     'Sort by priority (Low, Medium, High)',
   ),
+  highPriorityOnly(
+    'High Priority Only',
+    'Show only high priority tasks (sorted by due date)',
+  ),
   alphabeticalAZ('Title: A → Z', 'Sort alphabetically (A to Z)'),
   alphabeticalZA('Title: Z → A', 'Sort alphabetically (Z to A)');
 
