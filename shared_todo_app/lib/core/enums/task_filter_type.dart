@@ -4,6 +4,8 @@
 enum TaskFilterType {
   createdAtNewest('Newest First', 'Sort by creation date (newest first)'),
   createdAtOldest('Oldest First', 'Sort by creation date (oldest first)'),
+  dueDateEarliest('Due Date: Earliest', 'Sort by due date (earliest first)'),
+  dueDateLatest('Due Date: Latest', 'Sort by due date (latest first)'),
   priorityHighToLow(
     'Priority: High → Low',
     'Sort by priority (High, Medium, Low)',

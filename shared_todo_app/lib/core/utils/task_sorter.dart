@@ -141,6 +141,22 @@ class TaskSorter {
         });
         break;
 
+      case TaskFilterType.dueDateEarliest:
+        sortedTasks.sort((a, b) {
+          int result = a.dueDate.compareTo(b.dueDate);
+          if (result == 0) return _resolveTie(a, b);
+          return result;
+        });
+        break;
+
+      case TaskFilterType.dueDateLatest:
+        sortedTasks.sort((a, b) {
+          int result = b.dueDate.compareTo(a.dueDate);
+          if (result == 0) return _resolveTie(a, b);
+          return result;
+        });
+        break;
+
       case TaskFilterType.priorityHighToLow:
         sortedTasks.sort((a, b) {
           int result = _comparePriority(a.priority, b.priority);
