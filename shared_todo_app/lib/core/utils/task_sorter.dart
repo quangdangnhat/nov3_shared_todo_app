@@ -154,10 +154,15 @@ class TaskSorter {
     return a.id.compareTo(b.id);
   }
 
-  /// Resolve tie by due date (earliest first), then title, then id
+  /// Resolve tie by due date for HIGH priority only, otherwise by title
   static int _resolveTieByDueDate(Task a, Task b) {
-    int dateResult = a.dueDate.compareTo(b.dueDate);
-    if (dateResult != 0) return dateResult;
+    // Only sort by due date if both tasks are HIGH priority
+    if (a.priority.toLowerCase() == 'high' &&
+        b.priority.toLowerCase() == 'high') {
+      int dateResult = a.dueDate.compareTo(b.dueDate);
+      if (dateResult != 0) return dateResult;
+    }
+    // For other priorities, resolve by title
     int titleResult = a.title.toLowerCase().compareTo(b.title.toLowerCase());
     if (titleResult != 0) return titleResult;
     return a.id.compareTo(b.id);
