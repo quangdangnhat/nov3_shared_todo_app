@@ -3,6 +3,34 @@ import '../enums/task_filter_type.dart';
 
 /// Utility class to sort Task list with stable ordering for date-based sorts
 class TaskSorter {
+  /// Sort task list by multiple filter types
+  /// Applies filtering first (highPriorityOnly), then sorting
+  static List<Task> sortTasksMultiFilter(
+      List<Task> tasks, Set<TaskFilterType> filterTypes) {
+    if (tasks.isEmpty) return [];
+
+    var result = List<Task>.from(tasks);
+
+    // Step 1: Apply filtering (highPriorityOnly)
+    if (filterTypes.contains(TaskFilterType.highPriorityOnly)) {
+      result.removeWhere((task) => task.priority.toLowerCase() != 'high');
+    }
+
+    // Step 2: Find sorting filter and apply it
+    TaskFilterType? sortingFilter;
+    for (final filter in filterTypes) {
+      if (filter != TaskFilterType.highPriorityOnly) {
+        sortingFilter = filter;
+        break;
+      }
+    }
+
+    // If no sorting filter selected, default to createdAtNewest
+    sortingFilter ??= TaskFilterType.createdAtNewest;
+
+    return _performSort(result, sortingFilter);
+  }
+
   // Cache SOLO dell'ordine degli ID (non dei task stessi!)
   static List<String>? _cachedOrderIds;
   static TaskFilterType? _cachedFilterType;

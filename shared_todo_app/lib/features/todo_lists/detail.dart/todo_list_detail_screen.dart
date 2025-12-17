@@ -44,7 +44,7 @@ class TodoListDetailScreen extends StatefulWidget {
 
 class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
   late final TodoListDetailViewModel _viewModel;
-  TaskFilterType _selectedTaskFilter = TaskFilterType.createdAtNewest;
+  Set<TaskFilterType> _selectedTaskFilters = {};
 
   @override
   void initState() {
@@ -379,10 +379,10 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
                               Row(
                                 children: [
                                   TaskFilterDropdown(
-                                    selectedFilter: _selectedTaskFilter,
-                                    onFilterChanged: (newFilter) {
+                                    selectedFilters: _selectedTaskFilters,
+                                    onFiltersChanged: (newFilters) {
                                       setState(() {
-                                        _selectedTaskFilter = newFilter;
+                                        _selectedTaskFilters = newFilters;
                                       });
                                     },
                                   ),
@@ -430,7 +430,7 @@ class _TodoListDetailScreenState extends State<TodoListDetailScreen> {
 
                           final tasks = snapshot.data ?? [];
                           final sortedTasks =
-                              TaskSorter.sortTasks(tasks, _selectedTaskFilter);
+                              TaskSorter.sortTasksMultiFilter(tasks, _selectedTaskFilters);
 
                           if (sortedTasks.isEmpty) {
                             return const SliverToBoxAdapter(
