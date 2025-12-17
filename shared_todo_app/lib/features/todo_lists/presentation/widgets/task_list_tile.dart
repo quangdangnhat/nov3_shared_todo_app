@@ -5,6 +5,7 @@ import 'package:shared_todo_app/features/todo_lists/presentation/widgets/maps/ma
 import 'package:shared_todo_app/features/todo_lists/presentation/widgets/badges/recurring_badge.dart';
 import '../../../../data/models/task.dart';
 import '../../../../config/responsive.dart';
+import '../../../../core/utils/daily_tasks/color_helper.dart';
 
 class TaskListTile extends StatefulWidget {
   final Task task;
@@ -170,19 +171,27 @@ class _TaskListTileState extends State<TaskListTile> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      // Titolo
-                      Text(
-                        task.title,
-                        style: TextStyle(
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.w600,
-                          color: titleColor,
-                          height: 1.2,
-                          decoration:
-                              isDone ? TextDecoration.lineThrough : null,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      // Titolo + Priority Badge
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              task.title,
+                              style: TextStyle(
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w600,
+                                color: titleColor,
+                                height: 1.2,
+                                decoration:
+                                    isDone ? TextDecoration.lineThrough : null,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildPriorityBadge(context, task.priority),
+                        ],
                       ),
                       const SizedBox(height: 6),
 
@@ -380,6 +389,32 @@ class _TaskListTileState extends State<TaskListTile> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityBadge(BuildContext context, String priority) {
+    final theme = Theme.of(context);
+    final priorityColor = ColorHelper.getPriorityColor(priority, theme);
+    final isMobile = ResponsiveLayout.isMobile(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: priorityColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: priorityColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        priority.toUpperCase(),
+        style: TextStyle(
+          color: priorityColor,
+          fontSize: isMobile ? 10 : 11,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
