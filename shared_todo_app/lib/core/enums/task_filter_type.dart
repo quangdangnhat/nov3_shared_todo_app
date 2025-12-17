@@ -13,7 +13,9 @@ enum TaskFilterType {
     'Sort by priority (Low, Medium, High)',
   ),
   alphabeticalAZ('Title: A → Z', 'Sort alphabetically (A to Z)'),
-  alphabeticalZA('Title: Z → A', 'Sort alphabetically (Z to A)');
+  alphabeticalZA('Title: Z → A', 'Sort alphabetically (Z to A)'),
+  highPriorityOnly('High Priority Only', 'Show only high priority tasks'),
+  hasDueDate('Has Due Date', 'Show only tasks with due date');
 
   final String displayName;
   final String description;

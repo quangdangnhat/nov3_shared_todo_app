@@ -208,6 +208,42 @@ class _TaskListTileState extends State<TaskListTile> {
                       ),
                       const SizedBox(height: 4),
 
+                      // Priority Badge
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.flag,
+                            size: 14,
+                            color: _getPriorityColor(task.priority),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getPriorityColor(task.priority).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: _getPriorityColor(task.priority).withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              task.priority,
+                              style: TextStyle(
+                                fontSize: bodySize - 1,
+                                color: _getPriorityColor(task.priority),
+                                fontWeight: FontWeight.w500,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+
                       // Descrizione
                       Row(
                         children: [
@@ -339,6 +375,19 @@ class _TaskListTileState extends State<TaskListTile> {
         ),
       ),
     );
+  }
+
+  Color _getPriorityColor(String priority) {
+    switch (priority) {
+      case 'High':
+        return Colors.red;
+      case 'Medium':
+        return Colors.orange;
+      case 'Low':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildStatusButton(

@@ -16,6 +16,13 @@ class TaskSorter {
       return [];
     }
 
+    // Apply actual filtering first for filter-based types
+    List<Task> filteredTasks = _applyFilter(tasks, filterType);
+
+    if (filteredTasks.isEmpty) {
+      return [];
+    }
+
     final isDateBasedFilter = filterType == TaskFilterType.createdAtNewest ||
         filterType == TaskFilterType.createdAtOldest;
 
@@ -27,25 +34,41 @@ class TaskSorter {
 
     // Per filtri NON basati su data, esegui sempre il sort normale
     if (!isDateBasedFilter) {
-      return _performSort(List<Task>.from(tasks), filterType);
+      return _performSort(List<Task>.from(filteredTasks), filterType);
     }
 
     // === FILTRI BASATI SU DATA ===
 
-    final currentIds = tasks.map((t) => t.id).toSet();
+    final currentIds = filteredTasks.map((t) => t.id).toSet();
 
     // Verifica se la struttura è cambiata (aggiunti/rimossi task)
     final bool structureChanged = _hasStructureChanged(currentIds);
 
     if (structureChanged || _cachedOrderIds == null) {
       // Struttura cambiata: ricalcola il sort e aggiorna la cache
-      final sortedTasks = _performSort(List<Task>.from(tasks), filterType);
+      final sortedTasks = _performSort(List<Task>.from(filteredTasks), filterType);
       _cachedOrderIds = sortedTasks.map((t) => t.id).toList();
       return sortedTasks;
     }
 
     // Struttura invariata: usa l'ordine dalla cache ma con i TASK AGGIORNATI dallo stream
-    return _applyOrderWithFreshTasks(tasks);
+    return _applyOrderWithFreshTasks(filteredTasks);
+  }
+
+  /// Apply actual filtering based on filter type
+  static List<Task> _applyFilter(List<Task> tasks, TaskFilterType filterType) {
+    switch (filterType) {
+      case TaskFilterType.highPriorityOnly:
+        return tasks.where((task) => task.priority == 'High').toList();
+      case TaskFilterType.hasDueDate:
+        // All tasks have dueDate (it's required), but we can filter for tasks
+        // with due date that is not the default (today or in the future)
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        return tasks.where((task) => !task.dueDate.isBefore(today)).toList();
+      default:
+        return tasks;
+    }
   }
 
   /// Verifica se la struttura della lista è cambiata (aggiunti/rimossi task)
@@ -141,6 +164,24 @@ class TaskSorter {
         sortedTasks.sort((a, b) {
           int result = b.title.toLowerCase().compareTo(a.title.toLowerCase());
           if (result == 0) return a.id.compareTo(b.id);
+          return result;
+        });
+        break;
+
+      case TaskFilterType.highPriorityOnly:
+        // Already filtered, just sort by creation date (newest first)
+        sortedTasks.sort((a, b) {
+          int result = b.createdAt.compareTo(a.createdAt);
+          if (result == 0) return _resolveTie(a, b);
+          return result;
+        });
+        break;
+
+      case TaskFilterType.hasDueDate:
+        // Already filtered, sort by due date (earliest first)
+        sortedTasks.sort((a, b) {
+          int result = a.dueDate.compareTo(b.dueDate);
+          if (result == 0) return _resolveTie(a, b);
           return result;
         });
         break;
